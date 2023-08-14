@@ -35,3 +35,37 @@ Once the classes are generated, you can integrate them into your Spring Boot pro
 Remember that MyBatis Generator is not an ORM framework like Hibernate; it's a code generation tool. While it can help you quickly generate entity classes, the generated classes won't have the same level of integration as JPA-managed entities.
 
 Always refer to the official documentation and resources for the latest and most accurate instructions on how to set up and use MyBatis Generator effectively.
+
+
+To generate an entity class for a specific table using the MyBatis Generator Maven plugin, 
+you can use the <table> element in the plugin's configuration and provide the <tableName> 
+and <domainObjectName> options as you've shown. Here's the relevant part of your configuration:
+
+
+<plugin>
+    <groupId>org.mybatis.generator</groupId>
+    <artifactId>mybatis-generator-maven-plugin</artifactId>
+    <version><!-- Use the latest version available --></version>
+    <configuration>
+        <!-- Other configuration options -->
+
+        <!-- Table Configuration -->
+        <table>
+            <tableName>BrokerCalcuationClaims</tableName>
+            <!-- Specify the name of the table to generate an entity for -->
+            <domainObjectName>BCC</domainObjectName>
+            <!-- Specify the desired name for the generated entity class -->
+        </table>
+    </configuration>
+</plugin>
+
+In this example, the plugin will generate an entity class for the table named "BrokerCalcuationClaims" 
+and name the generated entity class "BCC". The generated class will have JPA annotations and methods based on the columns and structure of the specified table.
+
+Remember that you can have multiple <table> elements within the configuration to generate entity classes for multiple tables. 
+Each <table> element defines how the entity class should be generated for a specific table.
+
+After configuring the plugin in your pom.xml file, run the command mvn mybatis-generator:generate to trigger the code generation process based on your configuration. The generated entity class will be placed in the specified output directory or package structure.
+
+As always, ensure that your configuration aligns with the specific version of the MyBatis Generator plugin you're using 
+and refer to the official documentation for accurate and detailed information.
