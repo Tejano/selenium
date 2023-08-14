@@ -1,0 +1,37 @@
+
+MyBatis Generator:
+MyBatis Generator (MBG) is a tool that can generate Java classes, XML mapper files, and other artifacts from an existing database schema. While it is often associated with the MyBatis SQL mapping framework, it can be used to generate standalone entity classes as well. It's a command-line tool, and you can configure it to generate entity classes based on your SQL Server schema.
+
+To use MyBatis Generator:
+
+Add Dependencies:
+You will need to add the MyBatis Generator Maven plugin to your project's pom.xml file.
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.mybatis.generator</groupId>
+            <artifactId>mybatis-generator-maven-plugin</artifactId>
+            <version><!-- Specify the version --></version>
+            <configuration>
+                <!-- Configuration options -->
+            </configuration>
+            <dependencies>
+                <!-- Add database-specific dependencies (SQL Server JDBC driver) -->
+            </dependencies>
+        </plugin>
+    </plugins>
+</build>
+
+Configure the Generator:
+Create a MyBatis Generator configuration file (e.g., generatorConfig.xml) where you define how the classes should be generated based on your SQL Server schema. In this configuration, you'll specify database connection details, tables to generate entities for, and how the entities should be generated.
+
+Run the Generator:
+Execute the MyBatis Generator plugin using the Maven command: mvn mybatis-generator:generate
+
+Integrate Generated Classes:
+Once the classes are generated, you can integrate them into your Spring Boot project as regular Java classes. These classes won't be managed by JPA or Hibernate, so you'll need to manually handle database operations if necessary.
+
+Remember that MyBatis Generator is not an ORM framework like Hibernate; it's a code generation tool. While it can help you quickly generate entity classes, the generated classes won't have the same level of integration as JPA-managed entities.
+
+Always refer to the official documentation and resources for the latest and most accurate instructions on how to set up and use MyBatis Generator effectively.
