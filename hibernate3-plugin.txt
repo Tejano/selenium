@@ -1,0 +1,13 @@
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>hibernate3-maven-plugin</artifactId>
+            <version><!-- Specify the version --></version>
+            <configuration>
+                <outputDirectory><!-- Specify your desired output directory --></outputDirectory>
+                <!-- Other configuration options -->
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
