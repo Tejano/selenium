@@ -1,0 +1,71 @@
+Create the VB.NET UserControl Project:
+
+Open Visual Studio.
+Create a new Windows Forms Control Library project.
+In the toolbox, drag and drop a WebBrowser control onto the user control's design surface.
+Add the Code for the UserControl:
+
+csharp
+Copy code
+using System;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
+
+namespace WebBrowserControl
+{
+    [ComVisible(true)]
+    [Guid("YOUR-GUID-HERE")]
+    [ProgId("WebBrowserControl.WebBrowserUserControl")]
+    [ClassInterface(ClassInterfaceType.AutoDual)]
+    public partial class WebBrowserUserControl : UserControl
+    {
+        public WebBrowserUserControl()
+        {
+            InitializeComponent();
+        }
+
+        public void Navigate(string url)
+        {
+            webBrowser.Navigate(url);
+        }
+    }
+}
+Replace "YOUR-GUID-HERE" with a valid GUID for your COM interface. You can generate one using a tool like guidgen.exe.
+
+Build the UserControl Project:
+
+Build the project to compile it into a DLL.
+Register the UserControl for COM Interop:
+
+Open the Developer Command Prompt for Visual Studio as an administrator.
+
+Navigate to the directory containing your compiled DLL.
+
+Run the following command to register the DLL for COM interop:
+
+bash
+Copy code
+regasm YourUserControl.dll /tlb:YourUserControl.tlb /codebase
+Use the UserControl in Access ADP:
+
+In Access ADP, open your form in Design View.
+Go to the "Design" tab, click on "ActiveX Control," and select "Microsoft Web Browser."
+Resize and position the ActiveX control on your form as needed.
+Add VBA Code to the Access Form:
+
+vba
+Copy code
+Private Sub Form_Load()
+    Dim browserControl As Object
+    Set browserControl = CreateObject("WebBrowserControl.WebBrowserUserControl")
+    
+    Me.Controls.Add browserControl
+    browserControl.Left = 10
+    browserControl.Top = 10
+    browserControl.Width = Me.Width - 20
+    browserControl.Height = Me.Height - 20
+    
+    browserControl.Navigate "https://www.example.com"
+End Sub
+This VBA code will create an instance of the VB.NET UserControl, add it to the Access form, and navigate to the specified URL.
+
