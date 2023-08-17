@@ -1,0 +1,60 @@
+Creating an Excel report with Selenium and Java involves using a library like Apache POI. Apache POI provides classes to work with Microsoft Office formats, including Excel. Below is an example of how you can create a simple Excel report using Apache POI in combination with Selenium:
+
+Add Apache POI Dependency:
+Add the Apache POI dependency to your pom.xml file:
+
+xml
+Copy code
+<dependency>
+    <groupId>org.apache.poi</groupId>
+    <artifactId>poi</artifactId>
+    <version>5.0.0</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.poi</groupId>
+    <artifactId>poi-ooxml</artifactId>
+    <version>5.0.0</version>
+</dependency>
+Create Excel Report:
+java
+Copy code
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+
+public class ExcelReportExample {
+
+    public static void main(String[] args) throws Exception {
+        WebDriver driver = new ChromeDriver();
+        driver.get("https://example.com");
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Test Results");
+
+        // Create header row
+        Row headerRow = sheet.createRow(0);
+        headerRow.createCell(0).setCellValue("Test Name");
+        headerRow.createCell(1).setCellValue("Status");
+
+        // Add test results
+        Row row = sheet.createRow(1);
+        row.createCell(0).setCellValue("Test1");
+        row.createCell(1).setCellValue("Passed");
+
+        // Save the Excel file
+        String filePath = "test_results.xlsx";
+        try (FileOutputStream outputStream = new FileOutputStream(filePath)) {
+            workbook.write(outputStream);
+        }
+
+        driver.quit();
+        System.out.println("Excel report generated successfully.");
+    }
+}
+In this example, we're creating a simple Excel report that includes test names and their statuses. You would replace the test names and statuses with the actual results from your Selenium tests.
+
+Execute the Example:
+Run the above Java program to execute the example. After execution, you will find a file named test_results.xlsx in the same directory as your project. This Excel file will contain the test results you added in the code.
+
+Please note that this is a basic example, and you can extend it to include more complex information such as screenshots, test details, timestamps, etc., based on your reporting requirements. Additionally, consider handling exceptions and closing resources appropriately in a real-world scenario.
