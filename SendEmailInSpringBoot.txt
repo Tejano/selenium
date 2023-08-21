@@ -1,0 +1,98 @@
+
+To send emails with attachments via a Microsoft Exchange Server in a Spring Boot application, you can use the JavaMail API along with the Spring Framework's JavaMailSender. Here's a basic example of how to achieve this:
+
+Add Dependencies to pom.xml:
+
+Make sure to include the necessary dependencies for JavaMail and Spring's email support in your pom.xml file.
+
+xml
+Copy code
+<dependencies>
+    <!-- JavaMail API -->
+    <dependency>
+        <groupId>javax.mail</groupId>
+        <artifactId>javax.mail-api</artifactId>
+        <version>1.7.1</version>
+    </dependency>
+    <!-- Spring Email Support -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-mail</artifactId>
+    </dependency>
+    <!-- Other dependencies... -->
+</dependencies>
+Create a Spring Service to Send Email:
+
+Create a service class that uses Spring's JavaMailSender to send emails with attachments. Here's a simplified example:
+
+java
+Copy code
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Service;
+
+@Service
+public class EmailService {
+
+    @Autowired
+    private JavaMailSender javaMailSender;
+
+    public void sendEmailWithAttachment(String to, String subject, String text, String attachmentPath) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(text);
+
+        // Attach a file
+        if (attachmentPath != null) {
+            FileSystemResource attachment = new FileSystemResource(new File(attachmentPath));
+            message.addAttachment("Attachment", attachment);
+        }
+
+        javaMailSender.send(message);
+    }
+}
+Configure Spring Boot for Email:
+
+Configure the email settings in your application.properties or application.yml file:
+
+properties
+Copy code
+# Email Configuration
+spring.mail.host=your-exchange-server
+spring.mail.port=your-port
+spring.mail.username=your-username
+spring.mail.password=your-password
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+Using the Email Service:
+
+You can now use the EmailService to send emails with attachments. Inject the service into your controllers, services, or components and call the sendEmailWithAttachment method.
+
+java
+Copy code
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class EmailController {
+
+    @Autowired
+    private EmailService emailService;
+
+    @GetMapping("/send-email")
+    public String sendEmail() {
+        String to = "recipient@example.com";
+        String subject = "Test Email with Attachment";
+        String text = "This is a test email with an attachment.";
+        String attachmentPath = "path/to/attachment/file.pdf"; // Provide the actual path
+
+        emailService.sendEmailWithAttachment(to, subject, text, attachmentPath);
+        return "Email sent successfully!";
+    }
+}
+Remember to replace placeholders (your-exchange-server, your-port, your-username, your-password, recipient@example.com, and path/to/attachment/file.pdf) with actual values.
+
+Keep in mind that sending emails with attachments requires proper configuration of your email server (Microsoft Exchange Server) to support attachments and appropriate security settings. Also, handle exceptions and error scenarios appropriately in your code.
