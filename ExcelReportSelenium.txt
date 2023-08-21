@@ -52,9 +52,67 @@ public class ExcelReportExample {
         System.out.println("Excel report generated successfully.");
     }
 }
+
+
 In this example, we're creating a simple Excel report that includes test names and their statuses. You would replace the test names and statuses with the actual results from your Selenium tests.
 
 Execute the Example:
 Run the above Java program to execute the example. After execution, you will find a file named test_results.xlsx in the same directory as your project. This Excel file will contain the test results you added in the code.
 
 Please note that this is a basic example, and you can extend it to include more complex information such as screenshots, test details, timestamps, etc., based on your reporting requirements. Additionally, consider handling exceptions and closing resources appropriately in a real-world scenario.
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openqa.selenium.WebDriver;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+@SpringBootTest
+public class ExcelReportTest extends AbstractTestNGSpringContextTests {
+
+    @Autowired
+    private WebDriver webDriver;
+
+    @BeforeMethod
+    public void setUp() {
+        // Any setup steps before each test method
+    }
+
+    @Test
+    public void generateExcelReport() throws IOException {
+        webDriver.get("https://example.com");
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Test Results");
+
+        // Create header row
+        Row headerRow = sheet.createRow(0);
+        headerRow.createCell(0).setCellValue("Test Name");
+        headerRow.createCell(1).setCellValue("Status");
+
+        // Add test results
+        Row row = sheet.createRow(1);
+        row.createCell(0).setCellValue("Test1");
+        row.createCell(1).setCellValue("Passed");
+
+        // Save the Excel file
+        String filePath = "test_results.xlsx";
+        try (FileOutputStream outputStream = new FileOutputStream(filePath)) {
+            workbook.write(outputStream);
+        }
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        if (webDriver != null) {
+            webDriver.quit();
+        }
+    }
+}
