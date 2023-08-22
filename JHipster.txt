@@ -1,0 +1,21 @@
+I apologize for any confusion. To clarify, when you have a plugin like the JHipster plugin installed in IntelliJ IDEA, you typically don't need to use the "Run Plugin" run configuration. The "Run Plugin" run configuration is primarily used when you are developing your own custom plugins for IntelliJ IDEA.
+
+For the JHipster plugin, you would interact with it through the integrated user interface and its provided actions rather than running it as a separate plugin. The steps for using the JHipster plugin are generally as follows:
+
+Install JHipster Plugin:
+
+Install the JHipster plugin from the IntelliJ IDEA marketplace. You can do this by navigating to Settings/Preferences > Plugins and searching for "JHipster" to install the plugin.
+
+Create JHipster Project:
+
+Use the plugin to create a new JHipster project or import an existing one. The plugin should provide options and wizards to help you set up the project's configuration.
+
+Use JHipster Features:
+
+Once the project is created or imported, you can use the JHipster plugin's features and tools directly within IntelliJ IDEA. These features might include generating entities, controllers, services, and more.
+
+Interact Through IDE UI:
+
+The JHipster plugin should provide additional menus, actions, and shortcuts that you can access directly from the IntelliJ IDEA interface. You can use these to generate code, manage the project, and perform other tasks supported by the plugin.
+
+Remember, the JHipster plugin integrates with IntelliJ IDEA's existing UI and features, so you typically won't need to explicitly use the "Run Plugin" configuration for the JHipster plugin itself. If you encounter any issues or have specific questions about using the JHipster plugin, it's a good idea to refer to its documentation or guides provided by the plugin's authors.
