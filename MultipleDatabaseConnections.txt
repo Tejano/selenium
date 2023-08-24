@@ -1,0 +1,71 @@
+
+in spring boot 2.3.5,  I need to make a connection to  a CRU  database MonthlyLives table and a broker database BCC table to run validation queries after executing and SSIS job the pulls data from MonthlyLives to the BCC Table.    How to I setup Spring boot to handle the multiple database connections. 
+
+ChatGPT
+In Spring Boot, you can easily set up and manage multiple database connections using the @Configuration annotation along with Spring Data JPA. Here's a step-by-step guide on how to achieve this:
+
+Dependencies: Make sure you have the necessary dependencies in your pom.xml or build.gradle file. You need the Spring Data JPA and the appropriate database driver dependencies (e.g., H2, MySQL, PostgreSQL, etc.) for both databases.
+
+Database Configuration: Create configuration classes for each of your databases. You can have a main configuration class for your application and separate configuration classes for each database.
+
+java
+Copy code
+@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories(
+    basePackages = "com.example.monthlylives.repository",
+    entityManagerFactoryRef = "monthlyLivesEntityManagerFactory",
+    transactionManagerRef = "monthlyLivesTransactionManager"
+)
+public class MonthlyLivesDataSourceConfig {
+
+    @Primary
+    @Bean(name = "monthlyLivesDataSource")
+    @ConfigurationProperties(prefix = "spring.datasource.monthlylives")
+    public DataSource dataSource() {
+        return DataSourceBuilder.create().build();
+    }
+
+    @Primary
+    @Bean(name = "monthlyLivesEntityManagerFactory")
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(
+            EntityManagerFactoryBuilder builder,
+            @Qualifier("monthlyLivesDataSource") DataSource dataSource) {
+        return builder
+                .dataSource(dataSource)
+                .packages("com.example.monthlylives.entity")
+                .persistenceUnit("monthlyLives")
+                .build();
+    }
+
+    @Primary
+    @Bean(name = "monthlyLivesTransactionManager")
+    public PlatformTransactionManager transactionManager(
+            @Qualifier("monthlyLivesEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
+        return new JpaTransactionManager(entityManagerFactory);
+    }
+}
+Similarly, create a configuration class for your second database (broker database).
+
+Repository and Entity Classes: Create repository and entity classes for each database. Annotate your repository interfaces with @Repository and your entity classes with @Entity.
+
+Service and Business Logic: Create services that encapsulate the business logic for each database. Inject the appropriate repositories into these services.
+
+Running Validation Queries: After executing your SSIS job, you can run validation queries by calling the methods from your service classes that interact with the databases.
+
+By using the @Primary annotation on the primary DataSource and EntityManagerFactory beans, you are telling Spring which database connection should be used by default when autowiring these beans.
+
+Remember to configure your database connection properties in your application.properties or application.yml file, like this:
+
+yaml
+Copy code
+spring.datasource.monthlylives.url=jdbc:mysql://localhost:3306/monthlylives
+spring.datasource.monthlylives.username=your-username
+spring.datasource.monthlylives.password=your-password
+
+spring.datasource.broker.url=jdbc:mysql://localhost:3306/broker
+spring.datasource.broker.username=your-username
+spring.datasource.broker.password=your-password
+Replace the URLs, usernames, and passwords with your actual database connection details.
+
+With this setup, you can now perform operations on both databases independently using the appropriate repositories and services.
