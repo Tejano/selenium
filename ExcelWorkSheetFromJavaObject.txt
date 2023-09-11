@@ -1,0 +1,68 @@
+To create a Java class that retrieves data from different native queries based on the comtype field, and then generates an Excel workbook with separate worksheets for each comtype, you can follow these steps:
+
+Define Your Entity Class (CommHistEntity):
+Ensure that your CommHistEntity class represents the data you want to retrieve from the database.
+
+Create a Service Class:
+Create a Java service class that handles data retrieval and Excel workbook creation. This class will use the Spring Data JPA repository to execute native queries and retrieve data.
+
+Execute Native Queries:
+In your service class, inject the CommHistRepository and execute the native queries for each comtype. You'll have to create separate queries for each comtype and retrieve the data accordingly.
+
+Create an Excel Workbook:
+Use a library like Apache POI to create an Excel workbook and worksheets. You'll need to create a new worksheet for each comtype and populate it with the data obtained from the queries.
+
+Populate Excel Worksheets:
+For each comtype, iterate through the data obtained from the queries and populate the corresponding worksheet with the data. You can use POI's Row and Cell objects to create rows and cells in the worksheet and set cell values.
+
+Generate and Save Excel File:
+Once you've populated all the worksheets, generate the Excel file and save it to a location on your filesystem or provide it as a download to the user.
+
+Here's a simplified example of how the Java code might look:
+@Service
+public class ExcelGenerationService {
+
+    @Autowired
+    private CommHistRepository commHistRepository;
+
+    public void generateExcel() {
+        // Create a new Excel workbook
+        Workbook workbook = new XSSFWorkbook();
+
+        // List of unique comtypes (you can fetch this from your database)
+        List<String> comtypes = Arrays.asList("comtype1", "comtype2", "comtype3");
+
+        for (String comtype : comtypes) {
+            // Execute native query for a specific comtype
+            List<CommHistEntity> data = commHistRepository.findDataByComtype(comtype);
+
+            // Create a new worksheet for this comtype
+            Sheet sheet = workbook.createSheet(comtype);
+
+            // Populate the worksheet with data
+            int rowNum = 0;
+            for (CommHistEntity entity : data) {
+                Row row = sheet.createRow(rowNum++);
+                // Populate cells with entity data
+                // row.createCell(0).setCellValue(entity.getField1());
+                // row.createCell(1).setCellValue(entity.getField2());
+                // ...
+            }
+        }
+
+        try {
+            // Save the workbook to a file or provide it for download
+            FileOutputStream outputStream = new FileOutputStream("output.xlsx");
+            workbook.write(outputStream);
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+In this example, findDataByComtype is a hypothetical method in your CommHistRepository that executes the native query based on the comtype. 
+You would need to define your native queries in the repository as needed.
+
+Make sure to adapt this example to your specific requirements and data model. You'll also need to configure the Spring application context correctly
+ and handle any error conditions that may arise during data retrieval or Excel generation.

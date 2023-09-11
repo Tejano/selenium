@@ -1,0 +1,41 @@
+Native queries in JPA do not have a direct relationship with JPA entities. Native queries are SQL queries that are written in the native SQL dialect of your database, and they are typically used when you need to execute database-specific queries that cannot be expressed using JPQL (Java Persistence Query Language), which is the query language used with JPA entities.
+
+While native queries do not have a direct mapping to JPA entities, you can use them to retrieve data from the database and map the results to JPA entities or other Java objects manually. Here's how it works:
+
+Executing Native Queries:
+You can execute native queries in JPA using the @Query annotation in combination with a nativeQuery attribute set to true in your repository methods. For example:
+
+@Repository
+public interface YourRepository extends JpaRepository<YourEntity, Long> {
+    @Query(value = "SELECT * FROM your_table WHERE some_condition", nativeQuery = true)
+    List<YourEntity> findEntitiesByNativeQuery();
+}
+
+
+Mapping Results:
+The result of a native query is typically a list of objects that represent the query results. These objects may not be JPA entities directly, but you can map the query results to JPA entities or other Java objects manually in your service or repository methods.
+
+For example, if your native query retrieves columns that correspond to fields in a JPA entity, you can manually construct instances of that entity class and populate them with the data from the query result set.
+
+@Autowired
+private YourRepository yourRepository;
+
+public List<YourEntity> getEntities() {
+    List<Object[]> queryResults = yourRepository.findEntitiesByNativeQuery();
+    List<YourEntity> entities = new ArrayList<>();
+
+    for (Object[] row : queryResults) {
+        YourEntity entity = new YourEntity();
+        entity.setId((Long) row[0]); // Assuming the first column is the ID
+        entity.setName((String) row[1]); // Assuming the second column is the name
+        // Set other fields...
+        entities.add(entity);
+    }
+
+    return entities;
+}
+
+Result Set Mapping:
+Depending on the complexity of your query and the structure of your result set, you may need to write custom code to map the query results to your JPA entities accurately. This mapping process can involve handling data type conversions and dealing with database-specific behaviors.
+
+In summary, native queries in JPA allow you to execute SQL queries directly against the database. While the query results may not directly match JPA entities, you can manually map the results to your entity objects or other Java objects as needed in your application code.

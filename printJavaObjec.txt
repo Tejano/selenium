@@ -1,0 +1,88 @@
+List<Object[]> commHist = repository.memETCommHist(202303);
+
+for (Object[] objArray : commHist) {
+    StringBuilder line = new StringBuilder();
+    
+    for (Object obj : objArray) {
+        line.append(obj).append(" ");
+    }
+    
+    System.out.println(line.toString().trim()); // Print the concatenated line, removing the trailing space
+}
+In this modified code:
+
+We use a StringBuilder (line) to concatenate the elements of each Object[] array together into a single line.
+Inside the inner loop, we use line.append(obj).append(" ") to append each element followed by a space to the StringBuilder.
+After processing all elements in the Object[] array, we use line.toString().trim() to convert the StringBuilder to a string, removing the trailing space, and then print the resulting line using System.out.println().
+This will print the elements of each Object[] array on a single line, with elements separated by spaces.
+
+
+
+
+To print out the values in the commHist list, which contains Object[] elements returned by the repository.memETCommHist(202303) method, 
+you can iterate through the list and then iterate through each Object[] array to access and print the individual elements. Here's how you can do it:
+
+
+List<Object[]> commHist = repository.memETCommHist(202303);
+
+for (Object[] objArray : commHist) {
+    for (Object obj : objArray) {
+        System.out.print(obj + " ");
+    }
+    System.out.println(); // Print a newline after each Object[] array
+}
+In the above code:
+
+We first iterate through the commHist list, which contains Object[] arrays.
+For each Object[] array (objArray) in the list, we iterate through the elements of the array.
+We use System.out.print(obj + " ") to print each element followed by a space.
+After printing all elements in an Object[] array, we print a newline (System.out.println();) to separate the output of each array.
+This code will print out the values in the commHist list, one Object[] array at a time, with elements separated by spaces. Adjust the formatting as needed based on your specific requirements.
+
+
+
+
+If you're getting java.lang.Object when printing an array of objects (Object[]), it means that the toString() method of each object in the array is 
+returning the default implementation from the Object class, which only includes the class name and the object's hash code. To see meaningful values, 
+you need to ensure that the toString() method for each object provides the desired output.
+
+Here are a few approaches to ensure that you see meaningful values when printing an Object[]:
+
+Override toString() Method: For custom classes that are part of the Object[], override the toString() method in each class to return a meaningful string representation. For example:
+public class CustomObject {
+    private int id;
+    private String name;
+
+    // ... constructors, getters, setters, etc.
+
+    @Override
+    public String toString() {
+        return "CustomObject [id=" + id + ", name=" + name + "]";
+    }
+}
+
+Use Arrays.toString(): If you're working with an Object[] containing standard Java types (e.g., integers, 
+strings), you can use Arrays.toString() to get a more informative output
+
+Object[] myArray = {1, "Hello", 3.14, new Date()};
+System.out.println(Arrays.toString(myArray));
+This will print the array elements in a readable format.
+
+
+Custom Formatting: If you have complex objects and want to print them in a specific format, 
+you can iterate through the array and manually format the elements:
+
+for (Object obj : myArray) {
+    String formattedValue;
+    if (obj instanceof CustomObject) {
+        formattedValue = ((CustomObject) obj).getFormattedValue(); // Implement this method
+    } else {
+        formattedValue = obj.toString(); // Use the default toString()
+    }
+    System.out.println(formattedValue);
+}
+In this example, you would need to implement a getFormattedValue() method in your CustomObject class to return the desired string representation.
+
+By ensuring that the toString() method or custom formatting logic returns meaningful values for each object in the array, you can get a more informative output when printing an Object[].
+
+
