@@ -85,3 +85,24 @@ private <T> List<T> fetchDataByYearMonthAndCommType(String yearMonth, Class<T> d
 }
 
 }
+
+private <T> List<T> fetchDataByYearMonthAndCommType(String yearMonth, Class<T> dtoClass) {
+    List<T> result = new ArrayList<>();
+    
+    if (dtoClass == AWPCommHistDTO.class) {
+        result.addAll((Collection<? extends T>)commHistRepository.getAWPCommHistByMonth(Integer.parseInt(yearMonth)));
+    } else if (dtoClass == MemEtCommHistDTO.class) {
+        // Use the appropriate repository method for MemEtCommHistDTO
+        result.addAll((Collection<? extends T>)commHistRepository.getMemEtCommHistByMonth(Integer.parseInt(yearMonth)));
+    } else if (dtoClass == FeeFlatCommHistDTO.class) {
+        // Use the appropriate repository method for FeeFlatCommHistDTO
+        result.addAll((Collection<? extends T>)commHistRepository.getFeeFlatCommHistByMonth(Integer.parseInt(yearMonth)));
+    }
+    
+    return result;
+}
+String outputPath = "C:\\Users\\YourUsername\\Documents\\output.xlsx";
+String outputPath = "C:/Users/YourUsername/Documents/output.xlsx";
+
+
+
