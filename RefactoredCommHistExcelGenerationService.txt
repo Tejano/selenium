@@ -1,0 +1,86 @@
+@Service
+public class CommHistService {
+    @Autowired
+    private CommHistEntityRepository commHistRepository;
+
+    public void executeStoredProcedure(String yearMonth) {
+        // Call your stored procedure here
+        // This could be a call to a stored procedure using Spring Data JPA
+        // Example: commHistRepository.callStoredProc(yearMonth);
+    }
+
+    public void generateExcelWorkbook(String yearMonth, String outputPath) {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            generateWorksheets(workbook, yearMonth);
+            saveWorkbook(workbook, outputPath);
+        } catch (IOException e) {
+            handleIOException(e);
+        }
+    }
+
+    private void generateWorksheets(Workbook workbook, String yearMonth) {
+        generateWorksheet(workbook, "AWP", AWPCommHistDTO.class, yearMonth);
+        generateWorksheet(workbook, "MemEt", MemEtCommHistDTO.class, yearMonth);
+        generateWorksheet(workbook, "FeeFlat", FeeFlatCommHistDTO.class, yearMonth);
+        // Add more worksheets as needed
+    }
+
+    private <T> void generateWorksheet(Workbook workbook, String sheetName, Class<T> dtoClass, String yearMonth) {
+        List<T> data = fetchDataByYearMonthAndCommType(yearMonth, dtoClass);
+        createWorksheet(workbook, sheetName, dtoClass, data);
+    }
+
+    private <T> void createWorksheet(Workbook workbook, String sheetName, Class<T> dtoClass, List<T> data) {
+        Sheet sheet = workbook.createSheet(sheetName);
+        createHeaderRow(sheet, dtoClass);
+        populateDataRows(sheet, data);
+    }
+
+    private <T> void createHeaderRow(Sheet sheet, Class<T> dtoClass) {
+        Row headerRow = sheet.createRow(0);
+        Field[] fields = dtoClass.getDeclaredFields();
+
+        int columnIdx = 0;
+        for (Field field : fields) {
+            field.setAccessible(true);
+            String fieldName = field.getName();
+            headerRow.createCell(columnIdx++).setCellValue(fieldName);
+        }
+    }
+
+    private <T> void populateDataRows(Sheet sheet, List<T> data) {
+        int rowNum = 1;
+        for (T dto : data) {
+            Row dataRow = sheet.createRow(rowNum++);
+            int columnIdx = 0;
+            Field[] fields = dto.getClass().getDeclaredFields();
+
+            for (Field field : fields) {
+                field.setAccessible(true);
+                try {
+                    Object value = field.get(dto);
+                    dataRow.createCell(columnIdx++).setCellValue(value.toString());
+                } catch (IllegalAccessException e) {
+                    // Handle the exception as needed
+                }
+            }
+        }
+    }
+
+    private <T> List<T> fetchDataByYearMonthAndCommType(String yearMonth, Class<T> dtoClass) {
+        // Implement your data retrieval logic here based on yearMonth and DTO class
+        // Use appropriate repository methods or queries
+        return new ArrayList<>();
+    }
+
+    private void saveWorkbook(Workbook workbook, String outputPath) throws IOException {
+        try (FileOutputStream fileOutputStream = new FileOutputStream(outputPath)) {
+            workbook.write(fileOutputStream);
+        }
+    }
+
+    private void handleIOException(IOException e) {
+        // Handle the exception as needed (e.g., logging, error response, etc.)
+        e.printStackTrace();
+    }
+}
