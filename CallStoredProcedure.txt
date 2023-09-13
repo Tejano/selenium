@@ -1,0 +1,70 @@
+CREATE PROCEDURE dbo.master
+    @Month INT,
+    @Runtype CHAR = NULL,
+    @ErrorMsg VARCHAR(100) OUTPUT
+AS
+BEGIN
+    -- Your stored procedure logic here
+    -- Set @ErrorMsg as needed
+END
+
+Create an entity class to represent the result of your stored procedure. 
+In this case, you don't have a specific entity since it's an output parameter, but you can create a simple class to hold the output value:
+
+
+public class StoredProcedureResult {
+    private String errorMsg;
+
+    public String getErrorMsg() {
+        return errorMsg;
+    }
+
+    public void setErrorMsg(String errorMsg) {
+        this.errorMsg = errorMsg;
+    }
+}
+
+
+Create a repository interface that extends JpaRepository or CrudRepository 
+and defines a method to call your stored procedure. Use the @Procedure annotation to specify the name of the stored procedure and its parameters.
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.query.Procedure;
+
+public interface StoredProcedureRepository extends JpaRepository<StoredProcedureResult, Long> {
+
+    @Procedure(procedureName = "master")
+    void callMasterProcedure(
+        @Param("Month") Integer month,
+        @Param("Runtype") String runtype,
+        @Param("ErrorMsg") String[] errorMsg
+    );
+}
+
+
+In your service or controller, you can use the repository to call the stored procedure and retrieve the output parameter:
+
+
+@Service
+public class StoredProcedureService {
+
+    @Autowired
+    private StoredProcedureRepository storedProcedureRepository;
+
+    public void executeMasterProcedure(Integer month) {
+        String[] errorMsg = new String[1]; // To store the output parameter
+
+        // Call the stored procedure
+        storedProcedureRepository.callMasterProcedure(month, null, errorMsg);
+
+        // Retrieve the output parameter
+        String errorMessage = errorMsg[0];
+        System.out.println("Error Message: " + errorMessage);
+    }
+}
+
+
+In this example, we call the callMasterProcedure method from the StoredProcedureRepository, 
+which calls your SQL Server stored procedure master. The output parameter @ErrorMsg is stored in the errorMsg array, and you can access it afterward.
+
+Make sure to adjust the data types and handling of the output parameter according to your specific requirements and error-handling logic in your stored procedure.
