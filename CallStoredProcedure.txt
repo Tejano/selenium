@@ -70,6 +70,78 @@ which calls your SQL Server stored procedure master. The output parameter @Error
 Make sure to adjust the data types and handling of the output parameter according to your specific requirements and error-handling logic in your stored procedure.
 
 
+import org.springframework.data.jpa.repository.support.JpaEntityInformation;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
+
+import javax.persistence.EntityManager;
+import javax.sql.DataSource;
+
+public class CustomStoredProcedureRepositoryImpl<T> extends SimpleJpaRepository<T, Long> implements CustomStoredProcedureRepository<T> {
+
+    private final DataSource dataSource;
+
+    public CustomStoredProcedureRepositoryImpl(JpaEntityInformation<T, ?> entityInformation, EntityManager entityManager, DataSource dataSource) {
+        super(entityInformation, entityManager);
+        this.dataSource = dataSource;
+    }
+
+    // Override methods or add custom logic for your repository if needed
+}
+
+
+
+
+
+@Configuration
+@EnableJpaRepositories(
+        basePackages = "com.commissions.qa.broker.repositories",
+        repositoryBaseClass = CustomStoredProcedureRepositoryImpl.class // Use the custom base class
+)
+
+
+
+
+I get this message > Need to call ParameterRegistration#enablePassingNulls(true) in order to pass null parameters.  What does this mean?
+
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.query.Procedure;
+import org.springframework.data.repository.query.Param;
+
+import javax.persistence.ParameterMode;
+import javax.persistence.StoredProcedureParameter;
+
+public interface StoredProcedureRepository extends JpaRepository<StoredProcedureResult, Long> {
+
+    @Procedure(procedureName = "master")
+    void callMasterProcedure(
+        @Param("Month") Integer month,
+        @Param("Runtype") String runtype,
+        @Param("ErrorMsg") String[] errorMsg
+    );
+
+    // Enable passing nulls for the "Runtype" parameter
+    @Procedure(procedureName = "master")
+    void callMasterProcedureWithNullRuntype(
+        @Param("Month") Integer month,
+        @Param("Runtype") String runtype,
+        @Param("ErrorMsg") String[] errorMsg
+    ).registerStoredProcedureParameter(
+        "Runtype",
+        String.class,
+        ParameterMode.INOUT
+    ).enablePassingNulls(true);
+}
+
+
+
+
+
+
+
+
+
+
 for (T dto : data) {
     Row dataRow = sheet.createRow(rowNum++);
     columnIdx = 0;
