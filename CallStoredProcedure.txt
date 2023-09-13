@@ -68,3 +68,23 @@ In this example, we call the callMasterProcedure method from the StoredProcedure
 which calls your SQL Server stored procedure master. The output parameter @ErrorMsg is stored in the errorMsg array, and you can access it afterward.
 
 Make sure to adjust the data types and handling of the output parameter according to your specific requirements and error-handling logic in your stored procedure.
+
+
+for (T dto : data) {
+    Row dataRow = sheet.createRow(rowNum++);
+    columnIdx = 0;
+    for (Field field : fields) {
+        field.setAccessible(true);
+        try {
+            Object value = field.get(dto);
+            if (value != null) {
+                dataRow.createCell(columnIdx++).setCellValue(value.toString());
+            } else {
+                // Handle null value, e.g., set a default or leave cell blank
+                dataRow.createCell(columnIdx++).setCellValue("");
+            }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
+}
