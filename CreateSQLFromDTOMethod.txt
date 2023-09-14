@@ -49,3 +49,54 @@ If a field is not null, we include it in the SELECT statement. This way, the met
 However, please be cautious when using reflection, 
 as it can be error-prone and may not work well with all DTO classes. Additionally, consider implementing
  appropriate error handling and validation to ensure the reliability of this method in a real-world application.
+ 
+
+
+
+import java.lang.reflect.Field;
+
+public class MyService {
+
+    public String generateSelectStatement(Class<?> dtoClass) {
+        if (dtoClass == null) {
+            throw new IllegalArgumentException("DTO class cannot be null.");
+        }
+
+        Field[] fields = dtoClass.getDeclaredFields();
+        
+        StringBuilder sql = new StringBuilder("SELECT ");
+
+        for (Field field : fields) {
+            sql.append(field.getName()).append(", ");
+        }
+
+        // Remove the trailing comma and space
+        if (sql.lastIndexOf(", ") == sql.length() - 2) {
+            sql.setLength(sql.length() - 2);
+        }
+
+        // Add the FROM clause and table name (replace "your_table_name" with your actual table name)
+        sql.append(" FROM your_table_name");
+
+        // You can add WHERE conditions based on DTO fields here if needed
+        // For example:
+        // if (dto.getSomeOtherField() != null) {
+        //     sql.append(" WHERE some_column = :someOtherField");
+        // }
+
+        return sql.toString();
+    }
+}
+
+In this modified code, the generateSelectStatement method accepts a Class<?> parameter 
+representing the DTO class. It uses reflection to inspect the fields of the provided class and generates a SQL SELECT statement
+based on those fields. You can call this method by passing the class of the DTO you want to generate the SQL statement for.
+
+Here's how you can use it:
+
+Class<?> dtoClass = ChildDto1.class; // Replace with the desired DTO class
+MyService myService = new MyService();
+String sqlStatement = myService.generateSelectStatement(dtoClass);
+System.out.println(sqlStatement);
+
+This code will generate the SQL SELECT statement based on the fields of the provided DTO class (ChildDto1 in this example).
