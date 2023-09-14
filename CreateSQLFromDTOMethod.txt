@@ -1,0 +1,51 @@
+import java.lang.reflect.Field;
+
+@Service
+public class MyService {
+
+    public String generateSelectStatement(Object dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("DTO cannot be null.");
+        }
+
+        Class<?> dtoClass = dto.getClass();
+        Field[] fields = dtoClass.getDeclaredFields();
+        
+        StringBuilder sql = new StringBuilder("SELECT ");
+
+        for (Field field : fields) {
+            field.setAccessible(true);
+            try {
+                Object fieldValue = field.get(dto);
+                if (fieldValue != null) {
+                    sql.append(field.getName()).append(", ");
+                }
+            } catch (IllegalAccessException e) {
+                // Handle the exception as needed
+                e.printStackTrace();
+            }
+        }
+
+        // Remove the trailing comma and space
+        if (sql.lastIndexOf(", ") == sql.length() - 2) {
+            sql.setLength(sql.length() - 2);
+        }
+
+        // Add the FROM clause and table name (replace "your_table_name" with your actual table name)
+        sql.append(" FROM your_table_name");
+
+        // You can add WHERE conditions based on DTO fields here if needed
+        // For example:
+        // if (dto.getSomeOtherField() != null) {
+        //     sql.append(" WHERE some_column = :someOtherField");
+        // }
+
+        return sql.toString();
+    }
+}
+In this generateSelectStatement method, we accept any object (DTO) and use reflection to iterate through its fields. 
+If a field is not null, we include it in the SELECT statement. This way, the method can work with any DTO without hardcoding the field names.
+
+However, please be cautious when using reflection, 
+as it can be error-prone and may not work well with all DTO classes. Additionally, consider implementing
+ appropriate error handling and validation to ensure the reliability of this method in a real-world application.
