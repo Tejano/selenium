@@ -142,6 +142,51 @@ public String getJobStatus(String jobName) {
 }
 
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public String getJobStatusAndFailureMessage(String jobName) {
+    String status = "Job not found";
+    String failureMessage = "";
+
+    String sql = "SELECT TOP 1 j.name AS JobName, "
+                 + "CASE "
+                 + "    WHEN h.run_status = 0 THEN 'Failed' "
+                 + "    WHEN h.run_status = 1 THEN 'Succeeded' "
+                 + "    ELSE 'Running (In Progress)' "
+                 + "END AS JobStatus, "
+                 + "h.message AS FailureMessage "
+                 + "FROM msdb.dbo.sysjobs j "
+                 + "INNER JOIN msdb.dbo.sysjobservers s "
+                 + "    ON j.job_id = s.job_id "
+                 + "LEFT JOIN msdb.dbo.sysjobhistory h "
+                 + "    ON s.job_id = h.job_id "
+                 + "WHERE j.name = ? "
+                 + "ORDER BY h.run_date DESC, h.run_time DESC";
+
+    try (Connection connection = DriverManager.getConnection(
+            "jdbc:sqlserver://your-server:your-port;databaseName=your-database",
+            "your-username",
+            "your-password");
+         PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+        preparedStatement.setString(1, jobName);
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            if (resultSet.next()) {
+                status = resultSet.getString("JobStatus");
+                failureMessage = resultSet.getString("FailureMessage");
+            }
+        }
+    } catch (SQLException e) {
+        // Handle SQL exceptions
+        e.printStackTrace();
+    }
+
+    return "Job Status: " + status + ", Failure Message: " + failureMessage;
+}
 
 
 
