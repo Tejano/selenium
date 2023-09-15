@@ -97,6 +97,50 @@ Replace the connection details as mentioned earlier.
 Remember to handle exceptions and connection management properly in your production code. 
 This code demonstrates how to execute a SQL Server job and fetch a list of jobs using Java's JDBC API.
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public String getJobStatus(String jobName) {
+    String status = "Job not found";
+
+    String sql = "SELECT TOP 1 j.name AS JobName, "
+                 + "CASE "
+                 + "    WHEN h.run_status = 0 THEN 'Failed' "
+                 + "    WHEN h.run_status = 1 THEN 'Succeeded' "
+				 + "    WHEN h.run_status = 4 THEN 'In Progress (Running)' "
+                 + "    ELSE 'Running (In Progress)' "
+                 + "END AS JobStatus "
+                 + "FROM msdb.dbo.sysjobs j "
+                 + "INNER JOIN msdb.dbo.sysjobservers s "
+                 + "    ON j.job_id = s.job_id "
+                 + "LEFT JOIN msdb.dbo.sysjobhistory h "
+                 + "    ON s.job_id = h.job_id "
+                 + "WHERE j.name = ? "
+                 + "ORDER BY h.run_date DESC, h.run_time DESC";
+
+    try (Connection connection = DriverManager.getConnection(
+            "jdbc:sqlserver://your-server:your-port;databaseName=your-database",
+            "your-username",
+            "your-password");
+         PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+        preparedStatement.setString(1, jobName);
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            if (resultSet.next()) {
+                status = resultSet.getString("JobStatus");
+            }
+        }
+    } catch (SQLException e) {
+        // Handle SQL exceptions
+        e.printStackTrace();
+    }
+
+    return status;
+}
+
 
 
 
