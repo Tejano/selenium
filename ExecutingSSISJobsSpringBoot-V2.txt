@@ -1,0 +1,103 @@
+To execute a SQL Server job and read the list of jobs, you can use Java's JDBC (Java Database Connectivity)
+ API to interact with SQL Server. In this example, I'll show you how to make a call to execute a SQL Server job
+ and fetch a list of jobs from the SQL Server system tables. We'll use the Microsoft SQL Server JDBC driver for connecting to the database.
+
+Here are the steps:
+
+Add the SQL Server JDBC Driver to Your Project:
+
+First, make sure you have added the SQL Server JDBC driver as a dependency in your project's pom.xml
+ (if you're using Maven) or build.gradle (if you're using Gradle). For Maven, it would look like this:
+ 
+ <dependency>
+    <groupId>com.microsoft.sqlserver</groupId>
+    <artifactId>mssql-jdbc</artifactId>
+    <version>9.4.1.jre11</version> <!-- Use the latest version available -->
+</dependency>
+
+Create a Configuration for Your Database Connection:
+
+In your Spring Boot application properties (e.g., application.properties or application.yml), 
+configure your database connection details:
+
+spring.datasource.url=jdbc:sqlserver://your-server:your-port;databaseName=your-database
+spring.datasource.username=your-username
+spring.datasource.password=your-password
+spring.datasource.driverClassName=com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+
+spring.datasource.driverClassName=com.microsoft.sqlserver.jdbc.SQLServerDriver
+Execute a SQL Server Job:
+
+To execute a SQL Server job, you can use the following code:
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+// ...
+
+public void executeSqlServerJob(String jobName) {
+    String sql = "EXEC msdb.dbo.sp_start_job ?"; // Replace with your SQL Server instance and database
+
+    try (Connection connection = DriverManager.getConnection(
+            "jdbc:sqlserver://your-server:your-port;databaseName=your-database",
+            "your-username",
+            "your-password");
+         PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+        preparedStatement.setString(1, jobName);
+        preparedStatement.execute();
+        // Handle the job execution result as needed
+    } catch (SQLException e) {
+        // Handle SQL exceptions
+        e.printStackTrace();
+    }
+}
+Replace "your-server", "your-port", "your-database", "your-username", and "your-password" with your SQL Server configuration.
+
+Read the List of SQL Server Jobs:
+
+To read the list of SQL Server jobs, you can use the following code:
+
+java
+Copy code
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+// ...
+
+public List<String> getSqlServerJobList() {
+    List<String> jobList = new ArrayList<>();
+    String sql = "SELECT name FROM msdb.dbo.sysjobs"; // Replace with your SQL Server instance and database
+
+    try (Connection connection = DriverManager.getConnection(
+            "jdbc:sqlserver://your-server:your-port;databaseName=your-database",
+            "your-username",
+            "your-password");
+         Statement statement = connection.createStatement();
+         ResultSet resultSet = statement.executeQuery(sql)) {
+
+        while (resultSet.next()) {
+            String jobName = resultSet.getString("name");
+            jobList.add(jobName);
+        }
+    } catch (SQLException e) {
+        // Handle SQL exceptions
+        e.printStackTrace();
+    }
+
+    return jobList;
+}
+Replace the connection details as mentioned earlier.
+
+Remember to handle exceptions and connection management properly in your production code. 
+This code demonstrates how to execute a SQL Server job and fetch a list of jobs using Java's JDBC API.
+
+
+
+
+
