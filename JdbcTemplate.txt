@@ -1,0 +1,56 @@
+When you have multiple data sources configured in your Spring application and you use JdbcTemplate, it's important to specify which data source you want to use for a particular JdbcTemplate instance. If you don't explicitly specify a data source, Spring will use the default data source (if one is defined).
+
+Here's how you can specify the data source for a JdbcTemplate:
+
+Using Qualifier Annotation:
+You can use the @Qualifier annotation to specify which data source to inject into the JdbcTemplate.
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+import javax.sql.DataSource;
+
+@Configuration
+public class JdbcTemplateConfig {
+
+    @Bean
+    public JdbcTemplate jdbcTemplate(@Qualifier("dataSource1") DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+}
+In this example, @Qualifier("dataSource1") specifies that the JdbcTemplate should use the data source named "dataSource1".
+
+NamedDataSource:
+If you have multiple data sources and they are named, you can directly reference the named data source when creating a JdbcTemplate.
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.lookup.JndiDataSourceLookup;
+
+@Configuration
+public class JdbcTemplateConfig {
+
+    @Autowired
+    private DataSource dataSource1;  // Assume you have a named data source named "dataSource1"
+
+    @Autowired
+    private DataSource dataSource2;  // Assume you have a named data source named "dataSource2"
+
+    @Bean
+    public JdbcTemplate jdbcTemplate1() {
+        return new JdbcTemplate(dataSource1);
+    }
+
+    @Bean
+    public JdbcTemplate jdbcTemplate2() {
+        return new JdbcTemplate(dataSource2);
+    }
+}
+In this example, we create multiple JdbcTemplate beans, each using a different data source.
+
+Make sure to properly configure your data sources in your Spring configuration, and then inject the appropriate data source into the JdbcTemplate using one of the methods described above.
+
+By explicitly specifying the data source, you ensure that the correct data source is used when interacting with the database using JdbcTemplate.
