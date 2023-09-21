@@ -1,0 +1,106 @@
+FileValidationController:
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+
+@RestController
+public class FileValidationController {
+
+    private static final String FILE_PATH = "/path/to/your/excel-file.xlsx";
+
+    @GetMapping("/validateFiles")
+    public void validateFiles() {
+        try (FileInputStream excelFile = new FileInputStream(new File(FILE_PATH))) {
+            Workbook workbook = new XSSFWorkbook(excelFile);
+            Sheet sheet = workbook.getSheetAt(0); // Assuming the data is in the first sheet
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) { // Starting from row 1 (skipping header)
+                Row row = sheet.getRow(i);
+
+                String jobName = row.getCell(0).getStringCellValue();
+                String filePath = row.getCell(1).getStringCellValue();
+
+                // TODO: Add validation logic for the file and SSIS job
+                boolean validationResult = validateFileAndSSISJob(filePath);
+
+                // Update the test results column in the Excel sheet
+                Cell resultCell = row.createCell(2);
+                resultCell.setCellValue(validationResult ? "Pass" : "Fail");
+            }
+
+            // Save the updated Excel file
+            try (FileOutputStream outputStream = new FileOutputStream(FILE_PATH)) {
+                workbook.write(outputStream);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean validateFileAndSSISJob(String filePath) {
+        // TODO: Implement validation logic for the file and SSIS job
+        // You can use Selenium for testing SSIS job executions
+        return true; // Placeholder, update based on your logic
+    }
+}
+JUnit Test:
+You can write JUnit tests to test the validation logic separately. For Selenium-based testing, you'll need to set up appropriate WebDriver instances and implement the specific tests.
+
+Please note that the validateFileAndSSISJob method is a placeholder. You'll need to implement the actual logic to validate the file and test the SSIS job.
+
+This example assumes that your Excel sheet has columns for job name, file path, and test results, and the data starts from the second row (skipping the header row). Adjust the logic based on your specific Excel sheet structure.
+
+
+
+To store input files as part of a QA project in a structured and maintainable manner, you can organize them within a specific directory structure within your project. This allows for easy access, version control, and sharing across the team. Here are the steps to achieve this:
+
+Create a Directory for Input Files:
+
+Create a directory within your QA project to store the input files. For example, you can create a directory named input-files at the root of your project.
+
+/your-qa-project
+├── src
+├── test
+├── input-files
+│   ├── example.xlsx
+│   ├── test_data.txt
+│   └── ...
+├── ...
+
+Add Input Files:
+
+Place your input files (e.g., Excel, TXT) within the input-files directory.
+
+Access Input Files in Code:
+
+In your code, reference the input files using the appropriate relative path. For example, if you want to access example.xlsx, you would use a relative path like input-files/example.xlsx.
+
+Load Input Files in Code:
+
+Depending on the programming language and framework you are using, there are different ways to load and use these input files. For instance, in Java, you can use ClassLoader to load files:
+
+
+// Load an Excel file
+InputStream excelFile = getClass().getClassLoader().getResourceAsStream("input-files/example.xlsx");
+// Use the input stream to read the file and perform operations
+
+// Load a text file
+InputStream textFile = getClass().getClassLoader().getResourceAsStream("input-files/test_data.txt");
+// Use the input stream to read the file and perform operations
+
+
+Ensure Version Control:
+
+Make sure to include the input-files directory in your version control system (e.g., Git). This allows for easy versioning and sharing of input files with your team.
+
+Include in Build Process:
+
+Configure your build process (e.g., Maven, Gradle) to include the input-files directory so that the files are available during testing.
+
+By organizing your input files within a dedicated directory and including them as part of your project structure, you ensure that they are easily accessible, versioned, and maintainable within your QA project.
