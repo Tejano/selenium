@@ -243,3 +243,53 @@ public class PackageRunStatusController {
         }
     }
 }
+
+
+Yes, you can handle the case where the specified ID is not found using a custom exception, such as ResourceNotFoundException. This is a common practice to provide a consistent way to handle cases where a requested resource (in this case, a specific ID) is not found.
+
+Let's create a ResourceNotFoundException class:
+public class ResourceNotFoundException extends RuntimeException {
+
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+}
+Now, let's modify the service to throw this exception when the ID is not found:
+@Service
+public class PackageRunStatusService {
+
+    // ... other methods ...
+
+    public PackageRunStatusEntity updatePackageRunStatus(Short id, PackageRunStatusUpdateDTO updateDTO) {
+        Optional<PackageRunStatusEntity> optionalEntity = repository.findById(id);
+
+        if (optionalEntity.isPresent()) {
+            // existing code
+        } else {
+            throw new ResourceNotFoundException("PackageRunStatus not found with ID: " + id);
+        }
+    }
+
+    // ... other methods ...
+}
+
+@RestController
+@RequestMapping("/api/packagerunstatus")
+public class PackageRunStatusController {
+
+    // ... other methods ...
+
+    @PutMapping("/{id}")
+    public ResponseEntity<String> updatePackageRunStatus(@PathVariable Short id, @RequestBody PackageRunStatusUpdateDTO updateDTO) {
+        try {
+            PackageRunStatusEntity updatedEntity = service.updatePackageRunStatus(id, updateDTO);
+            return ResponseEntity.ok("PackageRunStatus updated successfully.");
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (InvalidInputException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("An error occurred while updating PackageRunStatus.");
+        }
+    }
+}
