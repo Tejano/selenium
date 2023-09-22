@@ -1,0 +1,1 @@
+so if I'm building a microservice application where you tables consist of Broker,   Carrier, OperationalGroup,  Org, Site, Producer,  and Commission,   The commission table is used to setup commision based on Org,Carrier,Produce,Site,PricingLev

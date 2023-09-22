@@ -1,0 +1,245 @@
+
+
+
+
+
+
+public class PackageRunStatusUpdateDTO {
+
+    private Short runFlag;
+
+    private Short flagResetDate;
+
+    // Getter and Setter for ID
+
+    public Short getRunFlag() {
+        return runFlag;
+    }
+
+    public void setRunFlag(Short runFlag) {
+        this.runFlag = runFlag;
+    }
+
+    public Short getFlagResetDate() {
+        return flagResetDate;
+    }
+
+    public void setFlagResetDate(Short flagResetDate) {
+        this.flagResetDate = flagResetDate;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+
+@Service
+public class PackageRunStatusService {
+
+    @Autowired
+    private PackageRunStatusRepository repository;
+
+    public Optional<PackageRunStatusEntity> getPackageRunStatusById(Short id) {
+        return repository.findById(id);
+    }
+
+    public PackageRunStatusEntity updatePackageRunStatus(Short id, PackageRunStatusUpdateDTO updateDTO) {
+        Optional<PackageRunStatusEntity> optionalEntity = repository.findById(id);
+
+        if (optionalEntity.isPresent()) {
+            PackageRunStatusEntity existingEntity = optionalEntity.get();
+
+            // Update only the fields that are not null in the DTO
+            if (updateDTO.getRunFlag() != null) {
+                existingEntity.setRunFlag(updateDTO.getRunFlag());
+            }
+            if (updateDTO.getFlagResetDate() != null) {
+                existingEntity.setFlagResetDate(updateDTO.getFlagResetDate());
+            }
+
+            return repository.save(existingEntity);
+        } else {
+            // Handle not found case, e.g., throw an exception
+            // ...
+            return null;
+        }
+    }
+}
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+
+@Service
+public class PackageRunStatusService {
+
+    @Autowired
+    private PackageRunStatusRepository repository;
+
+    public Optional<PackageRunStatusEntity> getPackageRunStatusById(Short id) {
+        return repository.findById(id);
+    }
+
+    public PackageRunStatusEntity updatePackageRunStatus(Short id, PackageRunStatusUpdateDTO updateDTO) {
+        Optional<PackageRunStatusEntity> optionalEntity = repository.findById(id);
+
+        if (optionalEntity.isPresent()) {
+            PackageRunStatusEntity existingEntity = optionalEntity.get();
+
+            // Validate runFlag
+            if (updateDTO.getRunFlag() != null) {
+                validateRunFlag(updateDTO.getRunFlag());
+                existingEntity.setRunFlag(updateDTO.getRunFlag());
+            }
+
+            // Validate flagResetDate
+            if (updateDTO.getFlagResetDate() != null) {
+                validateFlagResetDate(updateDTO.getFlagResetDate());
+                existingEntity.setFlagResetDate(updateDTO.getFlagResetDate());
+            }
+
+            return repository.save(existingEntity);
+        } else {
+            // Handle not found case, e.g., throw an exception
+            // ...
+            return null;
+        }
+    }
+
+    private void validateRunFlag(Short runFlag) {
+        // Implement runFlag validation logic here
+        // Throw an exception if validation fails
+    }
+
+    private void validateFlagResetDate(Short flagResetDate) {
+        // Implement flagResetDate validation logic here
+        // Throw an exception if validation fails
+    }
+}
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/api/packagerunstatus")
+public class PackageRunStatusController {
+
+    @Autowired
+    private PackageRunStatusService service;
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PackageRunStatusEntity> getPackageRunStatusById(@PathVariable Short id) {
+        Optional<PackageRunStatusEntity> packageRunStatus = service.getPackageRunStatusById(id);
+        return packageRunStatus.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<String> updatePackageRunStatus(@PathVariable Short id, @RequestBody PackageRunStatusUpdateDTO updateDTO) {
+        try {
+            PackageRunStatusEntity updatedEntity = service.updatePackageRunStatus(id, updateDTO);
+            return ResponseEntity.ok("PackageRunStatus updated successfully.");
+        } catch (ValidationException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("An error occurred while updating PackageRunStatus.");
+        }
+    }
+}
+In this updated approach, we've added validateRunFlag and validateFlagResetDate methods in the service to perform validation for the runFlag and flagResetDate, respectively. If the validation fails, these methods should throw a ValidationException (you'll need to define this custom exception). In the controller, we catch this exception and respond with a bad request status and the validation error message. Other exceptions are caught and responded to with a general error message and a 500 status. Adjust the exception handling and messages according to your specific validation requirements.
+
+
+Let's create a custom exception class for this purpose. You can name it InvalidInputException or something similar to indicate that it's related to invalid input data.
+
+public class InvalidInputException extends RuntimeException {
+
+    public InvalidInputException(String message) {
+        super(message);
+    }
+}
+
+Now, let's use this custom exception in the service class for validation:
+
+@Service
+public class PackageRunStatusService {
+
+    // ... other methods ...
+
+    private void validateRunFlag(Short runFlag) {
+        if (runFlag == null || (runFlag != 0 && runFlag != 1)) {
+            throw new InvalidInputException("Invalid runFlag value. Only valid values are 0 or 1.");
+        }
+    }
+}
+
+And in the controller, we'll catch this custom exception and respond with a bad request status and the validation error message:
+
+@RestController
+@RequestMapping("/api/packagerunstatus")
+public class PackageRunStatusController {
+
+    // ... other methods ...
+
+    @PutMapping("/{id}")
+    public ResponseEntity<String> updatePackageRunStatus(@PathVariable Short id, @RequestBody PackageRunStatusUpdateDTO updateDTO) {
+        try {
+            PackageRunStatusEntity updatedEntity = service.updatePackageRunStatus(id, updateDTO);
+            return ResponseEntity.ok("PackageRunStatus updated successfully.");
+        } catch (InvalidInputException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("An error occurred while updating PackageRunStatus.");
+        }
+    }
+}
+
+Now, when an invalid runFlag value is provided, we throw InvalidInputException, and the controller catches it to respond with a bad request status and the appropriate error message.
+
+
+@Service
+public class PackageRunStatusService {
+
+    // ... other methods ...
+
+    private void validateFlagResetDate(Short flagResetDate) {
+        if (flagResetDate == null || flagResetDate < 1 || flagResetDate > 31) {
+            throw new InvalidFlagResetDateException("Invalid flagResetDate value. Value should be between 1 and 31.");
+        }
+    }
+}
+Update the Controller for Exception Handling:
+
+@RestController
+@RequestMapping("/api/packagerunstatus")
+public class PackageRunStatusController {
+
+    // ... other methods ...
+
+    @PutMapping("/{id}")
+    public ResponseEntity<String> updatePackageRunStatus(@PathVariable Short id, @RequestBody PackageRunStatusUpdateDTO updateDTO) {
+        try {
+            PackageRunStatusEntity updatedEntity = service.updatePackageRunStatus(id, updateDTO);
+            return ResponseEntity.ok("PackageRunStatus updated successfully.");
+        } catch (InvalidInputException | InvalidFlagResetDateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("An error occurred while updating PackageRunStatus.");
+        }
+    }
+}
