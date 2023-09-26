@@ -137,3 +137,29 @@ By using jdbcTemplate.query(), you are abstracted from the low-level details of 
 
 In summary, jdbcTemplate.query() is a convenient and efficient way to execute a SQL query, map the results to Java objects, and handle resource cleanup, all in a streamlined manner.
 
+
+@Configuration
+public class SSISDataSourceConfig {
+
+    @Value("${ssis.datasource.url}")
+    private String url;
+
+    @Value("${ssis.datasource.username}")
+    private String username;
+
+    @Value("${ssis.datasource.password}")
+    private String password;
+
+    @Bean(name = "ssisDataSource")
+    public DataSource ssisDataSource() {
+        return DataSourceBuilder
+                .create()
+                .url(url)
+                .username(username)
+                .password(password)
+                .build();
+    }
+}
+
+
+
