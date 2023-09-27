@@ -104,3 +104,32 @@ Include in Build Process:
 Configure your build process (e.g., Maven, Gradle) to include the input-files directory so that the files are available during testing.
 
 By organizing your input files within a dedicated directory and including them as part of your project structure, you ensure that they are easily accessible, versioned, and maintainable within your QA project.
+
+
+In a Spring Boot application, you can create a simple file validation mechanism to check if specific Excel, TXT, or other files exist before executing an SSIS job. Here's an example of how you could achieve this using Java and Spring Boot:
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.io.File;
+
+@RestController
+public class FileValidationController {
+
+    @GetMapping("/validateFile/{fileName}")
+    public String validateFile(@PathVariable String fileName) {
+        String filePath = "/path/to/directory/" + fileName;  // Update the file path accordingly
+
+        File file = new File(filePath);
+
+        if (file.exists()) {
+            return "File exists: " + fileName;
+        } else {
+            return "File does not exist: " + fileName;
+        }
+    }
+}
+
+
+
