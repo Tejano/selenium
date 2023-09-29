@@ -1,0 +1,133 @@
+Implement Excel Reading and DTO Population:
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.stereotype.Service;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+@Service
+public class ExcelService {
+    public List<SSISJobDTO> readExcel(String filePath) {
+        List<SSISJobDTO> dtoList = new ArrayList<>();
+
+        try (FileInputStream excelFile = new FileInputStream(new File(filePath));
+             Workbook workbook = new XSSFWorkbook(excelFile)) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> iterator = sheet.iterator();
+
+            // Skip header row
+            if (iterator.hasNext()) {
+                iterator.next();
+            }
+
+            while (iterator.hasNext()) {
+                Row currentRow = iterator.next();
+
+                // Assuming column indices for respective fields
+                boolean runFlag = currentRow.getCell(0).getStringCellValue().equalsIgnoreCase("Yes");
+                String jobName = currentRow.getCell(1).getStringCellValue();
+                String source = currentRow.getCell(2).getStringCellValue();
+                boolean runStatus = currentRow.getCell(3).getBooleanCellValue();
+                String packageName = currentRow.getCell(4).getStringCellValue();
+                String jobStatus = currentRow.getCell(5).getStringCellValue();
+
+                // Only process rows with RunFlag set to "Yes"
+                if (runFlag) {
+                    SSISJobDTO jobDTO = new SSISJobDTO();
+                    jobDTO.setRunFlag(runFlag);
+                    jobDTO.setJobName(jobName);
+                    jobDTO.setSource(source);
+                    jobDTO.setRunStatus(runStatus);
+                    jobDTO.setPackageName(packageName);
+                    jobDTO.setJobStatus(jobStatus);
+
+                    dtoList.add(jobDTO);
+                }
+            }
+        } catch (IOException e) {
+            // Handle IOException
+            e.printStackTrace();
+        }
+
+        return dtoList;
+    }
+}
+
+
+Yes, you can change the cell or row color in Excel using Apache POI. However, please note that the actual color appearance will depend on the viewer (like Microsoft Excel) and may vary.
+
+To change the cell or row color, you'll need to use the CellStyle class in Apache POI. Here's how you can modify the updateExcel method to change the row color based on whether the update was successful or failed:
+
+
+
+
+import org.apache.poi.ss.usermodel.*;
+
+public void updateExcel(String filePath, List<SSISJobDTO> dtoList) {
+    try (FileInputStream excelFile = new FileInputStream(new File(filePath));
+         Workbook workbook = new XSSFWorkbook(excelFile)) {
+
+        Sheet sheet = workbook.getSheetAt(0);
+        CreationHelper creationHelper = workbook.getCreationHelper();
+
+        for (SSISJobDTO jobDTO : dtoList) {
+            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                Row row = sheet.getRow(rowIndex);
+
+                // Assuming jobName is in column 2 (0-based index)
+                String jobNameInExcel = row.getCell(1).getStringCellValue();
+
+                if (jobDTO.getJobName().equals(jobNameInExcel)) {
+                    Cell jobStatusCell = row.createCell(5); // Assuming jobStatus is in column 6 (0-based index)
+                    jobStatusCell.setCellValue(jobDTO.getJobStatus());
+
+                    Cell runFlagCell = row.createCell(0); // Assuming runFlag is in column 1 (0-based index)
+                    runFlagCell.setCellValue(jobDTO.isRunFlag() ? "Yes" : "No");
+
+                    // Create a CellStyle with the desired fill color
+                    CellStyle style = workbook.createCellStyle();
+                    style.setFillForegroundColor(getCellColor(jobDTO));
+                    style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+                    // Apply the style to the row
+                    row.setRowStyle(style);
+
+                    break;  // Break after updating the corresponding row
+                }
+            }
+        }
+
+        // Save the updated Excel file
+        try (FileOutputStream outFile = new FileOutputStream(new File(filePath))) {
+            workbook.write(outFile);
+        }
+    } catch (IOException e) {
+        // Handle IOException
+        e.printStackTrace();
+    }
+}
+
+// Helper method to determine the cell color based on success or failure
+private short getCellColor(SSISJobDTO jobDTO) {
+    if (jobDTO.getRunStatus()) {
+        // Light green for success
+        return IndexedColors.LIGHT_GREEN.getIndex();
+    } else {
+        // Light red for failure
+        return IndexedColors.LIGHT_CORAL.getIndex();
+    }
+}
+
+In this modified version of the updateExcel method:
+
+We create a CellStyle with the desired fill color (light green for success, light red for failure).
+We apply this style to the row after updating the cell values.
+The getCellColor method determines the color based on the runStatus in the SSISJobDTO. We use the IndexedColors enum from Apache POI to get the color index.
+Note that IndexedColors.LIGHT_GREEN.getIndex() and IndexedColors.LIGHT_CORAL.getIndex() return the color index for light green and light red, respectively. The actual appearance of colors may vary depending on the viewer used to open the Excel file.
