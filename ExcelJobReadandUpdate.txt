@@ -1,3 +1,22 @@
+
+public class SSISJobDTO {
+    private boolean runFlag;
+    private String jobName;
+    private String source;
+    private boolean runStatus;
+    private String packageName;
+    private String jobStatus;
+
+    // getters and setters
+}
+
+
+
+In this example, we assume the Excel file has columns in the order: RunFlag, JobName, Source, RunStatus, PackageName, 
+and JobStatus. Adjust the column indices accordingly based on your actual Excel structure. 
+The method reads the Excel file and populates the SSISJobDTO objects, filtering only the rows with RunFlag set to "Yes".
+
+
 Implement Excel Reading and DTO Population:
 
 import org.apache.poi.ss.usermodel.*;
@@ -59,6 +78,8 @@ public class ExcelService {
         return dtoList;
     }
 }
+
+
 
 
 Yes, you can change the cell or row color in Excel using Apache POI. However, please note that the actual color appearance will depend on the viewer (like Microsoft Excel) and may vary.
