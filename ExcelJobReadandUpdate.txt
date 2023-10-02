@@ -151,4 +151,40 @@ In this modified version of the updateExcel method:
 We create a CellStyle with the desired fill color (light green for success, light red for failure).
 We apply this style to the row after updating the cell values.
 The getCellColor method determines the color based on the runStatus in the SSISJobDTO. We use the IndexedColors enum from Apache POI to get the color index.
-Note that IndexedColors.LIGHT_GREEN.getIndex() and IndexedColors.LIGHT_CORAL.getIndex() return the color index for light green and light red, respectively. The actual appearance of colors may vary depending on the viewer used to open the Excel file.
+Note that IndexedColors.LIGHT_GREEN.getIndex() and IndexedColors.LIGHT_CORAL.getIndex() return the color index for light green and light red, respectively. 
+The actual appearance of colors may vary depending on the viewer used to open the Excel file.
+
+
+In Apache POI, to access a specific worksheet in a workbook with multiple worksheets, you use the getSheetAt(int index) method of the Workbook class. 
+The index parameter is a zero-based index representing the position of the worksheet within the workbook. Here's how you can access a specific worksheet:
+
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+// Load the workbook (assuming it's an XLSX workbook)
+Workbook workbook = new XSSFWorkbook("path/to/your/file.xlsx");
+
+// Get the first worksheet (index 0)
+Sheet firstWorksheet = workbook.getSheetAt(0);
+
+// Get the second worksheet (index 1)
+Sheet secondWorksheet = workbook.getSheetAt(1);
+
+// Do something with the worksheets...
+
+
+
+
+
+
+In this example, we load an XLSX workbook and then use getSheetAt to access the first and second worksheets. 
+Adjust the index according to the specific worksheet you want to access within the workbook.
+
+If you want to access a worksheet by its name (rather than by index), you can use the getSheet(String name) method:
+
+// Get a worksheet by its name
+Sheet sheetByName = workbook.getSheet("Sheet1");
+
+// Do something with the worksheet...
+
