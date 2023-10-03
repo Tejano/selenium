@@ -188,3 +188,97 @@ Sheet sheetByName = workbook.getSheet("Sheet1");
 
 // Do something with the worksheet...
 
+
+Now, let's modify the loop to update a JobStatusDTO for each job:
+
+import java.util.ArrayList;
+import java.util.List;
+
+// Assuming SSISRunJob is your class with boolean runFlag, String jobname, String filePath
+// Assuming JobStatusDTO is your class to capture job status
+
+List<SSISRunJob> jobs = service.getJobs();
+List<JobStatusDTO> jobStatusList = new ArrayList<>();
+
+for (SSISRunJob job : jobs) {
+    // Process each job and update its status
+    boolean isJobSuccessful = processJob(job);
+
+    // Create a JobStatusDTO for the current job and update its status
+    JobStatusDTO jobStatus = new JobStatusDTO();
+    jobStatus.setJobName(job.getJobname());
+    jobStatus.setJobSuccessful(isJobSuccessful);
+
+    // Add the JobStatusDTO to the list
+    jobStatusList.add(jobStatus);
+}
+
+// Function to process a job (you'll implement this according to your requirements)
+private boolean processJob(SSISRunJob job) {
+    // Implement your logic to process the job and determine its success/failure
+    // For demonstration, let's assume the job is always successful
+    return true;
+}
+
+
+
+
+Update the Loop to Set JobStatus and Message:
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+// Inside your loop where you process each job and update its status
+for (SSISRunJob job : jobs) {
+    boolean isJobSuccessful = processJob(job);
+    String jobStatus = isJobSuccessful ? "Completed" : "Failed";
+    String message = isJobSuccessful ? "Job was successful." : "Job failed.";
+
+    JobStatusDTO jobStatusDTO = new JobStatusDTO();
+    jobStatusDTO.setJobName(job.getJobname());
+    jobStatusDTO.setJobSuccessful(isJobSuccessful);
+    jobStatusDTO.setJobStatus(jobStatus);
+    jobStatusDTO.setMessage(message);
+
+    jobStatusList.add(jobStatusDTO);
+}
+
+
+Update Excel Spreadsheet Based on JobStatusDTO:
+
+
+try {
+    // Load your existing Excel file
+    FileInputStream excelFile = new FileInputStream(new File("path/to/your/excel/file.xlsx"));
+    Workbook workbook = new XSSFWorkbook(excelFile);
+    Sheet sheet = workbook.getSheetAt(0); // Assuming your sheet is at index 0
+
+    for (JobStatusDTO jobStatusDTO : jobStatusList) {
+        String jobName = jobStatusDTO.getJobName();
+        String status = jobStatusDTO.getJobStatus();
+        String message = jobStatusDTO.getMessage();
+
+        // Iterate through the rows and find the row with the matching jobName
+        for (Row row : sheet) {
+            Cell cell = row.getCell(0); // Assuming jobName is in the first column
+
+            if (cell != null && cell.getStringCellValue().equals(jobName)) {
+                // Update job status and message in the respective columns
+                row.createCell(1).setCellValue(status);   // Assuming status is in the second column
+                row.createCell(2).setCellValue(message);  // Assuming message is in the third column
+                break; // Stop searching once job is found
+            }
+        }
+    }
+
+    // Write the updated data to the Excel file
+    FileOutputStream outputStream = new FileOutputStream("path/to/your/excel/file.xlsx");
+    workbook.write(outputStream);
+    workbook.close();
+    outputStream.close();
+
+} catch (Exception e) {
+    e.printStackTrace();
+}
+
+
