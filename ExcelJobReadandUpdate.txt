@@ -146,6 +146,46 @@ private short getCellColor(SSISJobDTO jobDTO) {
     }
 }
 
+CellStyle Creation:
+Instead of creating a new CellStyle for each row, create a CellStyle for each cell 
+and set the style for each cell individually. This way, the style will be applied to cells irrespective of whether they are null or have values.
+
+Modify your updateExcel method as follows:
+for (SSISJobDTO jobDTO : dtoList) {
+    for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+        Row row = sheet.getRow(rowIndex);
+
+        // Assuming jobName is in column 2 (0-based index)
+        String jobNameInExcel = row.getCell(1).getStringCellValue();
+
+        if (jobDTO.getJobName().equals(jobNameInExcel)) {
+            Cell jobStatusCell = row.createCell(5); // Assuming jobStatus is in column 6 (0-based index)
+            jobStatusCell.setCellValue(jobDTO.getJobStatus());
+
+            Cell runFlagCell = row.createCell(0); // Assuming runFlag is in column 1 (0-based index)
+            runFlagCell.setCellValue(jobDTO.isRunFlag() ? "Yes" : "No");
+
+            // Create a CellStyle with the desired fill color
+            CellStyle style = workbook.createCellStyle();
+            style.setFillForegroundColor(getCellColor(jobDTO));
+            style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            // Apply the style to the cells
+            jobStatusCell.setCellStyle(style);
+            runFlagCell.setCellStyle(style);
+
+            break;  // Break after updating the corresponding row
+        }
+    }
+}
+In this modified version, we create a CellStyle once and set it for each cell (jobStatusCell and runFlagCell) individually.
+
+Verify Data:
+Double-check that the cells with values indeed have the expected values. If they have values, they should be highlighted with the desired colors.
+
+By applying the CellStyle to each cell individually, you should be able to ensure that cells with values are also highlighted correctly.
+
+
 In this modified version of the updateExcel method:
 
 We create a CellStyle with the desired fill color (light green for success, light red for failure).
