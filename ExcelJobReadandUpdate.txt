@@ -215,9 +215,6 @@ Sheet secondWorksheet = workbook.getSheetAt(1);
 
 
 
-
-
-
 In this example, we load an XLSX workbook and then use getSheetAt to access the first and second worksheets. 
 Adjust the index according to the specific worksheet you want to access within the workbook.
 
@@ -322,3 +319,68 @@ try {
 }
 
 
+Create a Utility to Copy and Timestamp the File:
+Create a utility method that takes the input Excel file, creates a copy with a timestamp in the output directory, and returns the path of the copied file.
+
+Write Logic to Update the Copied File:
+Update the copied file during the tests, as needed, and save the updates to the output directory.
+
+Here's a basic example to illustrate these steps:
+
+import java.io.*;
+import java.nio.file.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class ExcelFileUtility {
+
+    public static String copyAndTimestampInputFile(String inputFilePath, String outputDirectory) throws IOException {
+        File inputFile = new File(inputFilePath);
+
+        // Ensure the output directory exists, create if necessary
+        File outputDir = new File(outputDirectory);
+        if (!outputDir.exists()) {
+            outputDir.mkdirs();
+        }
+
+        // Generate a timestamp for the copied file
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
+        String timestamp = dateFormat.format(new Date());
+
+        // Create a new file name based on timestamp and original file name
+        String outputFileName = timestamp + "_" + inputFile.getName();
+
+        // Copy the input file to the output directory with the new name
+        String outputPath = Paths.get(outputDirectory, outputFileName).toString();
+        Files.copy(inputFile.toPath(), Paths.get(outputPath), StandardCopyOption.REPLACE_EXISTING);
+
+        return outputPath;
+    }
+
+    // Additional methods to update the copied file during tests
+    // ...
+}
+
+
+public class YourTestOrServiceClass {
+
+    // Assuming you have a method to update the copied file
+    // updateCopiedFile(outputPath, ...);
+
+    public void runTests() {
+        try {
+            // Copy the input file to the output directory and get the copied file path
+            String inputFilePath = "path/to/your/input/file.xlsx";
+            String outputDirectory = "path/to/your/output/directory";
+
+            String copiedFilePath = ExcelFileUtility.copyAndTimestampInputFile(inputFilePath, outputDirectory);
+
+            // Update the copied file during tests
+            // updateCopiedFile(copiedFilePath, ...);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+In this example, copyAndTimestampInputFile creates a copy of the input Excel file in the specified output directory with a timestamp in the filename. 
+You can then use this copied file for your tests, updating it as needed during the test.
