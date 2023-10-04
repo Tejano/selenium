@@ -384,3 +384,72 @@ public class YourTestOrServiceClass {
 }
 In this example, copyAndTimestampInputFile creates a copy of the input Excel file in the specified output directory with a timestamp in the filename. 
 You can then use this copied file for your tests, updating it as needed during the test.
+
+
+
+
+To handle multiple files or multiple tables in the job source, you can modify the data structure in your DTO 
+(SSISJobDTO) to accommodate a list of files and a list of tables. Additionally, 
+you can enhance the logic to split the source cell content appropriately based on the provided structure (tables or files). Below are the suggested changes:
+
+Enhanced SSISJobDTO:
+Modify the SSISJobDTO to include lists for files and tables.
+
+public class SSISJobDTO {
+    private boolean runFlag;
+    private String jobName;
+    private List<String> files;  // List of file paths
+    private List<String> tables; // List of table names
+    private boolean runStatus;
+    private String packageName;
+    private String jobStatus;
+
+    // Constructors, getters, setters
+}
+Updated Logic to Parse Source:
+Update the logic to parse the source cell content and split it into files and tables.
+
+while (iterator.hasNext()) {
+    Row currentRow = iterator.next();
+
+    // Assuming column indices for respective fields
+    boolean runFlag = currentRow.getCell(0).getStringCellValue().equalsIgnoreCase("Yes");
+    String jobName = currentRow.getCell(1).getStringCellValue();
+    String source = currentRow.getCell(2).getStringCellValue();
+    boolean runStatus = currentRow.getCell(3).getBooleanCellValue();
+    String packageName = currentRow.getCell(4).getStringCellValue();
+    String jobStatus = currentRow.getCell(5).getStringCellValue();
+
+    // Only process rows with RunFlag set to "Yes"
+    if (runFlag) {
+        SSISJobDTO jobDTO = new SSISJobDTO();
+        jobDTO.setRunFlag(runFlag);
+        jobDTO.setJobName(jobName);
+        jobDTO.setRunStatus(runStatus);
+        jobDTO.setPackageName(packageName);
+        jobDTO.setJobStatus(jobStatus);
+
+        // Split the source into files and tables based on the provided structure
+        String[] sources = source.split(", ");
+        for (String src : sources) {
+            if (src.startsWith("M:\\")) {
+                // Assuming files start with "M:\"
+                if (jobDTO.getFiles() == null) {
+                    jobDTO.setFiles(new ArrayList<>());
+                }
+                jobDTO.getFiles().add(src);
+            } else {
+                // Assuming tables start with "CRU.dbo."
+                if (jobDTO.getTables() == null) {
+                    jobDTO.setTables(new ArrayList<>());
+                }
+                jobDTO.getTables().add(src);
+            }
+        }
+
+        dtoList.add(jobDTO);
+    }
+}
+This updated approach assumes that files start with "M:" and tables start with "CRU.dbo." based on the provided structure.
+ You may need to adjust the logic based on the actual structure of your source data. 
+ The SSISJobDTO now contains lists for files and tables, allowing for handling multiple files or multiple tables for each job.
