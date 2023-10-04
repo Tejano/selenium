@@ -1,0 +1,39 @@
+import java.io.File;
+import java.util.List;
+
+public class FileExistenceChecker {
+
+    public boolean checkFileExistence(String fileOrFolderPath) {
+        File fileOrFolder = new File(fileOrFolderPath);
+
+        return fileOrFolder.exists();
+    }
+
+    public boolean checkFilesExistence(List<String> filePaths) {
+        boolean allExist = true;
+
+        for (String filePath : filePaths) {
+            if (!checkFileExistence(filePath)) {
+                allExist = false;
+                System.out.println("File doesn't exist: " + filePath);
+            }
+        }
+
+        return allExist;
+    }
+
+    public static void main(String[] args) {
+        FileExistenceChecker checker = new FileExistenceChecker();
+
+        // Single file
+        boolean fileExists = checker.checkFileExistence("path/to/single/file.txt");
+        System.out.println("File exists: " + fileExists);
+
+        // List of files
+        List<String> files = List.of("path/to/file1.txt", "path/to/file2.txt");
+        boolean allFilesExist = checker.checkFilesExistence(files);
+        System.out.println("All files exist: " + allFilesExist);
+    }
+}
+In this updated version, the checkFileExistence method returns true if the file or folder exists and false otherwise. 
+Similarly, the checkFilesExistence method returns true if all files exist and false if at least one file doesn't exist.
