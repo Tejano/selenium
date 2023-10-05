@@ -453,3 +453,33 @@ while (iterator.hasNext()) {
 This updated approach assumes that files start with "M:" and tables start with "CRU.dbo." based on the provided structure.
  You may need to adjust the logic based on the actual structure of your source data. 
  The SSISJobDTO now contains lists for files and tables, allowing for handling multiple files or multiple tables for each job.
+ 
+ 
+ 
+ public class ExcelGenerator {
+
+    public void generateExcel(List<YourEntity> entities, String sqlQuery) {
+        // Create an Excel workbook and worksheet
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Validation Results");
+
+        // Add the SQL query to the worksheet
+        Row sqlQueryRow = sheet.createRow(0);
+        Cell sqlQueryCell = sqlQueryRow.createCell(0);
+        sqlQueryCell.setCellValue(sqlQuery);
+
+        // Add the headers to the worksheet
+        Row headerRow = sheet.createRow(1);
+        // Add header cells for your entity fields
+
+        // Add data rows to the worksheet
+        int rowNum = 2;
+        for (YourEntity entity : entities) {
+            Row dataRow = sheet.createRow(rowNum++);
+            // Add data cells for your entity fields
+        }
+
+        // Write the workbook to a file or return as a response
+        // Handle exception and file writing logic here
+    }
+}
