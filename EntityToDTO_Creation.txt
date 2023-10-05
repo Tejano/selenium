@@ -1,0 +1,56 @@
+To achieve this, you can create a utility service that accepts an entity class, processes its fields, 
+and generates a DTO class with just the field names and types. The utility can use reflection to extract this information 
+from the entity class. Here's a basic example of how you can accomplish this:
+
+import javax.persistence.Column;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+
+public class EntityToDtoUtility {
+
+    public static Class<?> generateDTOFromEntity(Class<?> entityClass) {
+        List<Field> fields = getFieldsWithColumnAnnotation(entityClass);
+        return generateDTOClass(entityClass.getSimpleName() + "DTO", fields);
+    }
+
+    private static List<Field> getFieldsWithColumnAnnotation(Class<?> entityClass) {
+        List<Field> annotatedFields = new ArrayList<>();
+        for (Field field : entityClass.getDeclaredFields()) {
+            if (field.isAnnotationPresent(Column.class)) {
+                annotatedFields.add(field);
+            }
+        }
+        return annotatedFields;
+    }
+
+    private static Class<?> generateDTOClass(String dtoClassName, List<Field> fields) {
+        String dtoClassTemplate = "public class %s {%n%s}%n";
+        StringBuilder fieldsString = new StringBuilder();
+
+        for (Field field : fields) {
+            String fieldType = field.getType().getSimpleName();
+            String fieldName = field.getName();
+            fieldsString.append(String.format("    private %s %s;%n", fieldType, fieldName));
+        }
+
+        String dtoClassSource = String.format(dtoClassTemplate, dtoClassName, fieldsString);
+        System.out.println("Generated DTO class source:\n" + dtoClassSource);
+
+        // TODO: Compile and load the generated source code to obtain the Class object for the DTO
+        // You would typically write the source to a file, compile it, and then load the class.
+
+        return null;  // For simplicity, return null; you should return the generated DTO class.
+    }
+
+    public static void main(String[] args) {
+        Class<?> entityClass = YourEntity.class;  // Replace with your entity class
+        Class<?> dtoClass = generateDTOFromEntity(entityClass);
+
+        // Use dtoClass for further operations, like instantiating the DTO, etc.
+    }
+}
+
+In this utility, we're using reflection to extract fields annotated with @Column from the provided entity class.
+ We then generate a DTO class using a simple template and print the generated DTO class source to the console. 
+To complete the process, you would typically write the generated source code to a file, compile it, and load the resulting DTO class.
