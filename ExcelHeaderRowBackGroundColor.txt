@@ -1,0 +1,23 @@
+To set the background color of the header row in an Excel sheet using Apache POI,
+ you can use the CellStyle feature. Here's how you can modify your code to set the background color:
+ 
+ // Create a CellStyle with a gray background
+CellStyle headerCellStyle = workbook.createCellStyle();
+headerCellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+Row headerRow = sheet.createRow(0);
+Field[] fields = dtoClass.getDeclaredFields();
+
+int columnIdx = 0;
+for (Field field : fields) {
+    field.setAccessible(true);
+    String fieldName = field.getName();
+
+    Cell headerCell = headerRow.createCell(columnIdx++);
+    headerCell.setCellValue(fieldName);
+    headerCell.setCellStyle(headerCellStyle);
+}
+
+In this updated code, we create a CellStyle (headerCellStyle) with a gray background using the GREY_25_PERCENT color from the IndexedColors enum. We then set this style on each cell in the 
+header row to apply the desired background color. Adjust the color as needed or use IndexedColors.LIGHT_BLUE.getIndex() for a light blue color.
