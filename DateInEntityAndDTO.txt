@@ -1,0 +1,52 @@
+To handle the issue with java.sql.Date when creating a new DTO instance in queries, you may consider converting it to java.util.Date for the duration of the query and then back to java.sql.Date if necessary.
+
+Here's how you can adapt your DTO and query to work with java.util.Date during the query and then convert it back to java.sql.Date if needed:
+
+DTO:
+Update your DTO to use java.util.Date
+
+public class CanadaLivesDTO {
+
+    private String stringField1;
+    private Integer intField1;
+    private Date reportDate;  // Use java.util.Date
+
+    // Constructors, getters, and setters
+}
+
+@Query:
+Modify your @Query to use java.util.Date for reportDate. 
+You will still use java.sql.Date when interacting with the database.
+
+@Query("SELECT NEW com.commissions.qa.cru.dto.CanadaLiveDTO(e.stringField1, e.intField1,
+ CONVERT(date, e.reportDate)) FROM CanadaLivesEntity e WHERE e.yearMonth = :yearMonth")
+List<CanadaLiveDTO> findCanadaLivesByYearMonth(@Param("yearMonth") String yearMonth);
+
+In the above query, CONVERT(date, e.reportDate) is used to convert e.reportDate (which is a java.util.Date) to a java.sql.Date.
+
+3 Conversion in the DTO:
+If you need to convert java.util.Date to java.sql.Date within the DTO constructor, you can create a helper method:
+
+public class CanadaLivesDTO {
+
+    private String stringField1;
+    private Integer intField1;
+    private Date reportDate;  // Use java.util.Date
+
+    public CanadaLivesDTO(String stringField1, Integer intField1, Date reportDate) {
+        this.stringField1 = stringField1;
+        this.intField1 = intField1;
+        this.reportDate = convertToSqlDate(reportDate);
+        // Other assignments...
+    }
+
+    private java.sql.Date convertToSqlDate(Date date) {
+        return date != null ? new java.sql.Date(date.getTime()) : null;
+    }
+
+    // Getters and setters
+}
+
+By utilizing the convertToSqlDate method in the DTO, you can ensure that java.util.Date is converted to java.sql.Date when constructing the DTO instance.
+
+This approach allows you to work with java.util.Date in your DTOs and queries while properly handling the conversion to java.sql.Date when needed.
