@@ -1,0 +1,49 @@
+
+To adjust the column size based on the content in each cell, you can calculate the width of the content for each column 
+and set the column width accordingly. Here's how you can modify your code to achieve this:
+
+int rowNum = 2;
+for (YourEntity entity : entities) {
+    Row dataRow = sheet.createRow(rowNum++);
+    int columnIdx = 0;
+
+    // Add data cells for your entity fields
+    for (Field field : fields) {
+        field.setAccessible(true);
+        Object value = field.get(entity);
+
+        Cell dataCell = dataRow.createCell(columnIdx++);
+        if (value != null) {
+            dataCell.setCellValue(value.toString());
+
+            // Calculate the width of the content
+            int contentWidth = value.toString().length() * 256; // Adjust the multiplier as needed
+
+            // Set the column width to accommodate the content
+            if (sheet.getColumnWidth(columnIdx - 1) < contentWidth) {
+                sheet.setColumnWidth(columnIdx - 1, contentWidth);
+            }
+        }
+    }
+}
+In this modified code:
+
+For each cell, we calculate the width of the content by multiplying the length of the content by a multiplier (256 in this example, which is the standard multiplier used for calculating column width).
+We check if the calculated content width is greater than the existing column width for that column, and if so, we set the column width to accommodate the content.
+Adjust the multiplier (256 in this example) as needed to achieve the desired appearance. This approach will dynamically adjust the column width based on the content in each cell.
+
+The calculation of column width is not straightforward based on the length of the content in characters, 
+and multiplying by 256 is not the correct approach for setting column width in Excel.
+
+The column width in Excel is measured in units of 1/256th of the width of a character in the default font (at 12 points). 
+So, to calculate the width based on the content length in characters, you'll need to use a more accurate approach.
+
+Here's how you can adjust the column width based on the content length in characters:
+
+int contentWidth = (value.toString().length() + 1) * 256; // Adding 1 for a little extra padding
+sheet.setColumnWidth(columnIdx - 1, contentWidth);
+
+In this approach, we're adding a little extra padding by adding 1 to the content length before calculating 
+the column width. This is a more common approach to ensure that the content fits comfortably within the column.
+
+Feel free to adjust the padding or modify the calculation based on your specific requirements.
