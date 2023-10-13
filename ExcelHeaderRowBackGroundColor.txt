@@ -19,5 +19,48 @@ for (Field field : fields) {
     headerCell.setCellStyle(headerCellStyle);
 }
 
-In this updated code, we create a CellStyle (headerCellStyle) with a gray background using the GREY_25_PERCENT color from the IndexedColors enum. We then set this style on each cell in the 
-header row to apply the desired background color. Adjust the color as needed or use IndexedColors.LIGHT_BLUE.getIndex() for a light blue color.
+In this updated code, we create a CellStyle (headerCellStyle) with a gray background
+ using the GREY_25_PERCENT color from the IndexedColors enum. We then set this style on each cell in the 
+header row to apply the desired background color. Adjust the color as needed or use 
+IndexedColors.LIGHT_BLUE.getIndex() for a light blue color.
+
+
+To make the header text bold and have the columns adjust or wrap based on the size of the text,
+ you'll need to create a Font for the header cells and adjust the column width. Here's how you can modify your code to achieve this:
+
+// Create a CellStyle with a gray background
+CellStyle headerCellStyle = workbook.createCellStyle();
+headerCellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+// Create a Font for the header text and set it to bold
+Font headerFont = workbook.createFont();
+headerFont.setBold(true);
+headerCellStyle.setFont(headerFont);
+
+Row headerRow = sheet.createRow(0);
+Field[] fields = dtoClass.getDeclaredFields();
+
+int columnIdx = 0;
+for (Field field : fields) {
+    field.setAccessible(true);
+    String fieldName = field.getName();
+
+    Cell headerCell = headerRow.createCell(columnIdx++);
+    headerCell.setCellValue(fieldName);
+    headerCell.setCellStyle(headerCellStyle);
+    
+    // Adjust column width based on the length of the header text
+    int headerTextLength = fieldName.length();
+    sheet.setColumnWidth(headerCell.getColumnIndex(), headerTextLength * 256); // Adjust the multiplier as needed
+
+    // Set the header row's height to accommodate wrapped text (optional)
+    headerRow.setHeightInPoints((short) (headerCell.getRow().getHeightInPoints() * 1.5)); // Adjust the multiplier as needed
+}
+In this updated code:
+
+We create a Font for the header text and set it to bold.
+We set the Font to the CellStyle for the header cells.
+We adjust the column width based on the length of the header text.
+Optionally, we set the header row's height to accommodate wrapped text.
+Adjust the multiplier values as needed to achieve the desired appearance for the header text and column width.
