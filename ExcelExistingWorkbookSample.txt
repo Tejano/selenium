@@ -1,0 +1,105 @@
+To query the Entity and summarize the mem and sub by carrier for a given month, and summarize mem and sub for the month, you'll need to use Apache POI to create an Excel workbook 
+and write the results to the "MonthlyLivesRaw" worksheet. Here's a step-by-step approach to achieve this:
+
+import java.util.List;
+
+public class ExcelService {
+
+    public void performQueryAndWriteToWorksheet(List<Entity> entities, Workbook workbook) {
+        Sheet sheet = workbook.createSheet("MonthlyLivesRaw");
+
+        // Write headers
+        Row headerRow = sheet.createRow(0);
+        headerRow.createCell(0).setCellValue("Carrier");
+        headerRow.createCell(1).setCellValue("Total MEM for the Month");
+        headerRow.createCell(2).setCellValue("Total SUB for the Month");
+
+        // TODO: Perform the query and populate the data
+
+        // For demonstration, let's assume we have a method that performs the query and returns the results
+        List<CarrierSummary> carrierSummaries = performQuery(entities);
+
+        // Populate data in the worksheet
+        int rowNum = 1;
+        for (CarrierSummary carrierSummary : carrierSummaries) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(carrierSummary.getCarrier());
+            row.createCell(1).setCellValue(carrierSummary.getTotalMemForMonth());
+            row.createCell(2).setCellValue(carrierSummary.getTotalSubForMonth());
+        }
+    }
+
+    // Assume this method performs the necessary query to calculate the summary by carrier
+    private List<CarrierSummary> performQuery(List<Entity> entities) {
+        // Implement your query logic here
+        // For this example, we'll assume some dummy data
+        return List.of(
+            new CarrierSummary("Carrier A", 100, 150),
+            new CarrierSummary("Carrier B", 120, 180)
+        );
+    }
+}
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+
+@RestController
+@RequestMapping("/api/excel")
+public class ExcelController {
+
+    @Autowired
+    private ExcelService excelService;
+
+    @GetMapping("/addWorksheet")
+    public ResponseEntity<String> addWorksheetToExistingWorkbook() {
+        // Load the existing workbook
+        try (FileInputStream fis = new FileInputStream("path/to/your/existing/workbook.xlsx")) {
+            Workbook existingWorkbook = new XSSFWorkbook(fis);
+
+            // Call the service to add a worksheet with data
+            excelService.addWorksheetWithData(existingWorkbook);
+
+            return ResponseEntity.ok("Worksheet added to existing workbook.");
+        } catch (IOException e) {
+            return ResponseEntity.status(500).body("Failed to load existing workbook.");
+        }
+    }
+}
+
+Modify the ExcelService:
+
+Modify the ExcelService to include a method that adds a worksheet to an existing workbook and writes data to it.
+
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+public class ExcelService {
+
+    public void addWorksheetWithData(Workbook existingWorkbook) {
+        // Create a new sheet
+        Sheet newSheet = existingWorkbook.createSheet("NewSheetName");
+
+        // TODO: Write data to the new sheet as needed
+        // For demonstration, we'll just write a simple value to cell A1
+        newSheet.createRow(0).createCell(0).setCellValue("Hello, World!");
+
+        // Save the changes to the existing workbook
+        try (FileOutputStream fos = new FileOutputStream("path/to/your/existing/workbook.xlsx")) {
+            existingWorkbook.write(fos);
+        } catch (IOException e) {
+            // Handle the IOException
+            e.printStackTrace();
+        }
+    }
+}
