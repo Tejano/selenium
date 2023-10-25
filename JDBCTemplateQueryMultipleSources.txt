@@ -1,0 +1,109 @@
+Create a Method to Execute the Query:
+
+First, create a method in your service or repository that will execute the query. 
+In this method, you can specify which data source (2016 or 2019) to use based on your requirements.
+
+@Service
+public class BCCService {
+
+    @Autowired
+    @Qualifier("brokerOldVersionDataSource")
+    private DataSource dataSourceOld;
+
+    @Autowired
+    @Qualifier("brokerNewVersionDataSource")
+    private DataSource dataSourceNew;
+
+    public List<Object[]> executeQuery(String yearMonth, String dataVersion) {
+        DataSource dataSource;
+        if ("2016".equals(dataVersion)) {
+            dataSource = dataSourceOld;
+        } else if ("2019".equals(dataVersion)) {
+            dataSource = dataSourceNew;
+        } else {
+            throw new IllegalArgumentException("Invalid data version specified.");
+        }
+
+        // Create a JdbcTemplate using the selected data source
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+        // Define the SQL query
+        String sql = "SELECT pricinglevel, carrier, SUM(mem), SUM(sub) " +
+                     "FROM BrokerCalculationClaims " +
+                     "WHERE yearMonth = ? " +
+                     "GROUP BY pricinglevel, carrier";
+
+        // Execute the query
+        return jdbcTemplate.query(sql, new Object[]{yearMonth}, new BeanPropertyRowMapper(Object[].class));
+    }
+}
+Run the Query:
+
+In your service layer, you can call this executeQuery method with the appropriate data version (2016 or 2019)
+ and the desired yearMonth. This method will run the query using the selected data source.
+ 
+ @Service
+public class BCCService {
+
+    // ... (previous code)
+
+    public List<Object[]> executeQueryForDataVersion(String yearMonth, String dataVersion) {
+        return executeQuery(yearMonth, dataVersion);
+    }
+}
+
+Service Layer Usage:
+
+You can use the executeQueryForDataVersion method to execute the query against either the 2016 or 2019 data source, based on the specified data version:
+
+@Service
+public class BCCService {
+
+    // ... (previous code)
+
+    public void processQuery() {
+        String yearMonth = "202310";
+        String dataVersion2016 = "2016";
+        String dataVersion2019 = "2019";
+
+        List<Object[]> result2016 = executeQueryForDataVersion(yearMonth, dataVersion2016);
+        List<Object[]> result2019 = executeQueryForDataVersion(yearMonth, dataVersion2019);
+
+        // Process and compare the results from both data sources as needed.
+    }
+}
+This approach allows you to execute the same query against different data sources (2016 and 2019) 
+based on the specified data version, and then process and compare the results accordingly.
+
+
+Yes, the technique I described uses JdbcTemplate and SQL queries to directly interact with the database instead of relying on JPA entities. It is suitable when you need to work with multiple data sources or when you want more control over your SQL queries.
+
+JdbcTemplate is part of the Spring Framework and provides a way to interact with databases using JDBC (Java Database Connectivity) without needing to create and manage low-level JDBC connections, statements, and result sets manually. Here's an explanation of the usage of jdbcTemplate.query:
+
+jdbcTemplate Object Creation:
+In your code, you create a JdbcTemplate object using the selected DataSource. The DataSource represents the connection to the specific database (in this case, either SQL Server 2016 or SQL Server 2019).
+
+java
+Copy code
+JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+SQL Query Definition:
+You define your SQL query as a string. This query can be parameterized, which allows you to inject values into the query dynamically. In your example, the SQL query is used to retrieve data from the BrokerCalculationClaims table for a specific yearMonth.
+
+Parameterized Query Execution:
+You use the jdbcTemplate.query method to execute the SQL query. This method takes the following parameters:
+
+The SQL query as a string.
+An array of objects representing the parameters in the SQL query.
+A RowMapper to map the result set rows to Java objects.
+In this case, the query is parameterized with the yearMonth, so you pass it as an object in the array of parameters.
+The BeanPropertyRowMapper(Object[].class) is used to map the result set rows to an array of objects, where each element in the array corresponds to a column in the result set.
+
+Query Execution Result:
+The jdbcTemplate.query method returns a list of objects where each object represents a row in the result set. 
+The type of object returned depends on the RowMapper specified. In your case, it's an array of objects.
+
+Processing and Usage:
+After executing the query, you can process and use the results as needed in your application logic.
+
+The usage of JdbcTemplate is particularly useful when you need to perform custom or complex queries, interact with multiple databases, or have more fine-grained control over your database operations. 
+It is a lower-level approach compared to JPA and Hibernate and is typically used in situations where raw SQL is preferred or necessary.
