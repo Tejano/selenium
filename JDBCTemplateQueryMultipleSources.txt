@@ -107,3 +107,89 @@ After executing the query, you can process and use the results as needed in your
 
 The usage of JdbcTemplate is particularly useful when you need to perform custom or complex queries, interact with multiple databases, or have more fine-grained control over your database operations. 
 It is a lower-level approach compared to JPA and Hibernate and is typically used in situations where raw SQL is preferred or necessary.
+
+
+If you want to perform operations on both data sources within the same service or repository, you'll need to manage the transactions and database connections manually. Here's how you can work with multiple data sources within the same service or repository using EntityManager and DataSource:
+
+Define Multiple Entity Managers and Data Sources:
+In your configuration classes, define multiple EntityManager and DataSource beans for 
+each data source. You can use the @Qualifier annotation to distinguish between them.
+@Configuration
+@EnableTransactionManagement
+public class BrokerDataSourceConfig {
+
+    @Primary
+    @Bean(name = "entityManagerOld")
+    public LocalContainerEntityManagerFactoryBean entityManagerFactoryOld(
+        EntityManagerFactoryBuilder builder,
+        @Qualifier("brokerOldVersionDataSource") DataSource dataSource
+    ) {
+        return builder
+            .dataSource(dataSource)
+            .packages("com.example.entity")
+            .persistenceUnit("old")
+            .build();
+    }
+
+    @Primary
+    @Bean(name = "brokerOldVersionDataSource")
+    @ConfigurationProperties(prefix = "spring.datasource")
+    public DataSource dataSourceOld() {
+        return DataSourceBuilder.create().build();
+    }
+
+    @Bean(name = "entityManagerNew")
+    public LocalContainerEntityManagerFactoryBean entityManagerFactoryNew(
+        EntityManagerFactoryBuilder builder,
+        @Qualifier("brokerNewVersionDataSource") DataSource dataSource
+    ) {
+        return builder
+            .dataSource(dataSource)
+            .packages("com.example.entity")
+            .persistenceUnit("new")
+            .build();
+    }
+
+    @Bean(name = "brokerNewVersionDataSource")
+    @ConfigurationProperties(prefix = "spring.second-datasource")
+    public DataSource dataSourceNew() {
+        return DataSourceBuilder.create().build();
+    }
+}
+
+
+In your service or repository class, you can inject both EntityManager 
+and DataSource for different data sources using @PersistenceContext and @Qualifier annotations.
+
+@Service
+public class BCCService {
+    @PersistenceContext(unitName = "old")
+    @Qualifier("entityManagerOld")
+    private EntityManager entityManagerOld;
+    
+    @PersistenceContext(unitName = "new")
+    @Qualifier("entityManagerNew")
+    private EntityManager entityManagerNew;
+    
+    @Autowired
+    @Qualifier("brokerOldVersionDataSource")
+    private DataSource dataSourceOld;
+    
+    @Autowired
+    @Qualifier("brokerNewVersionDataSource")
+    private DataSource dataSourceNew;
+    
+    @Autowired
+    private BCCRepository bccRepository;
+    
+    public void performOperations() {
+        // Use entityManagerOld and dataSourceOld to perform operations on the old data source.
+        // Use entityManagerNew and dataSourceNew to perform operations on the new data source.
+    }
+}
+
+In this setup, you have access to both EntityManager and DataSource for both data sources. 
+When you want to perform operations on a specific data source, you can use the corresponding EntityManager and DataSource based on your requirements.
+
+Remember that with this approach, you'll need to manage transactions manually. 
+You can use @Transactional annotations on your methods to define transaction boundaries and specify which EntityManager and DataSource to use within those transactions.
