@@ -268,3 +268,46 @@ public void processQuery() {
 }
 By creating a dedicated result class and updating your query method accordingly, 
 you'll be able to work with the results of your query more effectively and avoid the "no default constructor found" error
+
+
+To verify that the data in the objects from the 2016 and 2019 data sources match and identify non-matching records, you can follow these steps:
+
+Compare Data:
+First, compare the data from both sources, which in your case are the List<QueryResult> objects for 2016 and 2019. You can iterate through both lists and compare each QueryResult object to check for differences.
+
+Identify Non-Matching Records:
+When you find differences between corresponding records, create a list to store the non-matching records. You can use a List<QueryResult> to keep track of these records.
+
+Comparison Logic:
+The specific comparison logic depends on your use case and what you consider to be a "match." It might involve comparing values of specific fields (e.g., pricinglevel, carrier, sumMem, and sumSub) or using a combination of fields to determine a match.
+
+Here's a simplified example of how you can perform the comparison and identify non-matching records:
+
+List<QueryResult> nonMatchingRecords = new ArrayList<>();
+
+for (QueryResult result2016 : result2016) {
+    // Find the corresponding record in result2019 based on a common identifier (e.g., pricinglevel and carrier).
+    QueryResult correspondingResult2019 = result2019.stream()
+        .filter(r -> r.getPricinglevel().equals(result2016.getPricinglevel()) && r.getCarrier().equals(result2016.getCarrier()))
+        .findFirst()
+        .orElse(null);
+
+    // Compare the fields to check for non-matching records.
+    if (correspondingResult2019 != null) {
+        if (!result2016.equals(correspondingResult2019)) {
+            nonMatchingRecords.add(result2016);
+        }
+    } else {
+        // Handle the case where a corresponding record is not found in result2019.
+        nonMatchingRecords.add(result2016);
+    }
+}
+
+// If you also want to identify records present in result2019 but not in result2016, you can perform a similar comparison in the opposite direction.
+
+// nonMatchingRecords now contains records that don't match between 2016 and 2019.
+
+Reporting or Logging:
+Depending on your needs, you can report or log the non-matching records for further analysis or troubleshooting. You might want to log them, write them to a file, or send them as a notification.
+
+This approach allows you to identify non-matching records by comparing objects and applying custom comparison logic based on your data and business rules. You can adjust the comparison logic as needed to match your specific requirements.
