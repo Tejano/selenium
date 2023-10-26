@@ -193,3 +193,78 @@ When you want to perform operations on a specific data source, you can use the c
 
 Remember that with this approach, you'll need to manage transactions manually. 
 You can use @Transactional annotations on your methods to define transaction boundaries and specify which EntityManager and DataSource to use within those transactions.
+
+
+
+The error you're encountering, "failed to instantiate: [Ljava.lang.Object]: no default constructor found," indicates that Spring is trying to instantiate an array of Object, but it cannot find a default constructor for it.
+
+This error is occurring because the result of your query is a list of arrays of Object, and Spring is trying to create an array of Object using reflection, but arrays don't have constructors that you can call.
+
+To resolve this issue, you should create a class to represent the result of your query, and Spring will be able to instantiate objects of that class. Here's what you can do:
+
+Create a Result Class:
+
+Define a class to represent the result of your query. This class should have fields corresponding to the columns returned by your query.
+
+public class QueryResult {
+    private String pricinglevel;
+    private String carrier;
+    private Long sumMem;
+    private Long sumSub;
+
+    public QueryResult(String pricinglevel, String carrier, Long sumMem, Long sumSub) {
+        this.pricinglevel = pricinglevel;
+        this.carrier = carrier;
+        this.sumMem = sumMem;
+        this.sumSub = sumSub;
+    }
+
+    // Getters and setters
+}
+Modify Your Query Method:
+
+Modify your query method to use the RowMapper to map the result set to instances of the QueryResult class:
+public List<QueryResult> executeQuery(String yearMonth, String dataVersion) {
+    DataSource dataSource;
+    if ("2016".equals(dataVersion)) {
+        dataSource = dataSourceOld;
+    } else if ("2019".equals(dataVersion)) {
+        dataSource = dataSourceNew;
+    } else {
+        throw new IllegalArgumentException("Invalid data version specified.");
+    }
+
+    JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+    String sql = "SELECT pricinglevel, carrier, SUM(mem), SUM(sub) " +
+                 "FROM BrokerCalculationClaims " +
+                 "WHERE yearMonth = ? " +
+                 "GROUP BY pricinglevel, carrier";
+
+    return jdbcTemplate.query(
+        sql,
+        new Object[]{yearMonth},
+        (rs, rowNum) -> new QueryResult(
+            rs.getString("pricinglevel"),
+            rs.getString("carrier"),
+            rs.getLong("SUM(mem)"),
+            rs.getLong("SUM(sub)")
+        )
+    );
+}
+Update Your processQuery Method:
+
+In your processQuery method, you should update it to work with the QueryResult class:
+
+public void processQuery() {
+    String yearMonth = "202310";
+    String dataVersion2016 = "2016";
+    String dataVersion2019 = "2019";
+
+    List<QueryResult> result2016 = executeQuery(yearMonth, dataVersion2016);
+    List<QueryResult> result2019 = executeQuery(yearMonth, dataVersion2019);
+
+    // Process and compare the results from both data sources as needed.
+}
+By creating a dedicated result class and updating your query method accordingly, 
+you'll be able to work with the results of your query more effectively and avoid the "no default constructor found" error
