@@ -346,3 +346,66 @@ if (totalSumMem2016 == totalSumMem2019 && totalSumSub2016 == totalSumSub2019) {
 In this code, we use Java streams to calculate the sums of sumMem and sumSub for both result2016 and result2019. Then, we compare the grand totals. If they match, a message indicating that the totals match is printed. If they don't match, the totals are printed for further analysis.
 
 This code should help you compare the grand totals of sumMem and sumSub between the two result sets. Adjust the code as needed to fit your specific requirements or reporting preferences.
+
+If you want to create a Data Transfer Object (DTO) to represent the comparison results of your result2016 and result2019 lists, you can follow these steps:
+
+Create a ComparisonResult DTO Class:
+
+Define a DTO class that represents the comparison result. This class can contain fields to store information about the comparison, 
+such as whether the totals match and lists of non-matching records. Here's an example:
+
+public class ComparisonResult {
+    private boolean totalsMatch;
+    private List<QueryResult> nonMatchingRecords;
+
+    public ComparisonResult(boolean totalsMatch, List<QueryResult> nonMatchingRecords) {
+        this.totalsMatch = totalsMatch;
+        this.nonMatchingRecords = nonMatchingRecords;
+    }
+
+    // Getters and setters
+}
+Update Your Comparison Logic:
+
+Modify your comparison logic to populate the ComparisonResult object with the comparison information. 
+Here's an updated version of the comparison logic that uses the ComparisonResult class:
+
+public ComparisonResult compareResults(List<QueryResult> result2016, List<QueryResult> result2019) {
+    List<QueryResult> nonMatchingRecords = new ArrayList<>();
+
+    for (QueryResult result2016Item : result2016) {
+        QueryResult correspondingResult2019 = result2019.stream()
+            .filter(r -> r.getPricinglevel().equals(result2016Item.getPricinglevel()) && r.getCarrier().equals(result2016Item.getCarrier()))
+            .findFirst()
+            .orElse(null);
+
+        if (correspondingResult2019 != null) {
+            if (!result2016Item.equals(correspondingResult2019)) {
+                nonMatchingRecords.add(result2016Item);
+            }
+        } else {
+            nonMatchingRecords.add(result2016Item);
+        }
+    }
+
+    // Calculate the grand totals
+    long totalSumMem2016 = result2016.stream().mapToLong(QueryResult::getSumMem).sum();
+    long totalSumSub2016 = result2016.stream().mapToLong(QueryResult::getSumSub).sum();
+    long totalSumMem2019 = result2019.stream().mapToLong(QueryResult::getSumMem).sum();
+    long totalSumSub2019 = result2019.stream().mapToLong(QueryResult::getSumSub).sum();
+
+    // Check if the totals match
+    boolean totalsMatch = totalSumMem2016 == totalSumMem2019 && totalSumSub2016 == totalSumSub2019;
+
+    return new ComparisonResult(totalsMatch, nonMatchingRecords);
+}
+Usage:
+
+You can now use the compareResults method to obtain a ComparisonResult object that contains the comparison information. For example:
+ComparisonResult comparisonResult = compareResults(result2016, result2019);
+
+// Access the comparison information
+boolean totalsMatch = comparisonResult.isTotalsMatch();
+List<QueryResult> nonMatchingRecords = comparisonResult.getNonMatchingRecords();
+
+// Perform further actions based on the comparison result
