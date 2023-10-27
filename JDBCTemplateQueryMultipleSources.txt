@@ -409,3 +409,62 @@ boolean totalsMatch = comparisonResult.isTotalsMatch();
 List<QueryResult> nonMatchingRecords = comparisonResult.getNonMatchingRecords();
 
 // Perform further actions based on the comparison result
+
+
+If you want to identify all records that don't intersect between the two lists, regardless of which list they belong to (2016 or 2019), 
+you can modify the comparison logic to identify records present in one list but not in the other. 
+You can create a comprehensive DTO to represent the differences. Here's how you can do it:
+Create a DTO to Represent Differences:
+
+Define a DTO that represents the differences between the 2016 and 2019 lists. This DTO should include fields
+ for records unique to each list and fields for records that have differences.
+ public class DifferenceResult {
+    private List<QueryResult> uniqueTo2016;
+    private List<QueryResult> uniqueTo2019;
+    private List<QueryResult> differingRecords;
+
+    public DifferenceResult(List<QueryResult> uniqueTo2016, List<QueryResult> uniqueTo2019, List<QueryResult> differingRecords) {
+        this.uniqueTo2016 = uniqueTo2016;
+        this.uniqueTo2019 = uniqueTo2019;
+        this.differingRecords = differingRecords;
+    }
+
+    // Getters and setters for all fields
+}
+Update Your Comparison Logic:
+
+Modify your comparison logic to populate the DifferenceResult object with records unique to each list
+ and records with differences. This logic will identify records that don't intersect between the two lists.
+ 
+public DifferenceResult compareResults(List<QueryResult> result2016, List<QueryResult> result2019) {
+    List<QueryResult> uniqueTo2016 = new ArrayList<>(result2016);
+    List<QueryResult> uniqueTo2019 = new ArrayList<>(result2019);
+    List<QueryResult> differingRecords = new ArrayList<>();
+
+    for (QueryResult result2016Item : result2016) {
+        if (result2019.contains(result2016Item)) {
+            uniqueTo2016.remove(result2016Item);
+            uniqueTo2019.remove(result2016Item);
+        } else {
+            differingRecords.add(result2016Item);
+        }
+    }
+
+    // Add records unique to 2019 to the uniqueTo2019 list
+    uniqueTo2019.addAll(result2019);
+
+    return new DifferenceResult(uniqueTo2016, uniqueTo2019, differingRecords);
+}
+Usage:
+
+You can now use the compareResults method to obtain a DifferenceResult object that contains records unique to each list and records with differences:
+DifferenceResult differenceResult = compareResults(result2016, result2019);
+
+// Access the difference information
+List<QueryResult> uniqueTo2016 = differenceResult.getUniqueTo2016();
+List<QueryResult> uniqueTo2019 = differenceResult.getUniqueTo2019();
+List<QueryResult> differingRecords = differenceResult.getDifferingRecords();
+
+// Perform further actions based on the difference information
+This approach allows you to identify and represent records that don't intersect between the 2016 and 2019 lists, including records unique to each list and records with differences.
+ You can customize the DifferenceResult class to include any additional fields or information you need for your specific use case.
