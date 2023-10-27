@@ -310,4 +310,39 @@ for (QueryResult result2016 : result2016) {
 Reporting or Logging:
 Depending on your needs, you can report or log the non-matching records for further analysis or troubleshooting. You might want to log them, write them to a file, or send them as a notification.
 
-This approach allows you to identify non-matching records by comparing objects and applying custom comparison logic based on your data and business rules. You can adjust the comparison logic as needed to match your specific requirements.
+This approach allows you to identify non-matching records by comparing objects and applying custom comparison logic based on your data and business rules. 
+You can adjust the comparison logic as needed to match your specific requirements.
+
+To compare the grand totals of sumMem and sumSub for the result2016 and result2019 lists, 
+you can iterate through both lists and calculate the sums separately. Here's an example of how you can do this:
+// Calculate the grand totals for sumMem and sumSub in result2016
+long totalSumMem2016 = result2016.stream()
+    .mapToLong(QueryResult::getSumMem)
+    .sum();
+
+long totalSumSub2016 = result2016.stream()
+    .mapToLong(QueryResult::getSumSub)
+    .sum();
+
+// Calculate the grand totals for sumMem and sumSub in result2019
+long totalSumMem2019 = result2019.stream()
+    .mapToLong(QueryResult::getSumMem)
+    .sum();
+
+long totalSumSub2019 = result2019.stream()
+    .mapToLong(QueryResult::getSumSub)
+    .sum();
+
+// Compare the grand totals
+if (totalSumMem2016 == totalSumMem2019 && totalSumSub2016 == totalSumSub2019) {
+    System.out.println("Grand totals match for sumMem and sumSub.");
+} else {
+    System.out.println("Grand totals do not match for sumMem and sumSub.");
+    System.out.println("Total sumMem 2016: " + totalSumMem2016);
+    System.out.println("Total sumMem 2019: " + totalSumMem2019);
+    System.out.println("Total sumSub 2016: " + totalSumSub2016);
+    System.out.println("Total sumSub 2019: " + totalSumSub2019);
+}
+In this code, we use Java streams to calculate the sums of sumMem and sumSub for both result2016 and result2019. Then, we compare the grand totals. If they match, a message indicating that the totals match is printed. If they don't match, the totals are printed for further analysis.
+
+This code should help you compare the grand totals of sumMem and sumSub between the two result sets. Adjust the code as needed to fit your specific requirements or reporting preferences.
