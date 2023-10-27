@@ -1,0 +1,72 @@
+To create a generic comparison function that can be reused to compare any table result set between the 2016 and 2019 servers (or any two data sources), you can define a method that accepts the following parameters:
+
+The two lists of results (e.g., result2016 and result2019) from the two different data sources.
+A function that determines how to compare individual records from these lists.
+An optional function that determines how to extract a unique identifier from each record for efficient comparison.
+Here's a generic Java method that allows you to compare two lists of results with flexibility for custom comparison logic:
+
+import java.util.List;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+public class DataComparator<T> {
+    public List<T> compareResults(List<T> data1, List<T> data2, BiPredicate<T, T> comparisonFunction, Function<T, ?> uniqueIdentifierFunction) {
+        // Create a map of unique identifiers for data2 for efficient comparison
+        List<?> data2UniqueIds = data2.stream()
+                .map(uniqueIdentifierFunction)
+                .collect(Collectors.toList());
+
+        // Initialize lists to store results
+        List<T> uniqueToData1 = data1.stream()
+                .filter(item1 -> data2UniqueIds.stream().noneMatch(item2UniqueId -> item2UniqueId.equals(uniqueIdentifierFunction.apply(item1))))
+                .collect(Collectors.toList());
+
+        List<T> uniqueToData2 = data2.stream()
+                .filter(item2 -> data1.stream().noneMatch(item1 -> uniqueIdentifierFunction.apply(item1).equals(uniqueIdentifierFunction.apply(item2))))
+                .collect(Collectors.toList());
+
+        List<T> differingRecords = data1.stream()
+                .filter(item1 -> {
+                    T correspondingItem = data2.stream()
+                            .filter(item2 -> uniqueIdentifierFunction.apply(item1).equals(uniqueIdentifierFunction.apply(item2)))
+                            .findFirst()
+                            .orElse(null);
+                    return correspondingItem != null && !comparisonFunction.test(item1, correspondingItem);
+                })
+                .collect(Collectors.toList());
+
+        return differingRecords;
+    }
+}
+Here's how you can use this generic function to compare two lists of any type (e.g., QueryResult or any other data class):
+// Example data classes and comparison functions
+public class QueryResult {
+    // Define your data fields here
+}
+
+// Define a function to compare two QueryResult objects
+BiPredicate<QueryResult, QueryResult> comparisonFunction = (result1, result2) -> {
+    // Define your custom comparison logic here
+    // For example, compare fields like pricinglevel, carrier, sumMem, and sumSub
+    return result1.getPricinglevel().equals(result2.getPricinglevel())
+            && result1.getCarrier().equals(result2.getCarrier())
+            && result1.getSumMem() == result2.getSumMem()
+            && result1.getSumSub() == result2.getSumSub();
+};
+
+// Define a function to extract a unique identifier (e.g., a combination of fields) from a QueryResult
+Function<QueryResult, ?> uniqueIdentifierFunction = result -> result.getPricinglevel() + result.getCarrier();
+
+// Create an instance of DataComparator for QueryResult
+DataComparator<QueryResult> dataComparator = new DataComparator<>();
+
+// Use the compareResults method to compare two lists
+List<QueryResult> result2016 = /* Get your data */;
+List<QueryResult> result2019 = /* Get your data */;
+
+List<QueryResult> differingRecords = dataComparator.compareResults(result2016, result2019, comparisonFunction, uniqueIdentifierFunction);
+
+// The 'differingRecords' list now contains records that don't match between result2016 and result2019.
+With this generic DataComparator class and the provided comparison functions, you can easily compare different result sets between the 
+2016 and 2019 servers or any other data sources by providing the appropriate data classes and comparison logic.
