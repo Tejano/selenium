@@ -1,0 +1,29 @@
+
+You can set the style and font of a row in Apache POI after the cells have been created. To do this, you need to create a CellStyle and Font,
+ and then apply them to each cell in the row individually. Here's how you can set the style and font for a row after creating the cells:
+ 
+ import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+// ...
+
+// Create a header row and set values
+Row headerRow = sheet.createRow(0);
+String[] headers = {"Header1", "Header2", "Header3", "Header4", "Header5"};
+for (int i = 0; i < headers.length; i++) {
+    Cell cell = headerRow.createCell(i);
+    cell.setCellValue(headers[i]);
+}
+
+// Create a style and font for the header row
+CellStyle rowStyle = workbook.createCellStyle();
+Font rowFont = workbook.createFont();
+rowFont.setBold(true); // Set the font to bold
+rowStyle.setFont(rowFont);
+
+// Apply the style and font to each cell in the header row
+for (int i = 0; i < headerRow.getLastCellNum(); i++) {
+    headerRow.getCell(i).setCellStyle(rowStyle);
+}
+In this code, we first create a CellStyle and Font for the header row. We set the font to be bold in this example. Then, we iterate over each cell in the header row
+ and apply the style to each cell. This way, you can set the style and font for the entire row after the cells have been created.
