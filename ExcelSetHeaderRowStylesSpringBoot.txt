@@ -27,3 +27,37 @@ for (int i = 0; i < headerRow.getLastCellNum(); i++) {
 }
 In this code, we first create a CellStyle and Font for the header row. We set the font to be bold in this example. Then, we iterate over each cell in the header row
  and apply the style to each cell. This way, you can set the style and font for the entire row after the cells have been created.
+ 
+ To make the width of the column a little wider than the header name values, you can adjust the column width after creating the header row.
+ You can set the column width using the autoSizeColumn method for each column in the header row. Here's how you can do it:
+ 
+ import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+// ...
+
+// Create a header row and set values
+Row headerRow = sheet.createRow(0);
+String[] headers = {"Header1", "Header2", "Header3", "Header4", "Header5"};
+for (int i = 0; i < headers.length; i++) {
+    Cell cell = headerRow.createCell(i);
+    cell.setCellValue(headers[i]);
+}
+
+// Create a style and font for the header row
+CellStyle rowStyle = workbook.createCellStyle();
+Font rowFont = workbook.createFont();
+rowFont.setBold(true); // Set the font to bold
+rowStyle.setFont(rowFont);
+
+// Apply the style and font to each cell in the header row
+for (int i = 0; i < headerRow.getLastCellNum(); i++) {
+    headerRow.getCell(i).setCellStyle(rowStyle);
+    
+    // Adjust column width to be wider than the header name values
+    sheet.autoSizeColumn(i);
+    int columnWidth = sheet.getColumnWidth(i);
+    sheet.setColumnWidth(i, columnWidth + 1000); // Adjust the width as needed
+}
+In this code, we use sheet.autoSizeColumn(i) to automatically size the column based on the content in the cell. You can then adjust the column width by adding a fixed value (e.g., 1000)
+ to make it a little wider than the header name values. You can adjust the value as needed to achieve the desired column width.
