@@ -1,0 +1,35 @@
+To sum the commTotal field for all records in a DTO list that uses the BigDecimal type, you can use the stream() and reduce() methods provided by Java's Stream API. Here's how you can do it in a Spring Boot application:
+
+Assuming you have a DTO class with a BigDecimal field named commTotal, 
+and you have a List<YourDTO> where YourDTO is the DTO class:
+
+import java.math.BigDecimal;
+import java.util.List;
+
+public class YourDTO {
+    private BigDecimal commTotal;
+
+    // Getters and setters for commTotal
+}
+
+You can sum the commTotal values in your DTO list as follows:
+
+import java.math.BigDecimal;
+import java.util.List;
+
+public class YourService {
+
+    public BigDecimal sumCommTotal(List<YourDTO> dtoList) {
+        BigDecimal totalCommTotal = dtoList.stream()
+            .map(YourDTO::getCommTotal) // Extract the commTotal value from each DTO
+            .reduce(BigDecimal.ZERO, BigDecimal::add); // Sum the commTotal values
+
+        return totalCommTotal;
+    }
+}
+In this code:
+
+We use the stream() method to convert the list of DTOs into a stream of BigDecimal values.
+We use the map() function to extract the commTotal values from each DTO.
+We use the reduce() function with an initial value of BigDecimal.ZERO and the BigDecimal::add operation to accumulate and sum the commTotal values.
+Now, you can call the sumCommTotal method with your list of DTOs to get the sum of commTotal values.
