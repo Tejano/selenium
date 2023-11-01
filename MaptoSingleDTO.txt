@@ -34,26 +34,40 @@ public class DataAggregationService {
         return new ArrayList<>(resultMap.values());
     }
 
+
+Certainly! The processResult method is responsible for aggregating the results 
+for a specific year (either "2016" or "2019") based on the pricing level. It uses a Map<String, 
+MyDTO> called resultMap to store the results in a way that allows 
+us to associate the results with their corresponding pricing levels. Here's a more detailed explanation of how it works:
     private void processResult(Map<String, MyDTO> resultMap, List<Object[]> result, String year) {
-        for (Object[] row : result) {
-            String pricingLevel = (String) row[1]; // Assuming PricingLevel is in position 1
-            BigDecimal sumMem = (BigDecimal) row[2]; // Assuming SUM(mem) is in position 2
+    for (Object[] row : result) {
+        String pricingLevel = (String) row[1]; // Extract the pricing level from the result row
+        BigDecimal sumMem = (BigDecimal) row[2]; // Extract the SUM(mem) value from the result row
 
-            String key = year + "-" + pricingLevel;
-            if (!resultMap.containsKey(key)) {
-                resultMap.put(key, new MyDTO());
-                resultMap.get(key).setYearMonth(yearMonth);
-                resultMap.get(key).setPricingLevel(pricingLevel);
-            }
+        String key = year + "-" + pricingLevel;
+        // The key is constructed by combining the year and pricing level, e.g., "2016-Contract Id"
 
-            if (year.equals("2016")) {
-                resultMap.get(key).setSumMem2016(sumMem);
-            } else if (year.equals("2019")) {
-                resultMap.get(key).setSumMem2019(sumMem);
-            }
+        if (!resultMap.containsKey(key)) {
+            resultMap.put(key, new MyDTO());
+            // If the key doesn't exist in the resultMap, create a new MyDTO and add it to the map
+            // This ensures we have a MyDTO for each unique key
+
+            resultMap.get(key).setYearMonth(yearMonth);
+            resultMap.get(key).setPricingLevel(pricingLevel);
+            // Set the common attributes like yearMonth and pricingLevel in the MyDTO
         }
+
+        if (year.equals("2016")) {
+            resultMap.get(key).setSumMem2016(sumMem);
+        } else if (year.equals("2019")) {
+            resultMap.get(key).setSumMem2019(sumMem);
+        }
+        // Based on the year, set the appropriate sumMem attribute in the MyDTO
     }
 }
+
+}
+
 In this code:
 
 We use a Map<String, MyDTO> called resultMap to aggregate the results by pricing level for both 2016 and 2019.
@@ -62,3 +76,20 @@ The processResult method is used to process the results for each year, and it en
 
 The resultMap stores the results, and at the end, we create a new ArrayList from the values of the map, which results in a list of four MyDTO objects, 
 each representing one of the four pricing levels with the sumMem2016 and sumMem2019 values in a single record.
+
+Here's how it works:
+
+For each row in the result list (representing the results for a particular year), we extract the pricing level and the SUM(mem) value from the row.
+
+We construct a key by combining the year (e.g., "2016" or "2019") and the pricing level. 
+The key uniquely identifies each record based on the year and pricing level.
+
+We check if the resultMap already contains the key. If it doesn't, we create a new MyDTO object and add it to the resultMap. 
+This ensures that we have a separate MyDTO for each unique combination of year and pricing level.
+
+We set common attributes, such as yearMonth and pricingLevel, in the MyDTO.
+
+Finally, we set the appropriate sumMem attribute in the MyDTO based on the year. If it's "2016," we set sumMem2016; if it's "2019," we set sumMem2019.
+
+This process ensures that the results are aggregated into separate MyDTO objects, 
+each representing a unique combination of year and pricing level, with the sumMem2016 and sumMem2019 values appropriately assigned.
