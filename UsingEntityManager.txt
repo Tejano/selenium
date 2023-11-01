@@ -40,3 +40,83 @@ In this example, we're creating two separate EntityManager instances, one for ea
 
 Please adapt this example to your specific use case, ensuring that you configure the 
 EntityManagerFactory instances and native queries as per your requirements for SQL Server 2016 and 2019 data sources.
+
+To populate the elements in the RxDiffDTO with data retrieved from the CommHist table for both 2016 and 2019 using EntityManager, you would need to execute queries for each set of data (2016 and 2019) and then aggregate and set the values in the RxDiffDTO. Here's a step-by-step guide on how to achieve this:
+
+Assuming you have a RxDiffDTO structure like this:
+public class RxDiffDTO {
+    private BigDecimal sumMember2016;
+    private BigDecimal sumMembers2019;
+    private BigDecimal sumClaimsTotal2016;
+    private BigDecimal sumClaimsTotal2019;
+    private BigDecimal sumCommTotal2016;
+    private BigDecimal sumCommTotal2019;
+    private List<RxDTO> rxResult2016;
+    private List<RxDTO> rxResult2019;
+
+    // Getters and setters
+}
+You can populate the RxDiffDTO as follows:
+
+Create EntityManager instances for 2016 and 2019:
+EntityManager entityManager2016 = entityManagerFactory2016.createEntityManager();
+EntityManager entityManager2019 = entityManagerFactory2019.createEntityManager();
+
+Execute queries to retrieve the data for 2016 and 2019. Make sure you have 
+appropriate queries that fetch the required data, and then convert the query results to RxDiffDTO fields:
+// Execute queries for 2016
+BigDecimal sumMember2016 = (BigDecimal) entityManager2016.createNativeQuery("SELECT SUM(member) FROM CommHist WHERE year = 2016").getSingleResult();
+BigDecimal sumClaimsTotal2016 = (BigDecimal) entityManager2016.createNativeQuery("SELECT SUM(claimsTotal) FROM CommHist WHERE year = 2016").getSingleResult();
+BigDecimal sumCommTotal2016 = (BigDecimal) entityManager2016.createNativeQuery("SELECT SUM(commTotal) FROM CommHist WHERE year = 2016").getSingleResult();
+
+List<RxDTO> rxResult2016 = entityManager2016.createQuery("SELECT r FROM RxDTO r WHERE r.year = 2016", RxDTO.class).getResultList();
+
+// Execute queries for 2019
+BigDecimal sumMember2019 = (BigDecimal) entityManager2019.createNativeQuery("SELECT SUM(member) FROM CommHist WHERE year = 2019").getSingleResult();
+BigDecimal sumClaimsTotal2019 = (BigDecimal) entityManager2019.createNativeQuery("SELECT SUM(claimsTotal) FROM CommHist WHERE year = 2019").getSingleResult();
+BigDecimal sumCommTotal2019 = (BigDecimal) entityManager2019.createNativeQuery("SELECT SUM(commTotal) FROM CommHist WHERE year = 2019").getSingleResult();
+
+List<RxDTO> rxResult2019 = entityManager2019.createQuery("SELECT r FROM RxDTO r WHERE r.year = 2019", RxDTO.class).getResultList();
+
+
+Set the retrieved data into the RxDiffDTO:
+RxDiffDTO rxDiffDTO = new RxDiffDTO();
+rxDiffDTO.setSumMember2016(sumMember2016);
+rxDiffDTO.setSumMember2019(sumMember2019);
+rxDiffDTO.setSumClaimsTotal2016(sumClaimsTotal2016);
+rxDiffDTO.setSumClaimsTotal2019(sumClaimsTotal2019);
+rxDiffDTO.setSumCommTotal2016(sumCommTotal2016);
+rxDiffDTO.setSumCommTotal2019(sumCommTotal2019);
+rxDiffDTO.setRxResult2016(rxResult2016);
+rxDiffDTO.setRxResult2019(rxResult2019);
+Close the EntityManager instances to release resources:
+entityManager2016.close();
+entityManager2019.close();
+This code retrieves the required data from both 2016 and 2019 using EntityManager instances, aggregates the data, 
+and populates the corresponding fields in the RxDiffDTO. 
+Please make sure to adjust the queries, field names, and data structures according to your specific database schema and DTO classes.
+
+Yes, you can use parameters in a native SQL query created with createNativeQuery in JPA, and you can set the parameter values using the setParameter method. Here's how you can add a parameter to a native query and set its value:
+
+Create a Native SQL Query with a Parameter:
+
+When creating your native query, use a parameter placeholder, typically ? or :paramName, to represent the parameter you want to set. For example:
+
+String sql = "SELECT * FROM your_table WHERE month = :monthParam";
+Query nativeQuery = entityManager.createNativeQuery(sql);
+nativeQuery.setParameter("monthParam", "202303"); // Set the parameter value
+In this example, :monthParam is the parameter placeholder.
+
+Set the Parameter Value:
+
+Use the setParameter method to set the value of the parameter. In this case, we set the parameter value to "202303".
+
+Execute the Query:
+
+After setting the parameter value, you can execute the query as usual. The parameter value will be used in the query.
+
+List<Object[]> results = nativeQuery.getResultList();
+
+So, in the provided code, we used :monthParam as the parameter placeholder and then used setParameter to set the value of :monthParam to "202303". When you execute the query, it will use this parameter value in the SQL query.
+
+You can set different parameter values based on your specific requirements. This allows you to dynamically pass values to your native SQL query, making it more versatile and useful for various scenarios.

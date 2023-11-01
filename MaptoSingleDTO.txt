@@ -1,0 +1,64 @@
+If you want the resultList to end up with only four records, each containing the sumMem2016 and sumMem2019 values
+ for the corresponding pricing level (e.g., "Contract Id"), you can achieve this by aggregating 
+the values during processing. Here's how to modify the code to achieve this:
+
+@Service
+public class DataAggregationService {
+
+    @PersistenceContext(unitName = "2016")
+    private EntityManager entityManager2016;
+
+    @PersistenceContext(unitName = "2019")
+    private EntityManager entityManager2019;
+
+    public List<MyDTO> fetchData(int yearMonth) {
+        Map<String, MyDTO> resultMap = new HashMap<>();
+
+        String queryString = "SELECT YearMonth, PricingLevel, SUM(mem) " +
+                "FROM bcc " +
+                "WHERE YearMonth = :yearMonth " +
+                "GROUP BY YearMonth, PricingLevel";
+
+        Query query2016 = entityManager2016.createNativeQuery(queryString);
+        query2016.setParameter("yearMonth", yearMonth);
+
+        Query query2019 = entityManager2019.createNativeQuery(queryString);
+        query2019.setParameter("yearMonth", yearMonth);
+
+        // Process the results for 2016
+        processResult(resultMap, result2016, "2016");
+
+        // Process the results for 2019
+        processResult(resultMap, result2019, "2019");
+
+        return new ArrayList<>(resultMap.values());
+    }
+
+    private void processResult(Map<String, MyDTO> resultMap, List<Object[]> result, String year) {
+        for (Object[] row : result) {
+            String pricingLevel = (String) row[1]; // Assuming PricingLevel is in position 1
+            BigDecimal sumMem = (BigDecimal) row[2]; // Assuming SUM(mem) is in position 2
+
+            String key = year + "-" + pricingLevel;
+            if (!resultMap.containsKey(key)) {
+                resultMap.put(key, new MyDTO());
+                resultMap.get(key).setYearMonth(yearMonth);
+                resultMap.get(key).setPricingLevel(pricingLevel);
+            }
+
+            if (year.equals("2016")) {
+                resultMap.get(key).setSumMem2016(sumMem);
+            } else if (year.equals("2019")) {
+                resultMap.get(key).setSumMem2019(sumMem);
+            }
+        }
+    }
+}
+In this code:
+
+We use a Map<String, MyDTO> called resultMap to aggregate the results by pricing level for both 2016 and 2019.
+
+The processResult method is used to process the results for each year, and it ensures that the results are aggregated by pricing level.
+
+The resultMap stores the results, and at the end, we create a new ArrayList from the values of the map, which results in a list of four MyDTO objects, 
+each representing one of the four pricing levels with the sumMem2016 and sumMem2019 values in a single record.
