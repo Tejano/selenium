@@ -116,3 +116,311 @@ public class ExcelReportTest extends AbstractTestNGSpringContextTests {
         }
     }
 }
+
+Yes, you can dynamically generate the Excel header row and data rows based on the fields in your DTO (Data Transfer Object) or entity class. To achieve this, you can use Java reflection to inspect the fields of your DTO or entity class and generate the Excel columns and rows accordingly. Here's an example of how you can do this:
+
+Assuming you have a DTO class CommHistDTO that corresponds to your CommHistEntity, and you want to generate Excel columns and rows based on its fields:
+
+private void createWorksheet(Workbook workbook, String sheetName, List<CommHistDTO> data) {
+    Sheet sheet = workbook.createSheet(sheetName);
+
+    // Create headers for columns based on DTO fields
+    Row headerRow = sheet.createRow(0);
+    Class<?> dtoClass = CommHistDTO.class; // Replace with your DTO class
+    Field[] fields = dtoClass.getDeclaredFields();
+
+    int columnIdx = 0;
+    for (Field field : fields) {
+        field.setAccessible(true); // Allow access to private fields if necessary
+        String fieldName = field.getName();
+        headerRow.createCell(columnIdx++).setCellValue(fieldName);
+    }
+
+    // Populate data rows based on DTO fields
+    int rowNum = 1;
+    for (CommHistDTO dto : data) {
+        Row dataRow = sheet.createRow(rowNum++);
+        columnIdx = 0;
+        for (Field field : fields) {
+            field.setAccessible(true); // Allow access to private fields if necessary
+            try {
+                Object value = field.get(dto);
+                // You may need to handle different data types and conversions here
+                dataRow.createCell(columnIdx++).setCellValue(value.toString());
+            } catch (IllegalAccessException e) {
+                // Handle the exception as needed
+            }
+        }
+    }
+}
+In this code, we use reflection to get the fields of the DTO class, create headers based on the field names, and populate data rows based on the field values. 
+Keep in mind that you may need to handle different data types and conversions based on 
+the actual types of the DTO fields. Also, ensure that the DTO fields have appropriate getters or are accessible for reflection.
+
+
+@Service
+public class CommHistService {
+    @Autowired
+    private CommHistEntityRepository commHistRepository;
+
+    public void executeStoredProcedure(String yearMonth) {
+        // Call your stored procedure here
+        // This could be a call to a stored procedure using Spring Data JPA
+        // Example: commHistRepository.callStoredProc(yearMonth);
+    }
+
+    public void generateExcelWorkbook(String yearMonth) {
+        // Generate Excel workbook here, e.g., using Apache POI or a library like Apache POI Excel
+
+        // Create separate worksheets for each CommType result
+        List<CommHistEntity> awpResults = commHistRepository.findByYearMonthAndCommTypeAWP(yearMonth);
+        List<CommHistEntity> rxResults = commHistRepository.findByYearMonthAndCommTypeRx(yearMonth);
+
+        // Generate Excel workbook and add data to worksheets
+        Workbook workbook = new XSSFWorkbook();
+        createWorksheet(workbook, "AWP", awpResults);
+        createWorksheet(workbook, "Rx", rxResults);
+
+        // Save the workbook to a file or send it as a response
+    }
+
+    private void createWorksheet(Workbook workbook, String sheetName, List<CommHistEntity> data) {
+        Sheet sheet = workbook.createSheet(sheetName);
+        // Add data to the worksheet here, using rows and cells
+    }
+}
+
+
+
+
+
+
+If you have different DTO classes (AWPCommHistDTO, MemEtCommHistDTO, FeeFlatCommHistDTO, etc.) for different CommTypes,
+ and you want to create worksheets dynamically based on the specific DTO class, you can modify the createWorksheet
+ method to accept a generic list of DTOs and the DTO class as parameters. Here's how you can do that:
+ 
+private <T> void createWorksheet(Workbook workbook, String sheetName, List<T> data, Class<T> dtoClass) {
+    Sheet sheet = workbook.createSheet(sheetName);
+
+    // Create headers for columns based on DTO fields
+    Row headerRow = sheet.createRow(0);
+    Field[] fields = dtoClass.getDeclaredFields();
+
+    int columnIdx = 0;
+    for (Field field : fields) {
+        field.setAccessible(true); // Allow access to private fields if necessary
+        String fieldName = field.getName();
+        headerRow.createCell(columnIdx++).setCellValue(fieldName);
+    }
+
+    // Populate data rows based on DTO fields
+    int rowNum = 1;
+    for (T dto : data) {
+        Row dataRow = sheet.createRow(rowNum++);
+        columnIdx = 0;
+        for (Field field : fields) {
+            field.setAccessible(true); // Allow access to private fields if necessary
+            try {
+                Object value = field.get(dto);
+                // You may need to handle different data types and conversions here
+                dataRow.createCell(columnIdx++).setCellValue(value.toString());
+            } catch (IllegalAccessException e) {
+                // Handle the exception as needed
+            }
+        }
+    }
+}
+
+
+Now, you can call this method with the specific DTO class and list of DTOs for each CommType:
+
+List<AWPCommHistDTO> awpResults = getAWPResults(); // Replace with your method to retrieve AWP data
+createWorksheet(workbook, "AWP", awpResults, AWPCommHistDTO.class);
+
+List<MemEtCommHistDTO> memEtResults = getMemEtResults(); // Replace with your method to retrieve MemEt data
+createWorksheet(workbook, "MemEt", memEtResults, MemEtCommHistDTO.class);
+
+List<FeeFlatCommHistDTO> feeFlatResults = getFeeFlatResults(); // Replace with your method to retrieve FeeFlat data
+createWorksheet(workbook, "FeeFlat", feeFlatResults, FeeFlatCommHistDTO.class);
+
+By passing both the list of DTOs and the DTO class as parameters to the createWorksheet method, 
+you can dynamically generate worksheets based on the specific DTO for each CommType.
+
+
+
+You can specify the location where the generated Excel workbook should be saved by providing
+ a file path when you create the workbook. Here's how you can do that:
+
+String outputPath = "C:/your/output/path/workbook.xlsx"; // Replace with your desired file path and name
+
+try (Workbook workbook = new XSSFWorkbook()) {
+    // Generate your worksheets and populate data here using the createWorksheet method
+
+    // Save the workbook to the specified file path
+    try (FileOutputStream fileOutputStream = new FileOutputStream(outputPath)) {
+        workbook.write(fileOutputStream);
+    } catch (IOException e) {
+        // Handle the exception if there's an issue with writing the workbook
+    }
+} catch (IOException e) {
+    // Handle the exception if there's an issue with creating the workbook
+}
+
+In the code above, we specify the outputPath variable with the desired file path and name for the Excel workbook. 
+After generating the worksheets and populating data, we create a FileOutputStream and write the workbook to the specified file path using workbook.write(fileOutputStream).
+
+@Service
+public class CommHistService {
+    @Autowired
+    private CommHistEntityRepository commHistRepository;
+
+    public void executeStoredProcedure(String yearMonth) {
+        // Call your stored procedure here
+        // This could be a call to a stored procedure using Spring Data JPA
+        // Example: commHistRepository.callStoredProc(yearMonth);
+    }
+
+    public void generateExcelWorkbook(String yearMonth,String outputPath) {
+        // Generate Excel workbook here, e.g., using Apache POI or a library like Apache POI Excel
+
+        // Generate Excel workbook and add data to worksheets
+        try (Workbook workbook = new XSSFWorkbook()) {
+		
+			// Generate your worksheets and populate data here using the createWorksheet method
+			List<AWPCommHistDTO> awpResults = getAWPResults(); // Replace with your method to retrieve AWP data
+			createWorksheet(workbook, "AWP", awpResults, AWPCommHistDTO.class);
+
+			List<MemEtCommHistDTO> memEtResults = getMemEtResults(); // Replace with your method to retrieve MemEt data
+			createWorksheet(workbook, "MemEt", memEtResults, MemEtCommHistDTO.class);
+
+			List<FeeFlatCommHistDTO> feeFlatResults = getFeeFlatResults(); // Replace with your method to retrieve FeeFlat data
+			createWorksheet(workbook, "FeeFlat", feeFlatResults, FeeFlatCommHistDTO.class);
+
+
+    // Save the workbook to the specified file path
+    try (FileOutputStream fileOutputStream = new FileOutputStream(outputPath)) {
+        workbook.write(fileOutputStream);
+    } catch (IOException e) {
+        // Handle the exception if there's an issue with writing the workbook
+    }
+} catch (IOException e) {
+    // Handle the exception if there's an issue with creating the workbook
+}
+
+    }
+
+private void createWorksheet(Workbook workbook, String sheetName, List<CommHistDTO> data) {
+    Sheet sheet = workbook.createSheet(sheetName);
+
+    // Create headers for columns based on DTO fields
+    Row headerRow = sheet.createRow(0);
+    Class<?> dtoClass = CommHistDTO.class; // Replace with your DTO class
+    Field[] fields = dtoClass.getDeclaredFields();
+
+    int columnIdx = 0;
+    for (Field field : fields) {
+        field.setAccessible(true); // Allow access to private fields if necessary
+        String fieldName = field.getName();
+        headerRow.createCell(columnIdx++).setCellValue(fieldName);
+    }
+
+    // Populate data rows based on DTO fields
+    int rowNum = 1;
+    for (CommHistDTO dto : data) {
+        Row dataRow = sheet.createRow(rowNum++);
+        columnIdx = 0;
+        for (Field field : fields) {
+            field.setAccessible(true); // Allow access to private fields if necessary
+            try {
+                Object value = field.get(dto);
+                // You may need to handle different data types and conversions here
+                dataRow.createCell(columnIdx++).setCellValue(value.toString());
+            } catch (IllegalAccessException e) {
+                // Handle the exception as needed
+            }
+        }
+    }
+}
+
+}
+
+
+
+@Service
+public class CommHistService {
+    @Autowired
+    private CommHistEntityRepository commHistRepository;
+
+    public void executeStoredProcedure(String yearMonth) {
+        // Call your stored procedure here
+        // This could be a call to a stored procedure using Spring Data JPA
+        // Example: commHistRepository.callStoredProc(yearMonth);
+    }
+
+    public void generateExcelWorkbook(String yearMonth, String outputPath) {
+        // Generate Excel workbook here, e.g., using Apache POI or a library like Apache POI Excel
+
+        try (Workbook workbook = new XSSFWorkbook()) {
+		
+            generateWorksheet(workbook, "AWP", AWPCommHistDTO.class, yearMonth);
+            generateWorksheet(workbook, "MemEt", MemEtCommHistDTO.class, yearMonth);
+            generateWorksheet(workbook, "FeeFlat", FeeFlatCommHistDTO.class, yearMonth);
+
+            // Save the workbook to the specified file path
+            try (FileOutputStream fileOutputStream = new FileOutputStream(outputPath)) {
+                workbook.write(fileOutputStream);
+            } catch (IOException e) {
+                // Handle the exception if there's an issue with writing the workbook
+                e.printStackTrace();
+            }
+        } catch (IOException e) {
+            // Handle the exception if there's an issue with creating the workbook
+            e.printStackTrace();
+        }
+    }
+
+    private <T> void generateWorksheet(Workbook workbook, String sheetName, Class<T> dtoClass, String yearMonth) {
+        // Replace this with your repository method to fetch data based on yearMonth and DTO class
+        List<T> data = fetchDataByYearMonthAndCommType(yearMonth, dtoClass);
+
+        Sheet sheet = workbook.createSheet(sheetName);
+
+        // Create headers for columns based on DTO fields
+        Row headerRow = sheet.createRow(0);
+        Field[] fields = dtoClass.getDeclaredFields();
+
+        int columnIdx = 0;
+        for (Field field : fields) {
+            field.setAccessible(true); // Allow access to private fields if necessary
+            String fieldName = field.getName();
+            headerRow.createCell(columnIdx++).setCellValue(fieldName);
+        }
+
+        // Populate data rows based on DTO fields
+        int rowNum = 1;
+        for (T dto : data) {
+            Row dataRow = sheet.createRow(rowNum++);
+            columnIdx = 0;
+            for (Field field : fields) {
+                field.setAccessible(true); // Allow access to private fields if necessary
+                try {
+                    Object value = field.get(dto);
+                    // You may need to handle different data types and conversions here
+                    dataRow.createCell(columnIdx++).setCellValue(value.toString());
+                } catch (IllegalAccessException e) {
+                    // Handle the exception as needed
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    // Replace this with your repository method to fetch data based on yearMonth and DTO class
+    private <T> List<T> fetchDataByYearMonthAndCommType(String yearMonth, Class<T> dtoClass) {
+        // Implement the logic to fetch data based on yearMonth and DTO class
+        // You can use Spring Data JPA repository methods or custom SQL queries here
+        // Return a list of DTO objects
+        return new ArrayList<>();
+    }
+}
+

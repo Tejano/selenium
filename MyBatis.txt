@@ -45,7 +45,7 @@ and <domainObjectName> options as you've shown. Here's the relevant part of your
 <plugin>
     <groupId>org.mybatis.generator</groupId>
     <artifactId>mybatis-generator-maven-plugin</artifactId>
-    <version><!-- Use the latest version available --></version>
+    <version>1.4.2</version>
     <configuration>
         <!-- Other configuration options -->
 

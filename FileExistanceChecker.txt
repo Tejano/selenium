@@ -37,3 +37,30 @@ public class FileExistenceChecker {
 }
 In this updated version, the checkFileExistence method returns true if the file or folder exists and false otherwise. 
 Similarly, the checkFilesExistence method returns true if all files exist and false if at least one file doesn't exist.
+
+
+public class FileCheckResultDTO {
+    private String jobName;
+    private String jobStatus;
+    private String message;
+    private boolean allFilesExist;
+    private List<String> nonExistentFiles;
+
+    // Constructors, getters, setters
+
+    public FileCheckResultDTO(String jobName, String jobStatus, List<String> nonExistentFiles) {
+        this.jobName = jobName;
+        this.jobStatus = jobStatus;
+        this.nonExistentFiles = nonExistentFiles;
+        updateMessage();
+    }
+
+    private void updateMessage() {
+        if (allFilesExist) {
+            this.message = "All files for job '" + jobName + "' exist.";
+        } else {
+            this.message = "Some files for job '" + jobName + "' do not exist: " +
+                    String.join(", ", nonExistentFiles);
+        }
+    }
+}

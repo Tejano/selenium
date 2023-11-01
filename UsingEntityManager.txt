@@ -1,0 +1,42 @@
+You're correct that a Spring Data JPA repository is typically tied to a single data source. If you have two different data sources (one for 2016 and one for 2019) and you want to use a native query to fetch data from both sources, you will need to handle this scenario outside of the standard Spring Data JPA repository approach.
+
+One way to approach this is to create custom repository methods that use separate EntityManager instances, one for each data source, and then execute the native query on each data source separately. Here's an outline of how you can do this:
+
+Create two separate EntityManagerFactory instances, one for 2016 and one for 2019, each configured with its own data source.
+
+Create two separate EntityManager instances, one for each EntityManagerFactory. You can do this in your service or repository class.
+
+Execute the native query on each EntityManager instance, fetching the data from both the 2016 and 2019 data sources.
+
+Here's an example of how you might structure your service or repository to achieve this:
+
+@Service
+public class CommHistService {
+
+    @PersistenceUnit(unitName = "entityManagerFactory2016")
+    private EntityManagerFactory entityManagerFactory2016;
+
+    @PersistenceUnit(unitName = "entityManagerFactory2019")
+    private EntityManagerFactory entityManagerFactory2019;
+
+    public List<Object[]> getSummaryData() {
+        EntityManager entityManager2016 = entityManagerFactory2016.createEntityManager();
+        EntityManager entityManager2019 = entityManagerFactory2019.createEntityManager();
+
+        try {
+            List<Object[]> summary2016 = entityManager2016.createNativeQuery("SELECT SUM(rxClaims), SUM(rxCommR) FROM commhist WHERE year = 2016").getResultList();
+            List<Object[]> summary2019 = entityManager2019.createNativeQuery("SELECT SUM(rxClaims), SUM(rxCommR) FROM commhist WHERE year = 2019").getResultList();
+
+            // Combine or process the results as needed
+        } finally {
+            entityManager2016.close();
+            entityManager2019.close();
+        }
+
+        return combinedSummary;
+    }
+}
+In this example, we're creating two separate EntityManager instances, one for each data source, and executing native queries independently. Afterward, you can combine or process the results as needed.
+
+Please adapt this example to your specific use case, ensuring that you configure the 
+EntityManagerFactory instances and native queries as per your requirements for SQL Server 2016 and 2019 data sources.
