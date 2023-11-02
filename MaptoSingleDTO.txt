@@ -19,11 +19,16 @@ public class DataAggregationService {
                 "WHERE YearMonth = :yearMonth " +
                 "GROUP BY YearMonth, PricingLevel";
 
-        Query query2016 = entityManager2016.createNativeQuery(queryString);
-        query2016.setParameter("yearMonth", yearMonth);
+		// Execute the queries for 2016
+		Query query2016 = entityManager2016.createNativeQuery(queryString);
+		query2016.setParameter("yearMonth", yearMonth);
+		List<Object[]> result2016 = query2016.getResultList();
 
-        Query query2019 = entityManager2019.createNativeQuery(queryString);
-        query2019.setParameter("yearMonth", yearMonth);
+		// Execute the queries for 2019
+		Query query2019 = entityManager2019.createNativeQuery(queryString);
+		query2019.setParameter("yearMonth", yearMonth);
+		List<Object[]> result2019 = query2019.getResultList();
+
 
         // Process the results for 2016
         processResult(resultMap, result2016, "2016");
