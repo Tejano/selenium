@@ -1,0 +1,66 @@
+
+If you want to configure two separate JdbcTemplate instances, each pointing to a different datasource (e.g., datasource1 and datasource2), you can create two separate JdbcTemplate beans in your Spring application. Here's how to do it:
+
+Create Two DataSource Configuration Classes:
+
+First, create two separate configuration classes, one for datasource1 and another for datasource2. These classes should configure their respective data sources
+
+@Configuration
+@EnableTransactionManagement
+public class DataSource1Config {
+    @Bean(name = "dataSource1")
+    public DataSource dataSource1() {
+        // Configure and return datasource1
+    }
+}
+
+@Configuration
+@EnableTransactionManagement
+public class DataSource2Config {
+    @Bean(name = "dataSource2")
+    public DataSource dataSource2() {
+        // Configure and return datasource2
+    }
+}
+
+Create Two JdbcTemplate Configuration Classes:
+
+Next, create two configuration classes for your JdbcTemplate instances. 
+Each class should be associated with a specific datasource.
+
+@Configuration
+public class JdbcTemplateConfig1 {
+    @Bean(name = "jdbcTemplate1")
+    public JdbcTemplate jdbcTemplate1(@Qualifier("dataSource1") DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+}
+
+@Configuration
+public class JdbcTemplateConfig2 {
+    @Bean(name = "jdbcTemplate2")
+    public JdbcTemplate jdbcTemplate2(@Qualifier("dataSource2") DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+}
+In these configurations, we use @Qualifier to specify which datasource each JdbcTemplate should be associated with.
+
+Use the JdbcTemplate Beans:
+
+You can now inject and use the JdbcTemplate instances in your services or repositories as needed.
+@Service
+public class MyService {
+    private final JdbcTemplate jdbcTemplate1;
+    private final JdbcTemplate jdbcTemplate2;
+
+    @Autowired
+    public MyService(@Qualifier("jdbcTemplate1") JdbcTemplate jdbcTemplate1,
+                     @Qualifier("jdbcTemplate2") JdbcTemplate jdbcTemplate2) {
+        this.jdbcTemplate1 = jdbcTemplate1;
+        this.jdbcTemplate2 = jdbcTemplate2;
+    }
+
+    // Use jdbcTemplate1 and jdbcTemplate2 in your methods
+}
+By creating separate DataSource and JdbcTemplate configuration classes for each datasource, and using @Qualifier to specify which JdbcTemplate 
+should be associated with which DataSource, you can effectively manage multiple datasources in your Spring application.
