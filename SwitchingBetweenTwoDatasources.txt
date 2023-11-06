@@ -1,0 +1,50 @@
+If you want to switch between the DataSource for SQL Server 2016 and the DataSource for SQL Server 2019 based on some condition or requirement, you can achieve this by creating a service or component that dynamically selects the appropriate DataSource and Connection. Here's a sample code example:
+
+Create a Service to Dynamically Choose DataSource:
+
+Create a service or component that determines which 
+DataSource to use based on a condition. In this example, I'll use a simple 
+if condition to switch between the two datasources:
+
+@Service
+public class DatabaseService {
+    @Autowired
+    @Qualifier("dataSource2016")
+    private DataSource dataSource2016;
+
+    @Autowired
+    @Qualifier("dataSource2019")
+    private DataSource dataSource2019;
+
+    public Connection getConnectionToDatabase(int year) throws SQLException {
+        if (year == 2016) {
+            return dataSource2016.getConnection();
+        } else if (year == 2019) {
+            return dataSource2019.getConnection();
+        } else {
+            throw new IllegalArgumentException("Invalid year: " + year);
+        }
+    }
+}
+You can use this service to obtain a Connection to the appropriate database based on the condition:
+@Service
+public class MyDatabaseService {
+    @Autowired
+    private DatabaseService databaseService;
+
+    public void doSomethingWithDatabase(int year) {
+        try (Connection connection = databaseService.getConnectionToDatabase(year)) {
+            // Create and execute PreparedStatement based on the selected DataSource
+            // ...
+        } catch (SQLException e) {
+            // Handle exceptions
+        }
+    }
+}
+
+In this example, the DatabaseService dynamically selects the appropriate DataSource based on the input year, 
+and the MyDatabaseService uses the selected DataSource to obtain a Connection and work with the database.
+
+This approach allows you to switch between different datasources based 
+on your application's logic or requirements. Make sure to handle exceptions and potential errors
+ when working with the Connection and database operations.
