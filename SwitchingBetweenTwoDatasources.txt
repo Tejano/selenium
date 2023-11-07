@@ -48,3 +48,39 @@ and the MyDatabaseService uses the selected DataSource to obtain a Connection an
 This approach allows you to switch between different datasources based 
 on your application's logic or requirements. Make sure to handle exceptions and potential errors
  when working with the Connection and database operations.
+ 
+ import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import javax.sql.DataSource;
+
+
+
+@Service
+public class MyDatabaseService {
+    @Autowired
+    private DatabaseService databaseService;
+
+    public void doSomethingWithDatabase(int year) {
+        try (Connection connection = databaseService.getConnectionToDatabase(year)) {
+            // Create and execute a PreparedStatement
+            String sql = "SELECT * FROM your_table WHERE some_column = ?";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                preparedStatement.setString(1, "some_value");
+
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    while (resultSet.next()) {
+                        // Process the results
+                        int id = resultSet.getInt("id");
+                        String columnValue = resultSet.getString("some_column");
+                        // Do something with the data
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(); // Handle exceptions, log, or throw your custom exception
+        }
+    }
+}
+
