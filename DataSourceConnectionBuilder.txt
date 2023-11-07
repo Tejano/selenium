@@ -1,0 +1,84 @@
+
+
+@Configuration
+public class DataSourceConfig {
+
+    @Value("${spring.datasource.url}")
+    private String dataSourceUrl;
+
+    @Value("${spring.datasource.username}")
+    private String dataSourceUsername;
+
+    @Value("${spring.datasource.password}")
+    private String dataSourcePassword;
+
+    @Value("${spring.datasource.driverClassName}")
+    private String dataSourceDriverClassName;
+
+    @Bean
+    public DataSource dataSource() {
+        return DataSourceBuilder
+                .create()
+                .url(dataSourceUrl)
+                .username(dataSourceUsername)
+                .password(dataSourcePassword)
+                .driverClassName(dataSourceDriverClassName)
+                .build();
+    }
+}
+
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import javax.sql.DataSource;
+
+@Configuration
+public class DataSource1Config {
+
+    @Bean(name = "dataSource1")
+    public DataSource dataSource1() {
+        return DataSourceBuilder
+                .create()
+                .url("jdbc:sqlserver://hostname1:port1;databaseName=Database1")
+                .username("username1")
+                .password("password1")
+                .driverClassName("com.microsoft.sqlserver.jdbc.SQLServerDriver")
+                .build();
+    }
+}
+
+
+
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import javax.sql.DataSource;
+
+@Configuration
+public class DataSource2Config {
+
+    @Bean(name = "dataSource2")
+    public DataSource dataSource2() {
+        return DataSourceBuilder
+                .create()
+                .url("jdbc:sqlserver://hostname2:port2;databaseName=Database2")
+                .username("username2")
+                .password("password2")
+                .driverClassName("com.microsoft.sqlserver.jdbc.SQLServerDriver")
+                .build();
+    }
+}
+
+
+
+@Service
+public class UserService {
+
+    private final DataSource dataSource;
+
+    public UserService(@Qualifier("dataSource1") DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    // ...
+}
