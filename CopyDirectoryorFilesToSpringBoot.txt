@@ -74,3 +74,112 @@ The StandardCopyOption.REPLACE_EXISTING option is used to replace the file in th
 
 Remember to handle exceptions, such as IOException, to ensure your code is robust in a real application. Additionally, you can use this code within your Spring Boot 
 application where you may have access to the source and destination paths as input parameters or configuration settings.
+
+
+In a Spring Boot application, you can perform various file operations like deleting a file, 
+renaming a file, making a file read-only, or making it readable using Java's standard file
+ manipulation capabilities provided by the java.nio.file package. Here are examples of how to perform these operations:
+
+Delete a File:
+
+To delete a file, you can use the Files.delete() method
+
+import java.io.IOException;
+import java.nio.file.*;
+
+public class FileOperationsExample {
+
+    public static void main(String[] args) {
+        String filePath = "C:\\path\\to\\file.txt";
+
+        try {
+            Files.delete(Paths.get(filePath));
+            System.out.println("File deleted successfully.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+Rename a File:
+
+To rename a file, you can use the Files.move() method.
+import java.io.IOException;
+import java.nio.file.*;
+
+public class FileOperationsExample {
+
+    public static void main(String[] args) {
+        String sourceFilePath = "C:\\path\\to\\oldfile.txt";
+        String targetFilePath = "C:\\path\\to\\newfile.txt";
+
+        try {
+            Files.move(Paths.get(sourceFilePath), Paths.get(targetFilePath), StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("File renamed successfully.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+Make a File Read-Only:
+
+To make a file read-only, you can set the file attributes.
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.HashSet;
+import java.util.Set;
+
+public class FileOperationsExample {
+
+    public static void main(String[] args) {
+        String filePath = "C:\\path\\to\\file.txt";
+
+        try {
+            Set<PosixFilePermission> permissions = new HashSet<>();
+            permissions.add(PosixFilePermission.OWNER_READ);
+            permissions.add(PosixFilePermission.OWNER_WRITE);
+
+            Files.setPosixFilePermissions(Paths.get(filePath), permissions);
+            System.out.println("File set to read-only.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+Make a File Readable (Remove Read-Only):
+
+To make a read-only file readable again, you can set the appropriate file permissions.
+
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.HashSet;
+import java.util.Set;
+
+public class FileOperationsExample {
+
+    public static void main(String[] args) {
+        String filePath = "C:\\path\\to\\file.txt";
+
+        try {
+            Set<PosixFilePermission> permissions = new HashSet<>();
+            permissions.add(PosixFilePermission.OWNER_READ);
+            permissions.add(PosixFilePermission.OWNER_WRITE);
+            permissions.add(PosixFilePermission.OWNER_EXECUTE);
+
+            Files.setPosixFilePermissions(Paths.get(filePath), permissions);
+            System.out.println("File set to readable.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+Make sure to handle exceptions appropriately in your Spring Boot application 
+and adapt these examples to your specific use case and requirements.
