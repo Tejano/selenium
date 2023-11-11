@@ -1,0 +1,213 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class DtoComparisonService {
+
+    public static <T> ComparisonResult<T> compareResults(List<T> result1, List<T> result2) {
+        List<T> uniqueToResult1 = result1.stream()
+                .filter(dto -> !result2.contains(dto))
+                .collect(Collectors.toList());
+
+        List<T> uniqueToResult2 = result2.stream()
+                .filter(dto -> !result1.contains(dto))
+                .collect(Collectors.toList());
+
+        List<T> commonRecords = result1.stream()
+                .filter(result2::contains)
+                .collect(Collectors.toList());
+
+        return new ComparisonResult<>(uniqueToResult1, uniqueToResult2, commonRecords);
+    }
+
+    public static class ComparisonResult<T> {
+        private final List<T> uniqueToResult1;
+        private final List<T> uniqueToResult2;
+        private final List<T> commonRecords;
+
+        public ComparisonResult(List<T> uniqueToResult1, List<T> uniqueToResult2, List<T> commonRecords) {
+            this.uniqueToResult1 = uniqueToResult1;
+            this.uniqueToResult2 = uniqueToResult2;
+            this.commonRecords = commonRecords;
+        }
+
+        public List<T> getUniqueToResult1() {
+            return uniqueToResult1;
+        }
+
+        public List<T> getUniqueToResult2() {
+            return uniqueToResult2;
+        }
+
+        public List<T> getCommonRecords() {
+            return commonRecords;
+        }
+    }
+
+    // Example of usage in a Spring Boot service method
+    public void compareTableResults() {
+        List<YourDto> result2016 = //... fetch result from SQL Server 2016
+        List<YourDto> result2019 = //... fetch result from SQL Server 2019
+
+        ComparisonResult<YourDto> comparisonResult = compareResults(result2016, result2019);
+
+        List<YourDto> uniqueToResult2016 = comparisonResult.getUniqueToResult1();
+        List<YourDto> uniqueToResult2019 = comparisonResult.getUniqueToResult2();
+        List<YourDto> commonRecords = comparisonResult.getCommonRecords();
+
+        // Now you can do something with these lists, e.g., log the differences or take specific actions.
+    }
+}
+
+
+If you want to use the DtoComparisonService from multiple services, you can define it as a separate service 
+and inject it into the services where you need the comparison functionality. Here's an example:
+
+
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class DtoComparisonService {
+
+    public <T> ComparisonResult<T> compareResults(List<T> result1, List<T> result2) {
+        List<T> uniqueToResult1 = result1.stream()
+                .filter(dto -> !result2.contains(dto))
+                .collect(Collectors.toList());
+
+        List<T> uniqueToResult2 = result2.stream()
+                .filter(dto -> !result1.contains(dto))
+                .collect(Collectors.toList());
+
+        List<T> commonRecords = result1.stream()
+                .filter(result2::contains)
+                .collect(Collectors.toList());
+
+        return new ComparisonResult<>(uniqueToResult1, uniqueToResult2, commonRecords);
+    }
+
+    public static class ComparisonResult<T> {
+        private final List<T> uniqueToResult1;
+        private final List<T> uniqueToResult2;
+        private final List<T> commonRecords;
+
+        public ComparisonResult(List<T> uniqueToResult1, List<T> uniqueToResult2, List<T> commonRecords) {
+            this.uniqueToResult1 = uniqueToResult1;
+            this.uniqueToResult2 = uniqueToResult2;
+            this.commonRecords = commonRecords;
+        }
+
+        public List<T> getUniqueToResult1() {
+            return uniqueToResult1;
+        }
+
+        public List<T> getUniqueToResult2() {
+            return uniqueToResult2;
+        }
+
+        public List<T> getCommonRecords() {
+            return commonRecords;
+        }
+    }
+}
+
+Now, you can inject this service into your other services where you need the comparison functionality. For example:
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class YourOtherService {
+
+    private final DtoComparisonService dtoComparisonService;
+
+    @Autowired
+    public YourOtherService(DtoComparisonService dtoComparisonService) {
+        this.dtoComparisonService = dtoComparisonService;
+    }
+
+    public void compareTableResults() {
+        List<YourDto> result2016 = //... fetch result from SQL Server 2016
+        List<YourDto> result2019 = //... fetch result from SQL Server 2019
+
+        DtoComparisonService.ComparisonResult<YourDto> comparisonResult = dtoComparisonService.compareResults(result2016, result2019);
+
+        List<YourDto> uniqueToResult2016 = comparisonResult.getUniqueToResult1();
+        List<YourDto> uniqueToResult2019 = comparisonResult.getUniqueToResult2();
+        List<YourDto> commonRecords = comparisonResult.getCommonRecords();
+
+        // Now you can do something with these lists, e.g., log the differences or take specific actions.
+    }
+}
+By injecting DtoComparisonService into your other services, you can reuse the 
+comparison functionality across multiple places in your application.
+
+
+ComparisonResult class to include a list of differences. Here's an updated version:
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class DtoComparisonService {
+
+    public <T> ComparisonResult<T> compareResults(List<T> result1, List<T> result2) {
+        List<T> uniqueToResult1 = result1.stream()
+                .filter(dto -> !result2.contains(dto))
+                .collect(Collectors.toList());
+
+        List<T> uniqueToResult2 = result2.stream()
+                .filter(dto -> !result1.contains(dto))
+                .collect(Collectors.toList());
+
+        List<T> commonRecords = result1.stream()
+                .filter(result2::contains)
+                .collect(Collectors.toList());
+
+        List<T> differences = result1.stream()
+                .filter(dto -> !result2.contains(dto))
+                .collect(Collectors.toList());
+        differences.addAll(result2.stream()
+                .filter(dto -> !result1.contains(dto))
+                .collect(Collectors.toList()));
+
+        return new ComparisonResult<>(uniqueToResult1, uniqueToResult2, commonRecords, differences);
+    }
+
+    public static class ComparisonResult<T> {
+        private final List<T> uniqueToResult1;
+        private final List<T> uniqueToResult2;
+        private final List<T> commonRecords;
+        private final List<T> differences;
+
+        public ComparisonResult(List<T> uniqueToResult1, List<T> uniqueToResult2, List<T> commonRecords, List<T> differences) {
+            this.uniqueToResult1 = uniqueToResult1;
+            this.uniqueToResult2 = uniqueToResult2;
+            this.commonRecords = commonRecords;
+            this.differences = differences;
+        }
+
+        public List<T> getUniqueToResult1() {
+            return uniqueToResult1;
+        }
+
+        public List<T> getUniqueToResult2() {
+            return uniqueToResult2;
+        }
+
+        public List<T> getCommonRecords() {
+            return commonRecords;
+        }
+
+        public List<T> getDifferences() {
+            return differences;
+        }
+    }
+}
+Now, the ComparisonResult class has an additional list called differences. This list contains the elements that are present 
+in one result but not in the other. You can access this list by calling comparisonResult.getDifferences() in your service methods.
