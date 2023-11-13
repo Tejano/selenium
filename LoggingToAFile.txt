@@ -1,0 +1,47 @@
+In a Spring Boot project, you can configure the logging behavior, including directing log output to a text file, by adjusting the application's application.properties or application.yml configuration file.
+
+Here's how you can do it using application.properties:
+
+Create a log file:
+Create a file where you want to store your logs, for example, application.log. Place it in a location where your Spring Boot application has write permissions.
+
+Configure the logging in application.properties:
+Open or create your src/main/resources/application.properties file and add the following lines:
+
+logging.file.name=your-log-file-name.log
+
+Replace your-log-file-name.log with the name you chose for your log file.
+
+If you want to specify an absolute path, you can use:
+
+logging.file.path=/absolute/path/to/your/logs
+
+Spring Boot will automatically configure a RollingFileAppender to write logs to the specified file.
+
+Adjust Log Level (Optional):
+You can also set the logging level in the application.properties file:
+
+logging.level.root=INFO
+
+Replace INFO with the desired logging level (e.g., DEBUG, WARN, ERROR, etc.).
+
+Run Your Application:
+When you run your Spring Boot application, logs will be written to the specified file.
+
+If you are using application.yml for configuration, the equivalent configuration would look like this:
+
+logging:
+  file:
+    name: your-log-file-name.log
+    path: /absolute/path/to/your/logs
+
+logging.level:
+  root: INFO
+
+Remember that Spring Boot uses SLF4J for logging, so the underlying logging implementation will be 
+based on the dependencies you have in your classpath. Common implementations include Logback and Log4j2. 
+If you don't explicitly include any logging dependencies, Spring Boot will use its default logging (which is Logback).
+
+Make sure to include the necessary dependencies in your pom.xml or build.gradle file if you want to use a specific logging framework.
+
+
