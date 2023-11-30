@@ -59,3 +59,56 @@ private String getKey(DTO dto) {
 }
 In this version, a Map (result2019Map) is created to store the 2019 results with a key generated based on yearMonth and ruleId. This allows for efficient lookup when matching the 
 records from 2016. The getKey method is a helper function to create a unique key for the map based on yearMonth and ruleId.
+
+You can make the getKey function generic by using reflection to dynamically access the fields of the DTO. Here's an example:
+
+import java.lang.reflect.Field;
+
+public class CombinedResultDTO {
+    private String server2016;
+    private String server2019;
+    private String yearMonth;
+    private String ruleId;
+    private Integer mem2016;
+    private Integer sub2016;
+    private Integer mem2019;
+    private Integer sub2019;
+
+    // Constructors, getters, and setters
+
+    // Helper method to create a unique key based on specified fields
+    public static <T> String getKey(T dto, String... fields) {
+        StringBuilder keyBuilder = new StringBuilder();
+
+        for (String field : fields) {
+            try {
+                Field declaredField = dto.getClass().getDeclaredField(field);
+                declaredField.setAccessible(true);
+
+                Object value = declaredField.get(dto);
+                keyBuilder.append(value).append("_");
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                // Handle exceptions according to your needs
+                e.printStackTrace();
+            }
+        }
+
+        return keyBuilder.toString();
+    }
+}
+
+// ...
+
+// Usage in your code:
+
+// Assuming DTO has the following fields:
+// String server, String yearMonth, String ruleId, Integer mem, Integer sub
+
+// ...
+
+String key2016 = CombinedResultDTO.getKey(dto2016, "yearMonth", "ruleId");
+String key2019 = CombinedResultDTO.getKey(dto2019, "yearMonth", "ruleId");
+In this example, the getKey method is a static method in the CombinedResultDTO class 
+that takes a DTO and variable arguments representing the fields to include in the key. 
+It uses reflection to access the specified fields dynamically. 
+You can call this method with different sets of fields for different DTOs.
