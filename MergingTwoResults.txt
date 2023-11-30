@@ -1,0 +1,61 @@
+Given that the servers are different and you want to match data based on yearMonth and ruleId, 
+you can modify the code to handle this scenario. Here's an updated version that accounts for different servers:
+
+public class CombinedResultDTO {
+    private String server2016;
+    private String server2019;
+    private String yearMonth;
+    private String ruleId;
+    private Integer mem2016;
+    private Integer sub2016;
+    private Integer mem2019;
+    private Integer sub2019;
+
+    // Constructors, getters, and setters
+}
+
+// ...
+
+// Assuming DTO has the following fields:
+// String server, String yearMonth, String ruleId, Integer mem, Integer sub
+
+// Retrieving results from 2016 and 2019 repositories
+List<DTO> result2016 = repo2016.getYrMonthRules("202301");
+List<DTO> result2019 = repo2019.getYrMonthRules("202301");
+
+// Combining results into a list of CombinedResultDTO
+List<CombinedResultDTO> combinedResultList = new ArrayList<>();
+
+// Create a map for faster lookup of 2019 results
+Map<String, DTO> result2019Map = result2019.stream()
+        .collect(Collectors.toMap(dto2019 -> getKey(dto2019), Function.identity()));
+
+for (DTO dto2016 : result2016) {
+    CombinedResultDTO combinedResultDTO = new CombinedResultDTO();
+    combinedResultDTO.setServer2016(dto2016.getServer());
+    combinedResultDTO.setYearMonth(dto2016.getYearMonth());
+    combinedResultDTO.setRuleId(dto2016.getRuleId());
+    combinedResultDTO.setMem2016(dto2016.getMem());
+    combinedResultDTO.setSub2016(dto2016.getSub());
+
+    // Find corresponding entry in 2019 results
+    String key = getKey(dto2016);
+    DTO matchingDto2019 = result2019Map.get(key);
+
+    if (matchingDto2019 != null) {
+        combinedResultDTO.setServer2019(matchingDto2019.getServer());
+        combinedResultDTO.setMem2019(matchingDto2019.getMem());
+        combinedResultDTO.setSub2019(matchingDto2019.getSub());
+    }
+
+    combinedResultList.add(combinedResultDTO);
+}
+
+// Now, combinedResultList contains entries for each DTO with separate fields for 2016 and 2019 results
+
+// Helper method to create a unique key based on yearMonth and ruleId
+private String getKey(DTO dto) {
+    return dto.getYearMonth() + "_" + dto.getRuleId();
+}
+In this version, a Map (result2019Map) is created to store the 2019 results with a key generated based on yearMonth and ruleId. This allows for efficient lookup when matching the 
+records from 2016. The getKey method is a helper function to create a unique key for the map based on yearMonth and ruleId.
