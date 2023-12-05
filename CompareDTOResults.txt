@@ -259,3 +259,54 @@ ComparisonResult<YourDtoType> result = compareResults(list1, list2, fieldExtract
 
 This approach allows you to customize which fields should be ignored during the comparison. Adjust
  the fieldExtractorToIgnore function based on your specific DTO structure and the field you want to ignore.
+ 
+ 
+ 
+Certainly! Here's an example of how you can modify your compareResults method to use parallel streams and HashSet for faster comparisons:
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+public class DtoComparisonService {
+
+    public <T> ComparisonResult<T> compareResults(List<T> result1, List<T> result2, Function<T, Object> fieldExtractorToIgnore) {
+        Set<Object> resultSet2Values = result2.parallelStream()
+                .map(fieldExtractorToIgnore)
+                .collect(Collectors.toSet());
+
+        List<T> uniqueToResult1 = result1.parallelStream()
+                .filter(dto -> !resultSet2Values.contains(fieldExtractorToIgnore.apply(dto)))
+                .collect(Collectors.toList());
+
+        Set<Object> resultSet1Values = result1.parallelStream()
+                .map(fieldExtractorToIgnore)
+                .collect(Collectors.toSet());
+
+        List<T> uniqueToResult2 = result2.parallelStream()
+                .filter(dto -> !resultSet1Values.contains(fieldExtractorToIgnore.apply(dto)))
+                .collect(Collectors.toList());
+
+        List<T> commonRecords = result1.parallelStream()
+                .filter(result2::contains)
+                .collect(Collectors.toList());
+
+        Set<Object> commonValues = commonRecords.parallelStream()
+                .map(fieldExtractorToIgnore)
+                .collect(Collectors.toSet());
+
+        List<T> differences = result1.parallelStream()
+                .filter(dto -> !commonValues.contains(fieldExtractorToIgnore.apply(dto)))
+                .collect(Collectors.toList());
+        differences.addAll(result2.parallelStream()
+                .filter(dto -> !commonValues.contains(fieldExtractorToIgnore.apply(dto)))
+                .collect(Collectors.toList()));
+
+        return new ComparisonResult<>(uniqueToResult1, uniqueToResult2, commonRecords, differences);
+    }
+
+    // ... rest of the class remains the same
+}
+This modification includes the usage of parallel streams for the main operations and HashSet for storing and checking field values. It's important to note that the effectiveness of parallel processing depends on the characteristics of your data and the 
+available hardware resources. Always profile and test to ensure that parallelization provides the expected performance benefits
