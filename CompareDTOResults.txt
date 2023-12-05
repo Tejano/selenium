@@ -211,3 +211,51 @@ public class DtoComparisonService {
 }
 Now, the ComparisonResult class has an additional list called differences. This list contains the elements that are present 
 in one result but not in the other. You can access this list by calling comparisonResult.getDifferences() in your service methods.
+
+
+
+
+Yes, you can modify your DtoComparisonService to include a mechanism for ignoring specific fields during the comparison. One common approach is to use a Function<T, Object> that extracts a field value from your DTO. You can then use this function to compare the objects while ignoring specific fields.
+
+Here's an example of how you could modify your DtoComparisonService to include field ignoring:
+
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+public class DtoComparisonService {
+
+    public <T> ComparisonResult<T> compareResults(List<T> result1, List<T> result2, Function<T, Object> fieldExtractorToIgnore) {
+        List<T> uniqueToResult1 = result1.stream()
+                .filter(dto -> !result2.stream().map(fieldExtractorToIgnore).anyMatch(value -> value.equals(fieldExtractorToIgnore.apply(dto))))
+                .collect(Collectors.toList());
+
+        List<T> uniqueToResult2 = result2.stream()
+                .filter(dto -> !result1.stream().map(fieldExtractorToIgnore).anyMatch(value -> value.equals(fieldExtractorToIgnore.apply(dto))))
+                .collect(Collectors.toList());
+
+        List<T> commonRecords = result1.stream()
+                .filter(result2::contains)
+                .collect(Collectors.toList());
+
+        List<T> differences = result1.stream()
+                .filter(dto -> !result2.stream().map(fieldExtractorToIgnore).anyMatch(value -> value.equals(fieldExtractorToIgnore.apply(dto))))
+                .collect(Collectors.toList());
+        differences.addAll(result2.stream()
+                .filter(dto -> !result1.stream().map(fieldExtractorToIgnore).anyMatch(value -> value.equals(fieldExtractorToIgnore.apply(dto))))
+                .collect(Collectors.toList()));
+
+        return new ComparisonResult<>(uniqueToResult1, uniqueToResult2, commonRecords, differences);
+    }
+
+    // ... rest of the class remains the same
+}
+You can then pass a function to compareResults that extracts the field you
+ want to ignore. For example, if you want to ignore a field named fieldName, you could do something like:
+
+
+Function<YourDtoType, Object> fieldExtractorToIgnore = dto -> dto.getFieldName();
+ComparisonResult<YourDtoType> result = compareResults(list1, list2, fieldExtractorToIgnore);
+
+This approach allows you to customize which fields should be ignored during the comparison. Adjust
+ the fieldExtractorToIgnore function based on your specific DTO structure and the field you want to ignore.
