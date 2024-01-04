@@ -1,0 +1,37 @@
+To create a JSON response that combines the fields of the compound key and the other fields of your LOV entity into a flat structure, you will need to modify how your data is represented. This typically involves creating a Data Transfer Object (DTO) that represents the flattened structure of your entity.
+
+Here are the steps to achieve this:
+
+Create a DTO Class: Define a new class that represents the flattened structure of your LOV entity. 
+This DTO will include fields for both the compound key (type and value) and other entity fields.
+
+public class LOVDto {
+    private String type;
+    private String value;
+    private String someOtherField; // Other fields of LOV
+
+    // Constructors, getters, and setters
+}
+
+Convert Entities to DTOs: In your service or in the controller, convert the list of LOV entities to a list of LOVDto objects.
+This conversion involves extracting the type and value from the LOVKey and setting them directly on the LOVDto along with other fields.
+
+public class LOVService {
+
+    // ... existing code
+
+    public List<LOVDto> getAllLOVDtos() {
+        List<LOV> lovs = lovRepository.findAll();
+        return lovs.stream()
+                   .map(this::convertToDto)
+                   .collect(Collectors.toList());
+    }
+
+    private LOVDto convertToDto(LOV lov) {
+        LOVDto dto = new LOVDto();
+        dto.setType(lov.getLovKey().getType());
+        dto.setValue(lov.getLovKey().getValue());
+        dto.setSomeOtherField(lov.getSomeOtherField());
+        return dto;
+    }
+}
