@@ -1,0 +1,42 @@
+To create a query in the StandardReviewRepository for a DTO that contains a flat structure
+ with livesYearMonth (part of the compound key), fields from StandardReviewEntity, and 
+ some fields from AdjustmentEntity in a Spring Boot application, you can follow these steps:
+
+Define the DTO: Create a DTO class that will contain
+ the fields you need from both StandardReviewEntity and AdjustmentEntity. For example:
+ 
+ public class StandardReviewDTO {
+    private String livesYearMonth;
+    // Additional fields from StandardReviewEntity
+    // Fields from AdjustmentEntity
+    // Getters and Setters
+}
+
+Modify the StandardReviewEntity: Ensure your StandardReviewEntity has 
+the ManyToOne relationship to AdjustmentEntity and a compound key including livesYearMonth, adjustmentId, etc.
+@Entity
+public class StandardReviewEntity {
+    @EmbeddedId
+    private StandardReviewId id; // This includes livesYearMonth, adjustmentId, etc.
+
+    @ManyToOne
+    @JoinColumn(name = "adjustmentId", insertable = false, updatable = false)
+    private AdjustmentEntity adjustment;
+    // Other fields and methods
+}
+Create a Repository Query: In your StandardReviewRepository, you can use JPQL (Java Persistence Query Language) or
+native SQL to create a query that joins StandardReviewEntity 
+and AdjustmentEntity and selects the required fields. 
+You can define this query method in the StandardReviewRepository interface.
+@Repository
+public interface StandardReviewRepository extends JpaRepository<StandardReviewEntity, Long> {
+    @Query("SELECT new com.yourpackage.StandardReviewDTO(s.id.livesYearMonth, s.field1, s.field2, a.field1, a.field2) " +
+           "FROM StandardReviewEntity s " +
+           "JOIN s.adjustment a " +
+           "WHERE s.id.livesYearMonth = :livesYearMonth")
+    List<StandardReviewDTO> findDtoByLivesYearMonth(@Param("livesYearMonth") String livesYearMonth);
+}
+In the above query, replace field1, field2, etc., with the actual field names you want to include in your DTO.
+
+Remember to adjust the field types and names according to your actual entity definitions and the fields you want to include 
+in your DTO. The @Query annotation allows you to write a custom query for fetching the data as per your DTO structure.
