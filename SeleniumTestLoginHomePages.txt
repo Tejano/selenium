@@ -67,3 +67,47 @@ Test Independence: Ensure each test can run independently, especially if they ar
 Session Management: Be mindful of how your application manages sessions. Tests may need to handle cookies or other session mechanisms to mimic user behavior accurately.
 Error Handling: Implement robust error handling in your tests to deal with unexpected application states or navigation issues.
 This approach should help you build a test that adapts to the application's state, whether it requires login or direct navigation, and allows you to perform specific tests on the StandardReviewPage.
+
+
+Exactly, the isDisplayed() method in the LoginPage class would typically check for the presence and visibility of certain key elements that uniquely identify the login page, such as the password field, username field, or login button. This method helps determine whether the user is currently on the login page.
+
+Here's a conceptual implementation of the isDisplayed() method:
+public class LoginPage extends BasePage {
+    
+    // Locators for elements on the login page
+    private By usernameLocator = By.id("username"); // Adjust the locator as per your page
+    private By passwordLocator = By.id("password");
+    private By loginButtonLocator = By.id("loginButton");
+
+    public LoginPage(WebDriver driver) {
+        super(driver);
+    }
+
+    // Method to check if login page is displayed
+    public boolean isDisplayed() {
+        try {
+            // The logic here checks if the elements are present and visible
+            return driver.findElement(usernameLocator).isDisplayed() 
+                   && driver.findElement(passwordLocator).isDisplayed()
+                   && driver.findElement(loginButtonLocator).isDisplayed();
+        } catch (NoSuchElementException e) {
+            // Return false if any of the elements are not found
+            return false;
+        }
+    }
+
+    // Additional methods for actions on the login page...
+}
+In this example:
+
+Locators: usernameLocator, passwordLocator, and loginButtonLocator are used to locate the elements on the page. 
+You need to replace the locator values (By.id("...")) with the actual locators that correspond to your application's elements.
+
+isDisplayed() Method: This method checks if these elements are present and visible on the page. 
+If all elements are visible, it's likely that the user is on the login page, and the method returns true. 
+Otherwise, it catches a NoSuchElementException and returns false.
+
+Error Handling: The try-catch block handles the case where any of the elements 
+are not found, which would throw a NoSuchElementException. In such cases, the method safely returns false.
+
+Using this method in your test allows you to conditionally perform actions based on whether the user is presented with the login page or is already logged in and directed to another page, such as the HomePage.
