@@ -3,7 +3,8 @@ However, the issue might still lie in the interaction between these elements and
 areas to investigate and suggestions for resolving the NullPointerException:
 
 1. Correct Usage of waitForElementToAppear Method
-Ensure that the waitForElementToAppear method is correctly used in your Login page object. If usernameInput is a WebElement initialized via @FindBy, you should use 
+Ensure that the waitForElementToAppear method is correctly used in your Login page object. 
+If usernameInput is a WebElement initialized via @FindBy, you should use 
 ExpectedConditions.visibilityOf instead of ExpectedConditions.visibilityOfElementLocated, as the latter is used with a By locator, not a WebElement.
 
 public void waitForElementToAppear(WebElement element){
@@ -12,6 +13,7 @@ public void waitForElementToAppear(WebElement element){
 }
 
 2. Modify isAt() Method
+
 In the isAt() method, instead of directly checking usernameInput.isDisplayed(), use the waitForElementToAppear method.
 public boolean isAt() {
     try {
@@ -25,10 +27,14 @@ public boolean isAt() {
     }
 }
 
-Given the information you've provided, it seems the WebDriver and usernameInput are correctly initialized. However, the issue might still lie in the interaction between these elements and the methods used. Here are some potential areas to investigate and suggestions for resolving the NullPointerException:
+Given the information you've provided, it seems the WebDriver and usernameInput are correctly initialized. 
+However, the issue might still lie in the interaction between these elements and the methods used. 
+Here are some potential areas to investigate and suggestions for resolving the NullPointerException:
 
 1. Correct Usage of waitForElementToAppear Method
-Ensure that the waitForElementToAppear method is correctly used in your Login page object. If usernameInput is a WebElement initialized via @FindBy, you should use ExpectedConditions.visibilityOf instead of ExpectedConditions.visibilityOfElementLocated, as the latter is used with a By locator, not a WebElement.
+Ensure that the waitForElementToAppear method is correctly used in your Login page object. 
+If usernameInput is a WebElement initialized via @FindBy, you should use ExpectedConditions.visibilityOf instead of 
+ExpectedConditions.visibilityOfElementLocated, as the latter is used with a By locator, not a WebElement.
 
 java
 Copy code
@@ -52,13 +58,19 @@ public boolean isAt() {
         return false;
     }
 }
+
 3. Check for WebDriver Initialization in Base Class
-Even though the WebDriver is initialized in an abstract base class, ensure that this initialization happens before any page objects (like Login) are created or interacted with.
-Also, verify that the WebDriver instance is correctly passed to the Login page object. Inheritance issues or incorrect constructor usage can sometimes lead to an uninitialized driver in the page object.
+Even though the WebDriver is initialized in an abstract base class, ensure that this initialization 
+happens before any page objects (like Login) are created or interacted with.
+Also, verify that the WebDriver instance is correctly passed to the Login page object. Inheritance issues or incorrect constructor 
+usage can sometimes lead to an uninitialized driver in the page object.
+
 4. Review Test Execution Order
 Ensure that the order of operations in your test is correct. The Login.goto() method should be called before any other interaction with the Login page object.
 Make sure that Login.isAt() is only called after the page has had sufficient time to load, which might be after the Login.goto() method completes its execution.
+
 5. Debugging and Logging
 Use debugging tools to step through the test execution and check the state of objects like driver and usernameInput at the point where the exception occurs.
 Add logging statements in your methods to log the state of key variables at various points, which can help identify where the null value is originating from.
-By carefully checking each of these areas and ensuring that all components are interacting correctly, you should be able to identify the cause of the NullPointerException and resolve it.
+By carefully checking each of these areas and ensuring that all components are interacting correctly, 
+you should be able to identify the cause of the NullPointerException and resolve it.
