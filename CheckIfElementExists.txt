@@ -74,3 +74,62 @@ Use debugging tools to step through the test execution and check the state of ob
 Add logging statements in your methods to log the state of key variables at various points, which can help identify where the null value is originating from.
 By carefully checking each of these areas and ensuring that all components are interacting correctly, 
 you should be able to identify the cause of the NullPointerException and resolve it.
+
+Modify the Configuration Class:
+
+Update the configuration class to handle both Chrome and Microsoft Edge and to conditionally enable headless mode based on the properties.headless property.
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.edge.EdgeOptions;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class WebDriverConfig {
+    @Value("${properties.browser}")
+    private String selectedBrowser;
+
+    @Value("${properties.headless}")
+    private boolean headless;
+
+    @Bean
+    public WebDriver webDriver() {
+        WebDriver driver;
+
+        if ("chrome".equalsIgnoreCase(selectedBrowser)) {
+            // Set the path to ChromeDriver
+            System.setProperty("webdriver.chrome.driver", "path/to/chromedriver");
+
+            // Configure ChromeOptions
+            ChromeOptions options = new ChromeOptions();
+            if (headless) {
+                options.addArguments("--headless");
+            }
+
+            // Initialize ChromeDriver with ChromeOptions
+            driver = new ChromeDriver(options);
+        } else if ("edge".equalsIgnoreCase(selectedBrowser)) {
+            // Set the path to EdgeDriver
+            System.setProperty("webdriver.edge.driver", "path/to/edgedriver");
+
+            // Configure EdgeOptions
+            EdgeOptions options = new EdgeOptions();
+            if (headless) {
+                // Edge does not have built-in headless mode, so you may need to handle it differently if required
+                // For example, you can use an XVFB (X Virtual Framebuffer) if available on your system.
+            }
+
+            // Initialize EdgeDriver with EdgeOptions
+            driver = new EdgeDriver(options);
+        } else {
+            throw new IllegalArgumentException("Unsupported browser: " + selectedBrowser);
+        }
+
+        return driver;
+    }
+}
+
+
