@@ -108,3 +108,42 @@ explicit waits while interacting with the web page. You can customize the timeou
 
 With this setup, you have a centralized configuration for your WebDriver and WebDriverWait, 
 making it easier to manage timeouts and WebDriver instances throughout your Spring Boot application.
+
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.logging.LogEntries;
+import org.openqa.selenium.logging.LogEntry;
+import org.openqa.selenium.logging.LogType;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.annotations.Test;
+
+public class YourTest {
+
+    @Test
+    public void yourTestMethod() {
+        // Set up WebDriver and navigate to the web page
+        System.setProperty("webdriver.chrome.driver", "path/to/chromedriver");
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--enable-logging");
+        options.addArguments("--log-level=ALL");
+        WebDriver driver = new ChromeDriver(options);
+        WebDriverWait wait = new WebDriverWait(driver, 10);
+
+        try {
+            driver.get("https://example.com");
+
+            // Perform your actions on the web page
+
+            // Capture browser console logs
+            LogEntries logs = driver.manage().logs().get(LogType.BROWSER);
+            for (LogEntry entry : logs) {
+                System.out.println(entry.getMessage());
+            }
+        } finally {
+            // Quit the WebDriver when done
+            driver.quit();
+        }
+    }
+}
