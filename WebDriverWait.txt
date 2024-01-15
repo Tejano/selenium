@@ -46,7 +46,7 @@ public class WebDriverConfig {
             if (headless) {
                 // Handle headless mode for Edge, if needed
             }
-
+            options.addArguments("--disable-site-isolation-trials");
             // Initialize EdgeDriver with EdgeOptions
             driver = new EdgeDriver(options);
         } else {
@@ -179,7 +179,8 @@ public class YourTest {
         
         // Disable web security (including CSP) for testing purposes
         options.addArguments("--disable-web-security");
-		    options.addArguments("--user-data-dir=" + tempDir.toString());
+		options.addArguments("--disable-site-isolation-trials");
+		options.addArguments("--user-data-dir=" + tempDir.toString());
 		options.addArguments("--disable-site-isolation-trials");
         options.addArguments("--disable-favicon-loading"); // Disable loading of favicon.ico
 		
@@ -200,6 +201,56 @@ public class YourTest {
             // Quit the WebDriver when done
             driver.quit();
         }
+    }
+}
+
+To implement the configuration for Chrome WebDriver with the temporary user data directory in a Spring Boot 
+@Configuration class, you can create a @Bean method that configures and returns the WebDriver instance. Here's how you can do it:
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+@Configuration
+public class WebDriverConfig {
+
+    @Bean
+    public WebDriver webDriver() {
+        WebDriver driver = null;
+
+        try {
+            // Create a temporary directory for Chrome's user data
+            Path tempDir = Files.createTempDirectory("chrome_user_data");
+
+            // Set up Chrome options
+            ChromeOptions options = new ChromeOptions();
+            options.addArguments("--disable-web-security");
+			options.addArguments("--disable-site-isolation-trials");
+            options.addArguments("--user-data-dir=" + tempDir.toString());
+
+            // Initialize ChromeDriver with options
+            System.setProperty("webdriver.chrome.driver", "path/to/chromedriver");
+            driver = new ChromeDriver(options);
+
+            // Clean up the temporary directory when the application context is closed
+            final Path tempDirToDelete = tempDir;
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    Files.deleteIfExists(tempDirToDelete);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return driver;
     }
 }
 
