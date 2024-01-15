@@ -147,3 +147,52 @@ public class YourTest {
         }
     }
 }
+
+Selenium Configuration: In your Selenium WebDriver configuration, 
+you don't typically need to explicitly specify CSP headers or policies. 
+Selenium interacts with the browser, and CSP is usually enforced by the browser itself. 
+However, you can configure Chrome to disable CSP during testing if necessary.
+
+In Chrome, you can use the --disable-web-security command-line option to disable CSP 
+and other web security features. Here's how you can configure Chrome options in your Selenium test:
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.logging.LogEntries;
+import org.openqa.selenium.logging.LogEntry;
+import org.openqa.selenium.logging.LogType;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.annotations.Test;
+
+public class YourTest {
+
+    @Test
+    public void yourTestMethod() {
+        // Set up WebDriver and navigate to the web page
+        System.setProperty("webdriver.chrome.driver", "path/to/chromedriver");
+        ChromeOptions options = new ChromeOptions();
+        
+        // Disable web security (including CSP) for testing purposes
+        options.addArguments("--disable-web-security");
+
+        WebDriver driver = new ChromeDriver(options);
+        WebDriverWait wait = new WebDriverWait(driver, 10);
+
+        try {
+            driver.get("https://example.com");
+
+            // Perform your actions on the web page
+
+            // Capture browser console logs
+            LogEntries logs = driver.manage().logs().get(LogType.BROWSER);
+            for (LogEntry entry : logs) {
+                System.out.println(entry.getMessage());
+            }
+        } finally {
+            // Quit the WebDriver when done
+            driver.quit();
+        }
+    }
+}
+
