@@ -254,3 +254,24 @@ public class WebDriverConfig {
     }
 }
 
+I apologize for the confusion. If you're encountering CSP errors in both 
+Chrome and Edge WebDriver, it indicates that CSP restrictions are consistently enforced across browsers,
+ and simply disabling them may not be straightforward. To work around CSP restrictions in Microsoft Edge WebDriver, 
+ you can use the --disable-site-isolation-trials option, which can sometimes help bypass CSP restrictions similar to the approach in Chrome.
+
+Here's how to configure Microsoft Edge WebDriver with the --disable-site-isolation-trials option:
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.edge.EdgeOptions;
+
+public class YourTest {
+    public static void main(String[] args) {
+        EdgeOptions options = new EdgeOptions();
+        options.addArguments("--disable-site-isolation-trials");
+
+        WebDriver driver = new EdgeDriver(options);
+        driver.get("https://example.com");
+
+        // Continue with your test
+    }
+}
