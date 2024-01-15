@@ -175,7 +175,8 @@ public class YourTest {
         
         // Disable web security (including CSP) for testing purposes
         options.addArguments("--disable-web-security");
-
+        options.addArguments("--disable-favicon-loading"); // Disable loading of favicon.ico
+		
         WebDriver driver = new ChromeDriver(options);
         WebDriverWait wait = new WebDriverWait(driver, 10);
 
