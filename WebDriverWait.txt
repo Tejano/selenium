@@ -1,0 +1,110 @@
+To set up a WebDriverWait as part of your configuration file in a Spring Boot application,
+ you can create a @Bean method for WebDriverWait in your configuration class. Here's how you can do it:
+
+Update Your Configuration Class:
+
+Modify your existing configuration class to include a @Bean method for WebDriverWait. Here's an example of how to do it:
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class WebDriverConfig {
+    @Value("${properties.browser}")
+    private String selectedBrowser;
+
+    @Value("${properties.headless}")
+    private boolean headless;
+
+    @Bean
+    public WebDriver webDriver() {
+        WebDriver driver;
+
+        if ("chrome".equalsIgnoreCase(selectedBrowser)) {
+            // Set the path to ChromeDriver
+            System.setProperty("webdriver.chrome.driver", "path/to/chromedriver");
+
+            // Configure ChromeOptions
+            ChromeOptions options = new ChromeOptions();
+            if (headless) {
+                options.addArguments("--headless");
+            }
+
+            // Initialize ChromeDriver with ChromeOptions
+            driver = new ChromeDriver(options);
+        } else if ("edge".equalsIgnoreCase(selectedBrowser)) {
+            // Set the path to EdgeDriver
+            System.setProperty("webdriver.edge.driver", "path/to/edgedriver");
+
+            // Configure EdgeOptions
+            EdgeOptions options = new EdgeOptions();
+            if (headless) {
+                // Handle headless mode for Edge, if needed
+            }
+
+            // Initialize EdgeDriver with EdgeOptions
+            driver = new EdgeDriver(options);
+        } else {
+            throw new IllegalArgumentException("Unsupported browser: " + selectedBrowser);
+        }
+
+        return driver;
+    }
+
+    @Bean
+    public WebDriverWait webDriverWait(WebDriver webDriver, @Value("${properties.timeout}") int timeoutInSeconds) {
+        return new WebDriverWait(webDriver, timeoutInSeconds);
+    }
+}
+
+In this updated configuration class, a @Bean method named webDriverWait is added. 
+It creates a WebDriverWait instance by injecting the WebDriver bean and a timeoutInSeconds property. 
+The timeoutInSeconds property is defined in your properties file (e.g., application.properties or application.yml) as follows:
+
+properties.timeout=10
+You can customize the timeout value as needed in your properties file.
+
+Use the WebDriverWait in Your Service:
+
+Now that you have defined the WebDriverWait bean, you can use it in your service or components as needed. For example:
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class SeleniumService {
+    private final WebDriver webDriver;
+    private final WebDriverWait webDriverWait;
+
+    @Autowired
+    public SeleniumService(WebDriver webDriver, WebDriverWait webDriverWait) {
+        this.webDriver = webDriver;
+        this.webDriverWait = webDriverWait;
+    }
+
+    public void performAutomation() {
+        try {
+            // Use the initialized WebDriver and WebDriverWait here
+            webDriver.get("https://example.com");
+            // Add your automation steps here, including waits using WebDriverWait
+
+            // Example wait for an element to be visible
+            webDriverWait.until(driver -> driver.findElement(By.id("someElementId")).isDisplayed());
+        } finally {
+            // Quit the WebDriver when done
+            webDriver.quit();
+        }
+    }
+}
+In this code, the WebDriverWait bean is injected into your service, allowing you to use it for 
+explicit waits while interacting with the web page. You can customize the timeout duration by adjusting the properties.timeout property in your configuration file.
+
+With this setup, you have a centralized configuration for your WebDriver and WebDriverWait, 
+making it easier to manage timeouts and WebDriver instances throughout your Spring Boot application.
