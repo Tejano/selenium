@@ -267,7 +267,8 @@ import org.openqa.selenium.edge.EdgeOptions;
 public class YourTest {
     public static void main(String[] args) {
         EdgeOptions options = new EdgeOptions();
-        options.addArguments("--disable-site-isolation-trials");
+        options.setExperimentalOption("useAutomationExtension", false);
+        options.setExperimentalOption("excludeSwitches", Collections.singletonList("enable-automation"));
 
         WebDriver driver = new EdgeDriver(options);
         driver.get("https://example.com");
