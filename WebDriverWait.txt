@@ -170,12 +170,16 @@ public class YourTest {
     @Test
     public void yourTestMethod() {
         // Set up WebDriver and navigate to the web page
-        System.setProperty("webdriver.chrome.driver", "path/to/chromedriver");
+       
+       // Create a temporary directory for Chrome's user data
+            Path tempDir = Files.createTempDirectory("chrome_user_data");
+
+	   System.setProperty("webdriver.chrome.driver", "path/to/chromedriver");
         ChromeOptions options = new ChromeOptions();
         
         // Disable web security (including CSP) for testing purposes
         options.addArguments("--disable-web-security");
-		 options.addArguments("--user-data-dir");
+		    options.addArguments("--user-data-dir=" + tempDir.toString());
 		options.addArguments("--disable-site-isolation-trials");
         options.addArguments("--disable-favicon-loading"); // Disable loading of favicon.ico
 		
