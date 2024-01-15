@@ -175,6 +175,7 @@ public class YourTest {
         
         // Disable web security (including CSP) for testing purposes
         options.addArguments("--disable-web-security");
+		 options.addArguments("--user-data-dir");
 		options.addArguments("--disable-site-isolation-trials");
         options.addArguments("--disable-favicon-loading"); // Disable loading of favicon.ico
 		
