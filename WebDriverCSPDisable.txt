@@ -1,0 +1,46 @@
+The code snippet you've provided is meant to configure Microsoft Edge WebDriver for Selenium tests. 
+However, it seems like it doesn't include any specific instructions to disable Content Security Policy (CSP). Disabling CSP can be tricky and is generally not recommended due to security concerns, but I understand your need for it in a controlled testing environment.
+
+Here's a revised approach that you can try to disable CSP in Edge and Chrome browsers using Selenium:
+
+For Chrome:
+You can use an extension to disable CSP. First, create a simple Chrome extension with the following manifest.json:
+{
+  "manifest_version": 2,
+  "name": "Disable CSP",
+  "version": "1.0",
+  "permissions": ["<all_urls>", "webRequest", "webRequestBlocking"],
+  "background": {
+    "scripts": ["background.js"]
+  }
+}
+And background.js:
+chrome.webRequest.onHeadersReceived.addListener(
+  function(details) {
+    return {
+      responseHeaders: details.responseHeaders.filter(function(header) {
+        return header.name.toLowerCase() !== 'content-security-policy';
+      })
+    };
+  }, {
+    urls: ["<all_urls>"]
+  }, ["blocking", "responseHeaders"]
+);
+You need to load this extension into Chrome when initializing the WebDriver:
+ChromeOptions options = new ChromeOptions();
+options.addArguments("--disable-extensions");
+options.addArguments("--load-extension=/path/to/extension");
+WebDriver driver = new ChromeDriver(options);
+For Edge:
+The approach is similar to Chrome, as Edge is also based on Chromium. You can use the same extension and load it into Edge:
+
+EdgeOptions options = new EdgeOptions();
+options.addArguments("--disable-extensions");
+options.addArguments("--load-extension=/path/to/extension");
+WebDriver driver = new EdgeDriver(options);
+
+Remember to replace "/path/to/extension" with the actual path to the folder containing your extension files.
+
+This approach involves creating a simple extension that strips the Content-Security-Policy header from all responses,
+ effectively disabling CSP. This should work for both Chrome and Edge due to their shared Chromium base. However, 
+be aware that this method might have implications on the behavior of your web application, and it should only be used in a controlled testing environment.
