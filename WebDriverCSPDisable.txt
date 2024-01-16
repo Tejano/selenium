@@ -44,3 +44,88 @@ Remember to replace "/path/to/extension" with the actual path to the folder cont
 This approach involves creating a simple extension that strips the Content-Security-Policy header from all responses,
  effectively disabling CSP. This should work for both Chrome and Edge due to their shared Chromium base. However, 
 be aware that this method might have implications on the behavior of your web application, and it should only be used in a controlled testing environment.
+
+
+
+If you are encountering a Content Security Policy (CSP) security error while running a test in Selenium 4.1.6 and you have added ChromeOptions to disable web security and site isolation trials using the --disable-web-security and --disable-site-isolation-trials arguments, it's important to note that these options are not recommended for production use, and they can lead to security vulnerabilities.
+
+However, if you have a specific use case that requires bypassing CSP restrictions for testing purposes, you can use a dedicated testing profile with ChromeOptions. To achieve this, you can create a Chrome profile directory with a custom manifest file (manifest.json) and an extension that uses chrome.webRequest.onHeadersReceived.addListener to modify headers as needed.
+
+Here are the steps to create and use a custom Chrome profile with Selenium:
+
+Create a directory for your custom Chrome profile. You can choose any name for the directory, for example, "custom-profile."
+
+Inside the custom profile directory, create a manifest.json file. This manifest file should specify the content security policy rules and include an extension background script.
+
+Here's an example manifest.json file
+{
+  "manifest_version": 2,
+  "name": "Custom CSP Extension",
+  "version": "1.0",
+  "permissions": [
+    "webRequest",
+    "webRequestBlocking",
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  "manifest_version": 2
+}
+Create a background.js file in the same directory as your manifest.json.
+ This background script can use chrome.webRequest.onHeadersReceived.addListener 
+ to modify headers as needed. Customize this script based on your requirements.
+
+Here's a simplified example of background.js:
+chrome.webRequest.onHeadersReceived.addListener(
+  function(details) {
+    var responseHeaders = details.responseHeaders;
+    // Modify response headers here if needed
+    return { responseHeaders: responseHeaders };
+  },
+  { urls: ["<all_urls>"] },
+  ["blocking", "responseHeaders"]
+);
+In your Selenium test, configure ChromeOptions to use 
+the custom profile directory you created and specify the --disable-web-security 
+and --disable-site-isolation-trials options:
+ChromeOptions options = new ChromeOptions();
+options.addArguments("--user-data-dir=/path/to/custom-profile");
+options.addArguments("--disable-web-security");
+options.addArguments("--disable-site-isolation-trials");
+
+WebDriver driver = new ChromeDriver(options);
+Replace /path/to/custom-profile with the actual path to your custom profile directory.
+
+Please note that bypassing CSP restrictions should only be done for testing and debugging purposes, and it's important to use caution when doing so. 
+Additionally, keep your Chrome and WebDriver versions up to date, as Chrome's behavior and security features may change over time
+
+
+
+Yes, you can add the custom Chrome profile directory, including the manifest.json and background.js files,
+ to your Spring Boot QA test project. Here's how you can do it:
+
+Create Directory Structure: Within your Spring Boot QA test project, create a directory to hold your custom Chrome profile. 
+For example, you can create a directory named custom-profile in your project's root directory.
+
+Add manifest.json and background.js: Place the manifest.json and background.js 
+files inside the custom-profile directory. Customize these files according to your CSP bypass requirements, as mentioned in the previous response.
+
+Configure ChromeOptions: In your Selenium test code (inside your Spring Boot project), 
+configure ChromeOptions to use the custom profile directory. Make sure to specify the correct path to the custom-profile directory.
+
+ChromeOptions options = new ChromeOptions();
+options.addArguments("--user-data-dir=/path/to/your/project/custom-profile");
+options.addArguments("--disable-web-security");
+options.addArguments("--disable-site-isolation-trials");
+
+WebDriver driver = new ChromeDriver(options);
+Replace /path/to/your/project/custom-profile with the actual path to the custom-profile directory within your Spring Boot QA test project.
+
+Run the Selenium Test: With the custom profile and ChromeOptions configured, 
+you can run your Selenium test in your Spring Boot QA test project. The custom Chrome profile should be used when launching the Chrome browser.
+
+This setup allows you to include the custom Chrome profile and necessary files 
+within your QA test project, making it self-contained and easier to manage.
