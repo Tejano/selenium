@@ -1,0 +1,63 @@
+
+If you have a service that has both 2016CRU and 2019CRU repositories autowired, 
+and you want to avoid instantiating and using the Broker entities and repositories 
+when running tests on the CRU functionality, you can achieve this by using Spring profiles to selectively enable or disable the Broker components.
+
+Here's a step-by-step approach:
+Create Spring Profiles:
+
+Define Spring profiles for your testing scenarios. For example, you can create profiles like test-cru and test-broker.
+
+Configure Profiles in Application Properties:
+
+In your application.properties or application.yml files, specify which profiles should be active for each testing scenario.
+For the CRU tests, activate the test-cru profile, and for the Broker tests, activate the test-broker profile.
+# For CRU tests
+spring.profiles.active=test-cru
+
+# For Broker tests
+spring.profiles.active=test-broker
+
+Profile-Based Component Scanning:
+
+In your Spring Boot application configuration, you can set up profile-based component scanning to 
+include or exclude specific packages based on the active profile.
+
+In your 2016CRUDatabaseConfig and 2019CRUDatabaseConfig, you can include 
+@ComponentScan annotations that specify the base packages for your CRU entities and repositories:
+@Configuration
+@ComponentScan(basePackages = "com.example.cru", excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = BrokerRepository.class))
+public class 2016CRUDatabaseConfig {
+    // ...
+}
+In this example, we're excluding the BrokerRepository from component scanning for the CRU configuration.
+
+Similarly, in your 2016BrokerDatabaseConfig and 2019BrokerDatabaseConfig, 
+you can include @ComponentScan annotations for the Broker components:
+@Configuration
+@ComponentScan(basePackages = "com.example.broker", excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = CRUDRepository.class))
+public class 2016BrokerDatabaseConfig {
+    // ...
+}
+Here, we're excluding the CRUDRepository from component scanning for the Broker configuration.
+
+Use Profiles in Tests:
+
+In your test classes, you can activate the appropriate profiles based on whether you are testing the CRU or Broker functionality.
+
+For CRU tests:
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@ActiveProfiles("test-cru")
+public class CRUTest {
+    // Your test code for CRU functionality
+}
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@ActiveProfiles("test-broker")
+public class BrokerTest {
+    // Your test code for Broker functionality
+}
+By using profiles and configuring component scanning to include or exclude specific packages based 
+on the active profile, you can ensure that only the relevant components (entities, repositories, services) are instantiated and used for each testing scenario, 
+whether it's CRU or Broker. This approach allows you to effectively isolate and test different parts of your application.
