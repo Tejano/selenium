@@ -1,0 +1,47 @@
+ you can disable and enable triggers in SQL Server 2016 and 2019 when using Spring Boot with JPA or JDBC. Disabling and enabling triggers is typically done using SQL statements, and you can execute these statements from your Spring Boot application.
+
+Here's how you can disable and enable triggers using Spring Boot:
+
+1. Disabling Triggers:
+To disable a trigger, you can use the DISABLE TRIGGER statement in SQL. 
+You can execute this statement from your Spring Boot application using JDBC or JPA:
+-- Disable a trigger
+DISABLE TRIGGER YourTriggerName ON YourTableName;
+In Spring Boot with JDBC, you can execute this SQL statement using JdbcTemplate:
+
+@Autowired
+private JdbcTemplate jdbcTemplate;
+
+public void disableTrigger() {
+    jdbcTemplate.execute("DISABLE TRIGGER YourTriggerName ON YourTableName");
+}
+
+In Spring Boot with JPA, you can use the entityManager to create a native query and execute it:
+@Autowired
+private EntityManager entityManager;
+
+public void disableTrigger() {
+    entityManager.createNativeQuery("DISABLE TRIGGER YourTriggerName ON YourTableName").executeUpdate();
+}
+
+2. Enabling Triggers:
+To enable a trigger, you can use the ENABLE TRIGGER statement in SQL.
+You can execute this statement in a similar way to disabling triggers:
+-- Enable a trigger
+ENABLE TRIGGER YourTriggerName ON YourTableName;
+In Spring Boot with JDBC:
+@Autowired
+private JdbcTemplate jdbcTemplate;
+
+public void enableTrigger() {
+    jdbcTemplate.execute("ENABLE TRIGGER YourTriggerName ON YourTableName");
+}
+In Spring Boot with JPA:
+@Autowired
+private EntityManager entityManager;
+
+public void enableTrigger() {
+    entityManager.createNativeQuery("ENABLE TRIGGER YourTriggerName ON YourTableName").executeUpdate();
+}
+Please replace YourTriggerName with the actual name of your trigger, and YourTableName with the name of the table on which the trigger is defined.
+ Make sure that your database user has the necessary permissions to disable and enable triggers.
