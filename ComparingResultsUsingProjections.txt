@@ -209,3 +209,70 @@ public Set<YourDto> convertToDtoSet(List<YourProjectionType> projectionList) {
     return resultSet;
 }
 Using DTOs in this manner can help streamline your data handling and make the comparison process more efficient and manageable.
+
+2. Using ModelMapper
+ModelMapper is a library that simplifies the process of mapping between 
+different data models in Java. It uses conventions to automatically map values from one object to another.
+
+First, add ModelMapper to your project's dependencies. Then, you can use it as follows:
+import org.modelmapper.ModelMapper;
+
+public class YourService {
+
+    private final ModelMapper modelMapper = new ModelMapper();
+
+    public Set<YourDto> convertToDtoSet(List<YourProjectionType> projectionList) {
+        Set<YourDto> resultSet = new HashSet<>();
+        for (YourProjectionType item : projectionList) {
+            YourDto dto = modelMapper.map(item, YourDto.class);
+            resultSet.add(dto);
+        }
+        return resultSet;
+    }
+}
+
+3. Using MapStruct
+MapStruct is another popular Java library used for object mapping. It's a compile-time code generator, which means it's very efficient at runtime.
+
+First, you need to define a mapper interface:
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
+
+@Mapper
+public interface YourMapper {
+    YourMapper INSTANCE = Mappers.getMapper(YourMapper.class);
+
+    YourDto projectionToDto(YourProjectionType projection);
+}
+
+Then use this mapper in your service:
+
+public Set<YourDto> convertToDtoSet(List<YourProjectionType> projectionList) {
+    Set<YourDto> resultSet = new HashSet<>();
+    for (YourProjectionType item : projectionList) {
+        YourDto dto = YourMapper.INSTANCE.projectionToDto(item);
+        resultSet.add(dto);
+    }
+    return resultSet;
+}
+
+Choosing a Method
+Manual Mapping is simple and requires no additional dependencies, but can become cumbersome for complex objects.
+ModelMapper is great for quick, convention-based mapping but might need additional configuration for complex scenarios.
+MapStruct offers compile-time safety and efficiency but requires an additional build-time dependency and configuration.
+Using a mapper can greatly simplify your code and reduce boilerplate, especially when dealing with many fields or complex nested structures.
+
+
+
+<dependencies>
+    <!-- Other dependencies -->
+
+    <!-- Add ModelMapper -->
+    <dependency>
+        <groupId>org.modelmapper</groupId>
+        <artifactId>modelmapper</artifactId>
+        <version>2.4.4</version> <!-- Use the latest version available -->
+    </dependency>
+
+    <!-- Other dependencies -->
+</dependencies>
