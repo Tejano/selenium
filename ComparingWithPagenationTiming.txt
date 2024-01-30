@@ -1,0 +1,64 @@
+First, ensure you have the necessary imports for time measurement:
+
+import java.time.Duration;
+import java.time.Instant;
+
+2. Modify the Comparison Service to Track Time
+You'll add time tracking at the start and end of each page processing, as well as for the total process
+
+@Service
+public class PostRuleComparisonService {
+
+    @Autowired
+    private Server2016Repository repository2016;
+
+    @Autowired
+    private Server2019Repository repository2019;
+
+    public void comparePostRuleData(String yearMonth) {
+        int pageSize = 10000;
+        int pageNumber = 0;
+        boolean allPagesProcessed = false;
+
+        Set<Dto> uniqueIn2016 = new HashSet<>();
+        Set<Dto> uniqueIn2019 = new HashSet<>();
+
+        // Start timing the total process
+        Instant startTotal = Instant.now();
+
+        while (!allPagesProcessed) {
+            Instant startPage = Instant.now(); // Start timing for this page
+
+            Pageable pageable = PageRequest.of(pageNumber, pageSize);
+            Page<Dto> page2016 = repository2016.getProcessedData(yearMonth, pageable);
+            Page<Dto> page2019 = repository2019.getProcessedData(yearMonth, pageable);
+
+            // Comparison logic...
+
+            allPagesProcessed = page2016.isLast() && page2019.isLast();
+            pageNumber++;
+
+            Instant endPage = Instant.now(); // End timing for this page
+            System.out.println("Time taken for page " + pageNumber + ": " + Duration.between(startPage, endPage).toMillis() + " ms");
+        }
+
+        Instant endTotal = Instant.now(); // End timing the total process
+        System.out.println("Total time taken: " + Duration.between(startTotal, endTotal).toMillis() + " ms");
+
+        // Process the unique records as needed
+    }
+}
+Explanation
+Instant.now() is used to record the current time at various points.
+Duration.between(start, end).toMillis() calculates the time difference between two instants in milliseconds.
+The time taken for each page is printed after each page is processed.
+The total time taken for the entire process is printed after all pages have been processed.
+Considerations
+Logging: Instead of using System.out.println, it's recommended to use a proper logging framework 
+like SLF4J. This allows better control over the logging levels and destinations (e.g., console, files, monitoring systems).
+Performance Impact: While time tracking has a minimal performance impact, it's still additional processing.
+ Keep this in mind, especially if your application is highly performance-sensitive.
+Granularity: This method measures time in milliseconds, which is usually sufficient for most use cases. 
+If you need higher precision (e.g., nanoseconds), Java's System.nanoTime() can be used, but its precision and accuracy can vary between systems.
+By implementing these changes, you'll get a good understanding of the time taken for each part of your comparison process,
+ which is invaluable for performance tuning and debugging.
