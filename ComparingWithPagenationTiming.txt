@@ -39,12 +39,15 @@ public class PostRuleComparisonService {
             pageNumber++;
 
             Instant endPage = Instant.now(); // End timing for this page
+			long timeTakenForPage = Duration.between(startPage, endPage).getSeconds();
             System.out.println("Time taken for page " + pageNumber + ": " + Duration.between(startPage, endPage).toMillis() + " ms");
+			System.out.println("Time taken for page " + pageNumber + ": " + timeTakenForPage + " seconds");
         }
 
         Instant endTotal = Instant.now(); // End timing the total process
         System.out.println("Total time taken: " + Duration.between(startTotal, endTotal).toMillis() + " ms");
-
+        long totalProcessTime = Duration.between(startTotal, endTotal).getSeconds();
+        System.out.println("Total time taken: " + totalProcessTime + " seconds");
         // Process the unique records as needed
     }
 }
