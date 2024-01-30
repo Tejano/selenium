@@ -122,10 +122,14 @@ public class PostRuleComparisonService {
                                      .filter(e -> !currentPageSet2016.contains(e))
                                      .collect(Collectors.toSet()));
 
+
             allPagesProcessed = page2016.isLast() && page2019.isLast();
             pageNumber++;
         }
-
+		// Combine unique sets into one list for total differences
+		List<Dto> totalDifferences = new ArrayList<>();
+		totalDifferences.addAll(uniqueIn2016);
+		totalDifferences.addAll(uniqueIn2019);
         // Process the unique records as needed
         // This could involve logging the discrepancies, storing them, or generating a report
     }
