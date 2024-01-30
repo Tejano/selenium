@@ -1,0 +1,152 @@
+To compare records from the monthlive table in two different SQL Server databases (2016 and 2019) 
+and find unique records in each using Java Streams, you would typically follow these steps:
+
+Fetch Data from Both Databases: Since the databases are separate, you would first fetch the data from each database into your Java application.
+ This can be done using JPA repositories or JDBC templates, depending on your setup. 
+ For the sake of this example, I'll assume you have a method to fetch the data and return it as a List<MonthliveDto>.
+
+Use Java Streams for Comparison: Once you have the data from both databases, you can use Java Streams to compare them and find unique records.
+
+Here is an illustrative example:
+
+Define Your DTO
+First, define a DTO (MonthliveDto) that represents the data you want to compare:
+public class MonthliveDto {
+    private String field1;
+    private String field2;
+    // other fields
+
+    // constructor, getters, setters, equals, and hashCode
+}
+Fetching Data
+Assuming you have methods like fetchDataFrom2016() and fetchDataFrom2019() that fetch the data:
+List<MonthliveDto> data2016 = fetchDataFrom2016();
+List<MonthliveDto> data2019 = fetchDataFrom2019();
+
+Performing the Comparison
+Use Java Streams to find unique records
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+// ...
+
+public void compareData() {
+    List<MonthliveDto> data2016 = fetchDataFrom2016();
+    List<MonthliveDto> data2019 = fetchDataFrom2019();
+
+    Set<MonthliveDto> set2016 = new HashSet<>(data2016);
+    Set<MonthliveDto> set2019 = new HashSet<>(data2019);
+
+    Set<MonthliveDto> uniqueIn2016 = set2016.stream()
+        .filter(e -> !set2019.contains(e))
+        .collect(Collectors.toSet());
+
+    Set<MonthliveDto> uniqueIn2019 = set2019.stream()
+        .filter(e -> !set2016.contains(e))
+        .collect(Collectors.toSet());
+
+    // Process the unique records as needed
+}
+In this example:
+
+fetchDataFrom2016() and fetchDataFrom2019() are methods that retrieve the data from your 2016 and 2019 databases, respectively.
+The data from each year is converted to a Set to ensure uniqueness and to optimize the search operation.
+Java Streams are then used to filter out records from each set that are not contained in the other set, resulting in two sets of unique records (uniqueIn2016 and uniqueIn2019).
+Considerations
+Performance: Processing 4 million records requires a lot of memory and CPU time. Consider using parallel
+ streams (parallelStream()) to leverage multi-core processors. However, keep in mind that parallel processing 
+can make the operation order non-deterministic, which is fine for this set-based operation.
+Memory Usage: Ensure that your JVM has enough memory to handle such large collections in memory.
+ Monitor the application's memory usage and consider increasing the JVM's heap size if necessary.
+Database Load: Fetching 4 million records from a database can be resource-intensive.
+ Make sure this operation does not negatively impact your database's performance, and consider implementing batching or pagination if needed.
+This approach assumes you have a mechanism to fetch the data and that the MonthliveDto class 
+properly implements equals and hashCode based on the fields you're interested in comparing. The actual fetching mechanism will 
+depend on your application's architecture and the database access technology you're using (like Spring Data JPA, JDBC, etc.).
+
+1. Implement Paging in Data Fetching Methods
+Modify fetchDataFrom2016() and fetchDataFrom2019() to support pagination. This can be achieved by 
+adding parameters for page number and page size, and then fetching data page by page.
+
+public List<MonthliveDto> fetchDataFrom2016(int pageNumber, int pageSize) {
+    // Fetch data from the 2016 database using pagination
+}
+
+public List<MonthliveDto> fetchDataFrom2019(int pageNumber, int pageSize) {
+    // Fetch data from the 2019 database using pagination
+}
+
+
+Step 1: Fetch Post-Processing Data
+First, you need to fetch the data that has been processed according to the rules from
+ both databases. Assuming you have a way to identify these records (like a timestamp, flag, 
+ or specific field that gets updated), you would modify your data fetching methods to retrieve this subset of data.
+
+Step 2: Implement Comparison Logic
+Implement the logic to compare data from both years. Since the comparison happens post-rule execution, you'll be comparing the end state of the records.
+
+@Service
+public class PostRuleComparisonService {
+
+    @Autowired
+    private Server2016Repository repository2016;
+
+    @Autowired
+    private Server2019Repository repository2019;
+
+    public void comparePostRuleData(String yearMonth) {
+        int pageSize = 10000; // Adjust based on performance considerations
+        int pageNumber = 0;
+        boolean allPagesProcessed = false;
+
+        Set<Dto> uniqueIn2016 = new HashSet<>();
+        Set<Dto> uniqueIn2019 = new HashSet<>();
+
+        while (!allPagesProcessed) {
+            Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+            Page<Dto> page2016 = repository2016.getProcessedData(yearMonth, pageable);
+            Page<Dto> page2019 = repository2019.getProcessedData(yearMonth, pageable);
+
+            // Convert to Sets for efficient comparison
+            Set<Dto> currentPageSet2016 = new HashSet<>(page2016.getContent());
+            Set<Dto> currentPageSet2019 = new HashSet<>(page2019.getContent());
+
+            uniqueIn2016.addAll(currentPageSet2016.stream()
+                                     .filter(e -> !currentPageSet2019.contains(e))
+                                     .collect(Collectors.toSet()));
+
+            uniqueIn2019.addAll(currentPageSet2019.stream()
+                                     .filter(e -> !currentPageSet2016.contains(e))
+                                     .collect(Collectors.toSet()));
+
+            allPagesProcessed = page2016.isLast() && page2019.isLast();
+            pageNumber++;
+        }
+
+        // Process the unique records as needed
+        // This could involve logging the discrepancies, storing them, or generating a report
+    }
+}
+
+Step 3: Repository Methods for Processed Data
+You'll need repository methods to fetch processed data. These methods should be tailored 
+to fetch data based on the criteria that determine whether a record has been processed (like a specific field or flag).
+
+public interface Server2016Repository extends JpaRepository<YourEntity2016, Long> {
+    @Query("SELECT new your.package.Dto(fields...) FROM MonthlyLivesEntity m WHERE m.yearMonth = :yearMonth AND m.isProcessed = true")
+    Page<Dto> getProcessedData(@Param("yearMonth") String yearMonth, Pageable pageable);
+}
+
+public interface Server2019Repository extends JpaRepository<YourEntity2019, Long> {
+    @Query("SELECT new your.package.Dto(fields...) FROM MonthlyLivesEntity m WHERE m.yearMonth = :yearMonth AND m.isProcessed = true")
+    Page<Dto> getProcessedData(@Param("yearMonth") String yearMonth, Pageable pageable);
+}
+Considerations
+Efficiency: The efficiency of this process depends heavily on the size of the data set and the complexity of the Dto objects. You may need to tune the page size and the specifics of the query to optimize performance.
+Memory Management: Ensure that the JVM settings are tuned to handle the memory load, especially if the data sets are large.
+Result Handling: Once you identify the unique records in each dataset, the next step is to determine how to handle these discrepancies. This might involve a review process, additional logging, or even triggering a reconciliation process.
+Concurrency and Data Integrity: Ensure that the data is not being modified by other processes while the comparison is being performed. This is important to maintain the integrity of the comparison.
+By structuring your comparison process in this way, you can efficiently compare the outcomes of the rule processing in both databases, ensuring the integrity and consistency of your data post-migration.
