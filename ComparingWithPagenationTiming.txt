@@ -275,3 +275,13 @@ public class YourService {
 
     // Other methods
 }
+JVM Memory Settings: Configure the Java Virtual Machine (JVM) settings to optimize memory usage. 
+Allocate sufficient heap space for your application. For instance, you might start by allocating 8-16 GB to the JVM,
+ depending on what other applications are running on your laptop.
+
+Example JVM settings:
+-Xms8g -Xmx16g
+This sets the initial heap size (-Xms) to 8 GB and the maximum heap size (-Xmx) to 16 GB.
+
+Garbage Collection (GC): Choose an appropriate garbage collector and tune its settings if necessary. Modern JVMs 
+like OpenJDK 11 or later come with efficient garbage collectors like G1GC, which are good for applications with large heaps.
