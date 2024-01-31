@@ -160,3 +160,80 @@ public class DataComparisonService {
         return modelMapper.map(projection, YourDto.class);
     }
 }
+
+To adjust the compareDataAndConvertToDto method to include unique2016, unique2019, and allDifferences (a combination of unique2016 and unique2019), and then convert these sets to lists using ModelMapper, you can follow this approach:
+
+Step 1: Implement the Comparison Logic
+Adjust the comparison logic to separate the unique records for each year and then combine them to form allDifferences.
+@Service
+public class DataComparisonService {
+
+    @Autowired
+    private YourRepository repository2016;
+
+    @Autowired
+    private YourRepository repository2019;
+
+    @Autowired
+    private ModelMapper modelMapper;
+
+    public void compareDataAndConvertToDto(String yearMonth) {
+        int pageSize = 10000;
+        int pageNumber = 0;
+        boolean allPagesProcessed = false;
+
+        Set<YourProjection> uniqueIn2016 = new HashSet<>();
+        Set<YourProjection> uniqueIn2019 = new HashSet<>();
+
+        while (!allPagesProcessed) {
+            Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+            Page<YourProjection> page2016 = repository2016.findDataByYearMonthWithRuleId(yearMonth, pageable);
+            Page<YourProjection> page2019 = repository2019.findDataByYearMonthWithRuleId(yearMonth, pageable);
+
+            Set<YourProjection> currentPageSet2016 = new HashSet<>(page2016.getContent());
+            Set<YourProjection> currentPageSet2019 = new HashSet<>(page2019.getContent());
+
+            uniqueIn2016.addAll(currentPageSet2016.stream().filter(e -> !currentPageSet2019.contains(e)).collect(Collectors.toSet()));
+            uniqueIn2019.addAll(currentPageSet2019.stream().filter(e -> !currentPageSet2016.contains(e)).collect(Collectors.toSet()));
+
+            allPagesProcessed = page2016.isLast() && page2019.isLast();
+            pageNumber++;
+        }
+
+        List<YourDto> unique2016List = convertToDtoList(uniqueIn2016);
+        List<YourDto> unique2019List = convertToDtoList(uniqueIn2019);
+
+        Set<YourProjection> allDifferencesSet = new HashSet<>(uniqueIn2016);
+        allDifferencesSet.addAll(uniqueIn2019);
+        List<YourDto> allDifferencesList = convertToDtoList(allDifferencesSet);
+
+        // Process the lists as needed (e.g., log, store, or return)
+    }
+
+    private List<YourDto> convertToDtoList(Set<YourProjection> projections) {
+        return projections.stream()
+                          .map(this::convertToDto)
+                          .collect(Collectors.toList());
+    }
+
+    private YourDto convertToDto(YourProjection projection) {
+        return modelMapper.map(projection, YourDto.class);
+    }
+}
+Explanation
+uniqueIn2016 and uniqueIn2019 are sets that store unique projections for each year.
+After the comparison, these sets are converted to lists of DTOs (unique2016List and unique2019List) using convertToDtoList.
+allDifferencesSet is a combined set of uniqueIn2016 and uniqueIn2019, which is then converted to a list of DTOs (allDifferencesList).
+Step 2: Handling the Results
+Once you have the lists unique2016List, unique2019List, and allDifferencesList, you can process them according to 
+your application's requirements. This might involve saving them to a database, returning them in an API response, logging, or any other action.
+
+Considerations
+Performance: This approach might involve significant processing, especially with large datasets. Monitor and optimize the performance and memory usage.
+ModelMapper Configuration: Ensure that ModelMapper is properly configured to handle the mapping from your projections to DTOs. 
+Complex mappings might require additional configuration.
+Parallel Processing: If performance is a concern, consider parallelizing the stream operations for converting sets to lists, but be 
+cautious of thread safety and the overhead of parallelism.
+By following this approach, you efficiently compare large datasets, identify unique records, 
+and convert the results into DTOs for further processing.
