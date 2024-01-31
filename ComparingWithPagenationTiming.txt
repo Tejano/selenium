@@ -285,3 +285,8 @@ This sets the initial heap size (-Xms) to 8 GB and the maximum heap size (-Xmx) 
 
 Garbage Collection (GC): Choose an appropriate garbage collector and tune its settings if necessary. Modern JVMs 
 like OpenJDK 11 or later come with efficient garbage collectors like G1GC, which are good for applications with large heaps.
+
+Adjust the timeout settings in your JDBC connection string or data source configuration. Increase the connectTimeout and socketTimeout to accommodate longer operations.
+Example JDBC URL adjustment
+spring.datasource.url=jdbc:sqlserver://server-name;databaseName=mydatabase;connectTimeout=300;socketTimeout=480
+
