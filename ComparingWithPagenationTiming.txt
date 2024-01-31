@@ -69,7 +69,25 @@ By implementing these changes, you'll get a good understanding of the time taken
  Compare with Projection:
  To utilize ModelMapper for converting projections to DTOs in your data comparison method, you'll first need to set up ModelMapper in your application. Then, you can use it in your service layer to efficiently map projection objects to DTOs.
 
-Step 1: Add ModelMapper Dependency
+Step 1: Define the Projection Interface
+Define an interface with getter methods for the fields you need in the comparison:
+public interface YourProjection {
+    // Define getters for the fields used in comparison
+    String getField1();
+    String getField2();
+    // Add other fields necessary for the comparison
+}
+Step 2: Modify the Repository
+Adjust your repository methods to use the projection and support pagination:
+
+public interface YourRepository extends JpaRepository<YourEntity, Long> {
+    @Query("SELECT field1, field2 FROM YourEntity WHERE yearMonth = :yearMonth AND ruleId IS NOT NULL")
+    Page<YourProjection> findDataByYearMonthWithRuleId(@Param("yearMonth") String yearMonth, Pageable pageable);
+}
+
+
+
+Step 3: Add ModelMapper Dependency
 Add the ModelMapper library to your project's dependencies. In your pom.xml, include:
  <dependency>
     <groupId>org.modelmapper</groupId>
@@ -77,7 +95,7 @@ Add the ModelMapper library to your project's dependencies. In your pom.xml, inc
     <version>2.4.4</version> <!-- Check for the latest version -->
 </dependency>
 
- Step 2: Configure ModelMapper Bean
+ Step 4: Configure ModelMapper Bean
 Configure a ModelMapper bean in your Spring configuration. This can be done in a configuration class:
  
  @Configuration
@@ -89,7 +107,7 @@ public class ModelMapperConfig {
     }
 }
 
-Step 3: Implement the Service with ModelMapper
+Step 5: Implement the Service with ModelMapper
 Now, in your service, inject the ModelMapper and use it to convert projections to DTOs
  
  @Service
