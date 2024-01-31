@@ -237,3 +237,41 @@ Parallel Processing: If performance is a concern, consider parallelizing the str
 cautious of thread safety and the overhead of parallelism.
 By following this approach, you efficiently compare large datasets, identify unique records, 
 and convert the results into DTOs for further processing.
+
+This can be set as a Hibernate property in Spring Boot:
+spring.jpa.properties.javax.persistence.query.timeout=20000
+
+3. Socket Timeout
+The socket timeout sets the timeout for waiting for data or, put differently, a maximum period inactivity between two consecutive data packets
+
+
+
+The @Transactional(timeout = 10) annotation in Spring Boot is typically used in the service layer of your application. This annotation is placed on either the class or method level to indicate that the enclosed method or all the methods of the class should be run within a transactional context. The timeout attribute specifically sets the duration in seconds after which the transaction should be automatically rolled back if it has not completed.
+
+Here's how to use it:
+@Service
+public class YourService {
+
+    @Transactional(timeout = 10) // Timeout in 10 seconds
+    public void someDatabaseOperation() {
+        // Your database logic here
+    }
+
+    // Other methods
+}
+2. Class-Level Usage
+Alternatively, you can set a default transaction timeout for all methods in a service class by placing the annotation at the class level:
+@Service
+@Transactional(timeout = 10) // Default timeout for all methods
+public class YourService {
+
+    public void someDatabaseOperation() {
+        // Your database logic here
+    }
+
+    public void anotherDatabaseOperation() {
+        // Another method that will also have the 10-second timeout
+    }
+
+    // Other methods
+}
