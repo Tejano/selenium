@@ -65,3 +65,80 @@ Granularity: This method measures time in milliseconds, which is usually suffici
 If you need higher precision (e.g., nanoseconds), Java's System.nanoTime() can be used, but its precision and accuracy can vary between systems.
 By implementing these changes, you'll get a good understanding of the time taken for each part of your comparison process,
  which is invaluable for performance tuning and debugging.
+ 
+ Compare with Projection:
+ To utilize ModelMapper for converting projections to DTOs in your data comparison method, you'll first need to set up ModelMapper in your application. Then, you can use it in your service layer to efficiently map projection objects to DTOs.
+
+Step 1: Add ModelMapper Dependency
+Add the ModelMapper library to your project's dependencies. In your pom.xml, include:
+ <dependency>
+    <groupId>org.modelmapper</groupId>
+    <artifactId>modelmapper</artifactId>
+    <version>2.4.4</version> <!-- Check for the latest version -->
+</dependency>
+
+ Step 2: Configure ModelMapper Bean
+Configure a ModelMapper bean in your Spring configuration. This can be done in a configuration class:
+ 
+ @Configuration
+public class ModelMapperConfig {
+    
+    @Bean
+    public ModelMapper modelMapper() {
+        return new ModelMapper();
+    }
+}
+
+Step 3: Implement the Service with ModelMapper
+Now, in your service, inject the ModelMapper and use it to convert projections to DTOs
+ 
+ @Service
+public class DataComparisonService {
+
+    @Autowired
+    private YourRepository repository2016;
+
+    @Autowired
+    private YourRepository repository2019;
+
+    @Autowired
+    private ModelMapper modelMapper;
+
+    public List<YourDto> compareDataAndConvertToDto(String yearMonth) {
+        int pageSize = 10000;
+        int pageNumber = 0;
+        boolean allPagesProcessed = false;
+
+        Set<YourProjection> uniqueProjections = new HashSet<>();
+
+        while (!allPagesProcessed) {
+            Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+            Page<YourProjection> page2016 = repository2016.findDataByYearMonthWithRuleId(yearMonth, pageable);
+            Page<YourProjection> page2019 = repository2019.findDataByYearMonthWithRuleId(yearMonth, pageable);
+
+            Set<YourProjection> set2016 = new HashSet<>(page2016.getContent());
+            Set<YourProjection> set2019 = new HashSet<>(page2019.getContent());
+
+            // Find unique in both sets
+            uniqueProjections.addAll(set2016.stream().filter(e -> !set2019.contains(e)).collect(Collectors.toSet()));
+            uniqueProjections.addAll(set2019.stream().filter(e -> !set2016.contains(e)).collect(Collectors.toSet()));
+
+            allPagesProcessed = page2016.isLast() && page2019.isLast();
+            pageNumber++;
+        }
+
+        // Convert unique projections to DTOs
+        return convertToDtoList(uniqueProjections);
+    }
+
+    private List<YourDto> convertToDtoList(Set<YourProjection> projections) {
+        return projections.stream()
+                          .map(this::convertToDto)
+                          .collect(Collectors.toList());
+    }
+
+    private YourDto convertToDto(YourProjection projection) {
+        return modelMapper.map(projection, YourDto.class);
+    }
+}
