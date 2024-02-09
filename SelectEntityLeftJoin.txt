@@ -1,0 +1,29 @@
+
+If you're looking for values in one table that exist but not in the other table, you can use different types of joins or subqueries depending on your specific requirements. Here's how you can modify the query to achieve that:
+
+Using a LEFT JOIN:
+
+@Repository
+public interface EntityARepository extends JpaRepository<EntityA, Long> {
+
+    @Query("SELECT a FROM EntityA a LEFT JOIN EntityB b ON a.org = b.org AND a.carrier = b.carrier AND a.adjustmentType = b.adjustmentType AND a.action = b.action WHERE b.id IS NULL")
+    List<EntityA> findValuesOnlyInEntityA();
+}
+
+In this query, we're performing a LEFT JOIN between EntityA and EntityB on the specified conditions 
+(org, carrier, adjustmentType, and action). Then, we're filtering the results to only include records
+ where there is no matching record in EntityB (i.e., where b.id is null).
+
+Using NOT EXISTS subquery:
+@Repository
+public interface EntityARepository extends JpaRepository<EntityA, Long> {
+
+    @Query("SELECT a FROM EntityA a WHERE NOT EXISTS (SELECT b FROM EntityB b 
+	WHERE a.org = b.org AND a.carrier = b.carrier AND a.adjustmentType = b.adjustmentType AND a.action = b.action)")
+    List<EntityA> findValuesOnlyInEntityA();
+}
+In this query, we're using a subquery to check if there are no corresponding records in 
+EntityB for each record in EntityA based on the specified conditions (org, carrier, adjustmentType, and action).
+
+Choose the approach that best fits your requirements and preferences. 
+These queries will return values from EntityA that exist in that table but not in EntityB.
