@@ -32,3 +32,44 @@ public class YourService {
         }
     }
 }
+
+To build a method that accepts both string values and null as input, you can use method overloading. 
+Create two overloaded versions of the method—one that accepts a 
+string parameter and another that accepts no parameter, 
+and set the field to null in the latter case. Here's how you can do it:
+
+@Service
+public class YourService {
+
+    @Autowired
+    private YourRepository repository;
+
+    // Method that accepts a string parameter
+    public void updateEntity(Long entityId, String newFieldValue) {
+        // Step 1: Retrieve the entity you want to update
+        Optional<YourEntity> optionalEntity = repository.findById(entityId);
+        
+        // Check if the entity exists
+        if (optionalEntity.isPresent()) {
+            YourEntity entity = optionalEntity.get();
+            
+            // Step 2: Modify the entity's fields with the new value
+            if (newFieldValue != null) {
+                entity.setFieldToUpdate(newFieldValue);
+            } else {
+                entity.setFieldToUpdate(null);
+            }
+            
+            // Step 3: Save the updated entity back to the database
+            repository.save(entity);
+        } else {
+            // Handle the case where the entity does not exist
+            // (e.g., throw an exception, log an error, etc.)
+        }
+    }
+    
+    // Method overload that sets the field to null
+    public void updateEntity(Long entityId) {
+        updateEntity(entityId, null);
+    }
+}
