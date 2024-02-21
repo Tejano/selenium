@@ -1,0 +1,31 @@
+
+If you have two tables with record counts and two tables with average counts, and you want to sum them together, you can achieve this by separately calculating 
+the total counts and average counts from each table, and then summing them up. Here's how you can do it:
+
+SELECT 
+    SUM(total_count) + SUM(avg_count) AS combined_count
+FROM (
+    SELECT 
+        COUNT(*) AS total_count,
+        0 AS avg_count
+    FROM 
+        table1
+    UNION ALL
+    SELECT 
+        COUNT(*) AS total_count,
+        0 AS avg_count
+    FROM 
+        table2
+    UNION ALL
+    SELECT 
+        0 AS total_count,
+        AVG(column_name) AS avg_count
+    FROM 
+        table3
+    UNION ALL
+    SELECT 
+        0 AS total_count,
+        AVG(column_name) AS avg_count
+    FROM 
+        table4
+) AS subquery;

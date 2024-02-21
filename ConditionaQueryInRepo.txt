@@ -1,0 +1,25 @@
+
+Yes, you can add this code to a repository class. Typically, in Spring Data JPA, 
+a repository class is where you define methods for accessing data from the underlying database.
+
+If you want to use a DTO (Data Transfer Object) to represent the results of your query,
+ you can modify the code accordingly. Here's how you can do it:
+
+
+@Repository
+public class YourEntityRepository {
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    public List<YourDto> findEntitiesByCommType(String specificCommType) {
+        TypedQuery<YourDto> query;
+        if (specificCommType != null) {
+            query = entityManager.createQuery("SELECT new YourDto(e.id, e.name) FROM YourEntity e WHERE e.commType = :commType", YourDto.class);
+            query.setParameter("commType", specificCommType);
+        } else {
+            query = entityManager.createQuery("SELECT new YourDto(e.id, e.name) FROM YourEntity e", YourDto.class);
+        }
+        return query.getResultList();
+    }
+}
