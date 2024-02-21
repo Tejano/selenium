@@ -23,3 +23,24 @@ public class YourEntityRepository {
         return query.getResultList();
     }
 }
+
+
+In your repositories, you need to specify which EntityManagerFactory to use. 
+You can do this using @PersistenceContext(unitName = "primary") for your primary data source or
+ @PersistenceContext(unitName = "secondary") for your secondary data source.
+
+Here's an example repository using the primary data source:
+@Repository
+public class PrimaryEntityRepository {
+
+    @PersistenceContext(unitName = "primary")
+    private EntityManager entityManager;
+
+    public List<YourDto> findEntitiesByCommType(String specificCommType) {
+        // Your query logic here
+    }
+}
+And similarly, you can create a repository for the secondary data source using the appropriate EntityManagerFactory. 
+This way, each repository knows which database to connect to. Make sure your 
+@Configuration class is properly configuring the multiple data sources and entity manager factories according to your setup.
+
