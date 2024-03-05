@@ -1,0 +1,33 @@
+
+Subject: Urgent: Testing Update & Immediate Actions Required for SSIS 2019 Migration
+
+Dear Team,
+
+I hope this message finds you well. I'm writing to provide you with a critical update on our current testing phase for the SSIS 2019 migration project. Unfortunately, we've encountered several roadblocks that have significantly stalled our progress. I'll outline these challenges below and propose immediate actions to mitigate these issues and keep our project on track.
+
+SSIS Server Proxy Issue:
+
+Challenge: Our testing efforts have hit a significant hurdle due to the SSIS Server proxy, specifically the RUN-#SvcCommission proxy,
+not being set up. This oversight has effectively paused our ability to proceed with migration testing.
+Action Required: It's imperative that our IT department prioritizes the setup of the RUN-#SvcCommission proxy 
+on the SSIS Server immediately. We need this to resume and complete our testing phase without further delays.
+Broker Front-End Testing Against SQL Server 2019:
+
+Challenge: We are currently unable to test the Broker Front-End against SQL Server 2019. 
+This issue arises from a compatibility conflict; our developers are equipped with Office 365 on their PCs, 
+whereas our business environment uses Office 2016 and Access 2010.
+Action Required: To address this, we must set up new virtual environments that mirror the 
+business environment for the two developers involved. This will enable them to start testing 
+the Broker Front-End against SQL Server 2019 effectively.
+React/Microservice UI Testing:
+
+Challenge: Testing the React/Microservice UI against the 2019 database is on hold. The delay is due to 
+the required firewall settings in PCF not being configured for the 2019 server.
+Action Required: Coordination with our network security team is crucial to expedite the firewall 
+setup in PCF for the 2019 server. Ensuring these configurations are 
+completed promptly will allow us to move forward with testing the React/Microservice UI.
+In conclusion, these challenges are significant but not insurmountable. By taking decisive action 
+on the above points, we can overcome these obstacles and continue our migration project with minimal delays. 
+I urge all relevant departments and team members to prioritize these actions and collaborate closely to resolve these issues.
+
+Please feel free to reach out to me directly if you have any questions, need further clarification, or can provide updates on the resolution of these issues. Your prompt attention to and action on these matters are crucial for keeping our project timeline intact.
