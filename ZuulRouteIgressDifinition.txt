@@ -1,0 +1,22 @@
+In OpenShift, managing how external traffic reaches services within the cluster can be achieved through two main resources: Routes and Ingress. Both serve to expose services to external traffic but differ in their capabilities and the level of granularity they offer for traffic management. Understanding these differences is crucial when migrating applications, such as a Zuul gateway setup from PCF to OpenShift, especially when dealing with path-based routing.
+
+Routes
+OpenShift-Specific: Routes are a concept specific to OpenShift, building upon Kubernetes services to provide additional features. They are designed to expose services by giving them externally reachable URLs, load balancing traffic, and offering termination policies for SSL/TLS.
+Hostname and Path: Routes allow you to define a hostname (URL) and optionally a path. This is particularly useful for path-based routing, where different paths can be directed to different services. For example, you can configure a Route to direct traffic for http://yourdomain.com/api/service1 to one service and http://yourdomain.com/api/service2 to another.
+TLS Termination: Routes also provide TLS termination, where encryption is handled at the edge router, allowing traffic to be encrypted between the client and the OpenShift router, but optionally unencrypted within the cluster.
+Ingress
+Kubernetes Native: Ingress is a Kubernetes-native API object that manages external access to the services in a cluster, typically HTTP. Ingress allows you to define rules for routing traffic without creating a bunch of LoadBalancers or exposing each service on the Node directly.
+Controller Required: Ingress requires an Ingress controller to function, which is a reverse proxy that routes traffic from the outside world to the services within the cluster based on the Ingress rules defined. OpenShift uses HAProxy as its default Ingress controller, but others can be used.
+Path-Based Rules: Just like Routes, Ingress allows for path-based rules, enabling you to define how different paths are forwarded to different backend services. This capability is essential for applications that use path-based routing, like a Zuul proxy setup.
+Path-Based Routing with Zuul
+When your Zuul gateway uses path-based routing, you need to ensure that either the Route or Ingress resource in OpenShift is configured to properly handle and forward the external requests to Zuul based on the path.
+
+Configuring a Route: When configuring a Route for path-based routing to Zuul, you specify the path that the Route will handle and the service (Zuul) that will receive the traffic for that path. OpenShift will then ensure that any request matching the path is forwarded to the correct pod running Zuul.
+
+Configuring Ingress: When using Ingress, you define an Ingress resource with rules that specify different paths and the backend services (e.g., Zuul) that should handle the requests. The Ingress controller will read these rules and route incoming traffic accordingly.
+
+Practical Steps
+Define the Path in Route/Ingress: Specify the path(s) that your Zuul gateway handles in the Route or Ingress configuration. This setup tells OpenShift how to direct traffic coming to these paths.
+Point to Zuul Service: Ensure the Route or Ingress resource routes traffic for those paths to the service that exposes your Zuul gateway.
+Test the Configuration: After applying the configuration, test by sending requests to the defined paths and ensure they are correctly routed to the services behind Zuul.
+In summary, when migrating to OpenShift and configuring path-based routing for Zuul, choosing between Routes and Ingress will depend on your specific requirements, such as the need for TLS termination or integration with other Kubernetes-native tooling. Both Routes and Ingress offer the capabilities needed to implement path-based routing, but Routes provide OpenShift-specific enhancements that might be beneficial depending on your deployment's needs.

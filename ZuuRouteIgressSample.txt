@@ -1,0 +1,69 @@
+
+Configuring a Route or Ingress in OpenShift for a Zuul gateway involves
+creating YAML definitions that OpenShift can use to set up 
+the desired routing rules. Below are examples of how you might configure 
+both a Route and an Ingress for a Zuul gateway that uses path-based routing.
+ These examples assume you have a Zuul gateway running in your OpenShift cluster, 
+ exposed by a Service named zuul-service within the default namespace.
+
+Sample Route Configuration for Zuul Gateway
+
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: zuul-route
+  namespace: default
+spec:
+  host: zuul.example.com
+  path: /api
+  to:
+    kind: Service
+    name: zuul-service
+  port:
+    targetPort: 8080
+  wildcardPolicy: None
+This Route configuration creates a new route named zuul-route 
+that directs traffic for http://zuul.example.com/api to the zuul-service. 
+The targetPort specifies the port on the service that OpenShift should route traffic to. Adjust the host, path, name, 
+and targetPort as needed to match your environment and service configuration.
+
+Sample Ingress Configuration for Zuul Gateway
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zuul-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+  - host: zuul.example.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: zuul-service
+            port:
+              number: 8080
+
+This Ingress configuration defines a rule that directs HTTP traffic 
+for http://zuul.example.com/api to the zuul-service. The pathType: Prefix means that this rule will match any request 
+whose path starts with /api and forward it to the specified service on port 8080. Adjust the host,
+ path, and service name and port as necessary.
+
+Applying the Configuration
+To apply these configurations to your OpenShift cluster:
+
+Save the desired configuration to a file (e.g., zuul-route.yaml or zuul-ingress.yaml).
+
+Use the oc command-line tool to apply the configuration:
+
+For a Route:
+oc apply -f zuul-route.yaml
+For an Ingress:
+oc apply -f zuul-ingress.yaml
+After applying the configuration, OpenShift will process the Route or Ingress and set up routing as specified. 
+You can then access your Zuul gateway using the configured host and path to verify that the routing is working as expected.
