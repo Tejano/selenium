@@ -1,0 +1,43 @@
+SELECT 'http://mySQLServerName/reports/api/v2.0/catalogitems(' + cast(itemid as varchar(256))+ ')/Content/$value' AS url  
+        FROM Catalog WHERE Type IN(2,5) AND Path LIKE '%/Sales/%'
+		
+		
+
+To import all SQL Server Reporting Services (SSRS) reports into a Visual Studio 2019 project, you can follow these steps. This process assumes you have access to the report server or the original .rdl files and have installed the necessary extensions in Visual Studio 2019 for working with SSRS projects.
+
+Prerequisites:
+SQL Server Data Tools (SSDT): Ensure you have SSDT installed in Visual Studio 2019. SSDT is the tool that allows you to develop and manage SQL Server database and SSRS projects. If you haven't installed it yet, you can download and install it from the Visual Studio Installer under the "Data storage and processing" workload.
+
+Access to Reports: Make sure you have access to the report server where the SSRS reports are deployed or have the .rdl files available locally.
+
+Steps to Import SSRS Reports:
+Open Visual Studio 2019.
+
+Create a New Project:
+
+Go to File > New > Project.
+In the "Create a new project" dialog, search for "Reporting Services" and select "Report Server Project Wizard" (or "Report Server Project" if you prefer to configure everything manually).
+Click "Next", give your project a name, choose the location, and click "Create".
+Using Report Server Project Wizard (If chosen):
+
+The wizard will guide you through setting up a data source and creating a new report. You can skip these steps if you're planning to import existing reports.
+Import Existing Reports:
+
+If you have the .rdl files locally:
+Right-click on the "Reports" folder in Solution Explorer.
+Choose "Add" > "Existing Item".
+Navigate to the folder containing your .rdl files, select all the reports you want to import, and click "Add".
+If you need to download the reports from a report server:
+You might need to manually download the .rdl files from the report server. This can usually be done from the report server's web portal by navigating to the report, selecting the "Download" option, and saving the .rdl file locally.
+After downloading, follow the steps above to add them to your project.
+Configure Data Sources:
+
+Ensure that the data sources in your project match those expected by the reports. You might need to modify the data source properties in each report or set up shared data sources within your project.
+Build and Deploy:
+
+Once all reports are imported and data sources are configured, you can build the project to ensure there are no errors.
+Deploy the project to your report server or SharePoint integrated mode report server by right-clicking the project in Solution Explorer, selecting "Deploy", and configuring the deployment properties.
+Additional Tips:
+Report Server URL: If downloading reports directly from the report server, you need the report server URL, which is typically in the format of http://<server name>/Reports for the web portal or http://<server name>/ReportServer for the web service endpoint.
+Version Compatibility: Ensure the reports are compatible with the version of SQL Server Reporting Services targeted by your Visual Studio project. There may be issues importing reports created in newer versions of SSRS.
+This process allows you to consolidate and manage your SSRS reports within Visual Studio 2019, leveraging the full suite of development and deployment tools available in SSDT.		
