@@ -1,0 +1,21 @@
+
+Mapping a network drive in Windows 10, especially within an enterprise environment, typically involves a few straightforward steps. However, remember that the process may vary slightly depending on your organization's specific network configuration and policies. Here's a general guide:
+
+Open File Explorer: You can do this by clicking on the File Explorer icon on your taskbar or pressing Windows key + E.
+
+Access 'This PC': In the File Explorer window, look for and click on "This PC" from the navigation pane on the left-hand side.
+
+Map Network Drive: While in "This PC", click on the "Computer" tab on the ribbon menu at the top, then click on "Map network drive" to open the mapping wizard.
+
+Choose Drive Letter: In the Map Network Drive window, select a drive letter of your choice from the dropdown menu. This letter will represent your network drive in File Explorer.
+
+Enter Path: In the "Folder" field, enter the path to the network folder you wish to map. This path usually looks something like \\ServerName\SharedFolder. You might need to contact your IT department to get the correct network path.
+
+Reconnection Option: If you want this network drive to be reconnected every time you log in to your computer, make sure to check the box "Reconnect at sign-in".
+
+Credential Management: If your network requires different credentials (username and password) than those you log in with, click on "Different credentials" and enter the required information when prompted. This is common in enterprise environments where network resources are protected.
+
+Finish and Access: Click "Finish" to complete the mapping process. If everything is correct, the network drive should now be accessible from "This PC" in File Explorer, appearing as a drive under "Network locations".
+
+In an enterprise environment, you may need additional permissions or configurations set up by your IT department, so if you encounter any issues during this process, it's a good idea to reach out to them for support. Additionally, your organization might have specific policies or scripts to 
+automate this process, especially if you're connecting to resources that require regular access or specific security protocols.
