@@ -29,3 +29,11 @@ running jobs and you're unsure about the password, you may need to reset the
 password in Active Directory (or another authentication system)
  and update the credential in SQL Server accordingly,
  following your organization's security policies.
+ 
+ SELECT 
+    sp.name AS ProxyName,
+    sp.credential_id,
+    sc.name AS CredentialName,
+    sc.identity_name AS AssociatedWindowsAccount
+FROM msdb.dbo.sysproxies AS sp
+JOIN msdb.dbo.syscredentials AS sc ON sp.credential_id = sc.credential_id;
