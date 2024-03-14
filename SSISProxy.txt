@@ -1,0 +1,31 @@
+
+In SQL Server, the information about proxy accounts, including the underlying Windows account details (such as the account name) used by the proxy,
+ is stored within SQL Server system tables. However, 
+ directly querying system tables to retrieve Windows account details 
+ for a proxy account is not straightforward because the password is encrypted 
+ and not visible for security reasons. You can, however, find out the associated Windows account username.
+
+To find the proxy account's Windows account details (specifically, the username),
+ you can use the following SQL query, which joins relevant system views to extract the information:
+ 
+ SELECT 
+    sp.name AS ProxyName,
+    sp.credential_id,
+    sc.name AS CredentialName,
+    sc.identity AS AssociatedWindowsAccount
+FROM msdb.dbo.sysproxies AS sp
+JOIN msdb.dbo.syscredentials AS sc ON sp.credential_id = sc.credential_id;
+
+This query retrieves the name of the proxy (ProxyName), the credential ID associated with the proxy, the name of the credential (CredentialName), and the identity used for the credential, which is the Windows account username (AssociatedWindowsAccount).
+
+Here's a breakdown of the elements in the query:
+
+msdb.dbo.sysproxies: This system view contains information about the proxy accounts defined in SQL Server Agent.
+msdb.dbo.syscredentials: This system view contains information about the credentials stored in SQL Server,
+including the identity (Windows account username) associated with each credential.
+Remember, the actual passwords for these Windows accounts are not accessible 
+ia these queries due to security reasons. If you need to use a proxy account for 
+running jobs and you're unsure about the password, you may need to reset the 
+password in Active Directory (or another authentication system)
+ and update the credential in SQL Server accordingly,
+ following your organization's security policies.
