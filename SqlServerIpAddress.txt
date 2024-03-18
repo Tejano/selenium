@@ -1,0 +1,43 @@
+Yes, you can obtain the IP address of the server where SQL Server is running by executing a SQL query within the SQL Server environment. Here is a method to get
+ the IP address of a SQL Server 2019 instance using Transact-SQL (T-SQL):
+ 
+ SELECT 
+    client_net_address AS 'IP Address'
+FROM 
+    sys.dm_exec_connections
+WHERE 
+    session_id = @@SPID;
+
+Yes, you can obtain the IP address of the server where SQL Server is running by executing a SQL query within the SQL Server environment. Here is a method to get the IP address of a SQL Server 2019 instance using Transact-SQL (T-SQL):
+
+sql
+Copy code
+SELECT 
+    client_net_address AS 'IP Address'
+FROM 
+    sys.dm_exec_connections
+WHERE 
+    session_id = @@SPID;
+	
+This query returns the IP address of the client that is connected to the SQL Server.
+ @@SPID is the server process ID of the current session. If you are looking for the IP address of the server itself, 
+you can use the following query, which retrieves the IP address of the SQL Server machine:	
+
+SELECT 
+    local_net_address AS 'IP Address'
+FROM 
+    sys.dm_exec_connections
+WHERE 
+    session_id = @@SPID;
+	
+	
+local_net_address shows the IP address of the SQL Server. If you are connected 
+directly on the server, it might return NULL for connections via shared memory.
+ To get comprehensive network interface information, you might need to access the 
+ operating system's network configuration directly, for instance, by using xp_cmdshell to execute ipconfig or similar 
+commands, though this requires appropriate permissions and that xp_cmdshell is enabled:
+
+EXEC xp_cmdshell 'ipconfig';
+
+However, enabling xp_cmdshell and using it to run system commands can pose a security risk, so it 
+should be done with caution and only when necessary, following best security practices.
