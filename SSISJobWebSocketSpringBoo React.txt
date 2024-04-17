@@ -1,0 +1,203 @@
+To use WebSockets for real-time communication between a React frontend and a Spring Boot backend, you will
+ need to set up both the server and client to handle WebSocket connections. This will allow you to update the 
+ UI in real-time without polling for the status of SSIS jobs. Below, I provide a step-by-step guide to implement WebSockets in your project:
+ 
+ Step 1: Set Up WebSocket in Spring Boot
+a. Add Dependencies
+First, add the WebSocket dependency to your pom.xml if you're using Maven:
+Step 1: Set Up WebSocket in Spring Boot
+a. Add Dependencies
+First, add the WebSocket dependency to your pom.xml if you're using Maven:
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-websocket</artifactId>
+</dependency>
+
+b. Configure WebSocket
+Create a configuration class to enable and configure WebSocket in Spring Boot:
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
+import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+
+@Configuration
+@EnableWebSocketMessageBroker
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/ws").setAllowedOrigins("*").withSockJS();
+    }
+
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.enableSimpleBroker("/topic");  // Enables a simple in-memory broker
+        registry.setApplicationDestinationPrefixes("/app");
+    }
+}
+
+c. Create a Controller for WebSocket
+You need a controller to handle sending and receiving messages through WebSockets:
+
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.stereotype.Controller;
+
+@Controller
+public class WebSocketController {
+
+    @MessageMapping("/startJob")
+    @SendTo("/topic/jobStatus")
+    public String startJob(String jobName) {
+        // Start job logic
+        return "Job " + jobName + " started";
+    }
+
+    // Method to update job status
+    public void updateJobStatus(String status) {
+        // Assuming configuration of messagingTemplate is done
+        messagingTemplate.convertAndSend("/topic/jobStatus", status);
+    }
+}
+Step 2: Set Up React Client with WebSockets
+a. Install Required Package
+Install sockjs-client and stompjs to handle WebSocket communication:
+
+npm install sockjs-client stompjs
+
+b. Implement WebSocket Client
+Create a WebSocket client in your React application:
+import React, { useState, useEffect } from 'react';
+import { over as StompOver } from 'stompjs';
+import SockJS from 'sockjs-client';
+
+function JobExecutor() {
+    const [jobStatus, setJobStatus] = useState('Idle');
+    const [client, setClient] = useState(null);
+
+    useEffect(() => {
+        const socket = new SockJS('http://your-api-url/ws');
+        const stompClient = StompOver(socket);
+        
+        stompClient.connect({}, frame => {
+            console.log('Connected: ' + frame);
+
+            stompClient.subscribe('/topic/jobStatus', status => {
+                setJobStatus(status.body);
+            });
+        });
+
+        setClient(stompClient);
+        return () => {
+            if (client) {
+                client.disconnect();
+            }
+        };
+    }, []);
+
+    const handleStartJob = () => {
+        client.send("/app/startJob", {}, "YourJobName");
+    };
+
+    return (
+        <div>
+            <button onClick={handleStartJob}>Start Job</button>
+            <p>Job Status: {jobStatus}</p>
+        </div>
+    );
+}
+
+export default JobExecutor;
+Conclusion
+This setup uses WebSockets to enable real-time communication between the Spring Boot server and the React client.
+ When the user clicks the button in the React app, a message is sent over the WebSocket to start a job. 
+ The server can then continuously send back status updates over the same WebSocket connection, 
+ which the client listens to and updates the UI accordingly.
+
+This avoids the need for polling and provides a more responsive and efficient user experience. 
+The WebSocket approach is particularly suitable for applications requiring real-time data flow,
+ such as monitoring and interactive platforms.
+ 
+ 
+ 
+ 
+When a user clicks the "Start Job" button on the React UI, the following interactions and updates typically happen on the screen, facilitated by the WebSocket connection:
+
+Button Interaction:
+
+As soon as the user clicks the "Start Job" button, you can change the button to a disabled state to prevent multiple submissions and to indicate that the job is being processed.
+Optionally, you can display a loading indicator (like a spinner) near the button or elsewhere on the page to show that the job initiation is in progress.
+Immediate Feedback:
+
+The button click triggers the WebSocket message to be sent to the server. You could immediately update the UI to reflect that the job start process is underway.
+You might display a message such as "Starting job..." or "Job initiation in progress..." to give instant feedback to the user.
+Real-Time Updates via WebSocket:
+
+Once the job is successfully started (as confirmed by a message from the server), you update the message to "Job started successfully" or similar.
+As the job progresses, further updates can be sent from the server to the client via WebSocket. The client updates the UI in real time to display these statuses. For example, "Job is running...", "Job is 50% complete", etc.
+Final Status:
+
+When the job is complete, the server sends a final status update, such as "Job completed successfully" or "Job failed with errors". This is displayed to the user.
+At this point, you can re-enable the "Start Job" button if the user needs to start the job again or perform other actions.
+Error Handling:
+
+In case of any errors during the job start or execution process, display error messages appropriately. For example, "Failed to start job due to server error" or specific error messages returned by the server.
+Here’s how you can implement some of these interactions in your React component:
+
+import React, { useState, useEffect } from 'react';
+import { over as StompOver } from 'stompjs';
+import SockJS from 'sockjs-client';
+
+function JobExecutor() {
+    const [jobStatus, setJobStatus] = useState('Idle');
+    const [loading, setLoading] = useState(false);
+    const [client, setClient] = useState(null);
+
+    useEffect(() => {
+        const socket = new SockJS('http://your-api-url/ws');
+        const stompClient = StompOver(socket);
+        
+        stompClient.connect({}, frame => {
+            console.log('Connected: ' + frame);
+
+            stompClient.subscribe('/topic/jobStatus', status => {
+                setJobStatus(status.body);
+                if (status.body.includes("completed") || status.body.includes("failed")) {
+                    setLoading(false);
+                }
+            });
+        });
+
+        setClient(stompClient);
+        return () => {
+            if (client) {
+                client.disconnect();
+            }
+        };
+    }, []);
+
+    const handleStartJob = () => {
+        if (client && !loading) {
+            setLoading(true);
+            setJobStatus("Starting job...");
+            client.send("/app/startJob", {}, "YourJobName");
+        }
+    };
+
+    return (
+        <div>
+            <button onClick={handleStartJob} disabled={loading}>
+                {loading ? 'Processing...' : 'Start Job'}
+            </button>
+            <p>Job Status: {jobStatus}</p>
+        </div>
+    );
+}
+
+export default JobExecutor;
+
+This setup ensures that the user is continuously informed about the state of the job they initiated, 
+enhancing the interactivity and responsiveness of your application.
