@@ -1,0 +1,96 @@
+Given that your CRUD database utilizes Spring Data JPA with entities and \
+repositories, and your SSIS interactions will be strictly SQL-based without needing 
+entities, your configuration will indeed be different for each data source. 
+This approach helps to keep your SSIS-related operations straightforward and more 
+directly controlled via SQL, which is suitable for executing stored procedures or direct SQL statements.
+
+Here’s a detailed setup that respects this architecture:
+Step 1: Configure Data Sources
+Since your SSIS interactions do not require entities or the complexity of JPA, you can configure the SSIS data source specifically for use with JdbcTemplate, which is ideal for running direct SQL queries.
+
+Primary (CRUD) Data Source Configuration:
+This data source will continue to use Spring Data JPA.
+@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories(
+    basePackages = "com.example.app.repositories",
+    entityManagerFactoryRef = "entityManagerFactory",
+    transactionManagerRef = "transactionManager"
+)
+public class PrimaryDataSourceConfig {
+
+    @Primary
+    @Bean(name = "dataSource")
+    @ConfigurationProperties(prefix = "spring.datasource")
+    public DataSource dataSource() {
+        return DataSourceBuilder.create().build();
+    }
+
+    @Primary
+    @Bean(name = "entityManagerFactory")
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(
+            EntityManagerFactoryBuilder builder,
+            @Qualifier("dataSource") DataSource dataSource) {
+        return builder
+                .dataSource(dataSource)
+                .packages("com.example.app.domain")
+                .persistenceUnit("primary")
+                .build();
+    }
+
+    @Primary
+    @Bean(name = "transactionManager")
+    public PlatformTransactionManager transactionManager(
+            @Qualifier("entityManagerFactory") EntityManagerFactory entityManagerFactory) {
+        return new JpaTransactionManager(entityManagerFactory);
+    }
+}
+SSIS Data Source Configuration:
+This configuration uses JdbcTemplate for SQL operations.
+@Configuration
+public class SSISDataSourceConfig {
+
+    @Bean(name = "ssisDataSource")
+    @ConfigurationProperties(prefix = "spring.ssis.datasource")
+    public DataSource ssisDataSource() {
+        return DataSourceBuilder.create().build();
+    }
+
+    @Bean(name = "ssisJdbcTemplate")
+    public JdbcTemplate ssisJdbcTemplate(@Qualifier("ssisDataSource") DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+}
+Step 2: Use the Configurations
+With these configurations, you can use the JdbcTemplate for SSIS-related operations and repositories for CRUD operations.
+
+Example SSIS Service:
+@Service
+public class SSISJobService {
+
+    @Autowired
+    @Qualifier("ssisJdbcTemplate")
+    private JdbcTemplate ssisJdbcTemplate;
+
+    public void startJob() {
+        ssisJdbcTemplate.update("EXEC job_start");
+    }
+
+    public String getJobStatus(int jobId) {
+        return ssisJdbcTemplate.queryForObject("EXEC get_job_status ?", new Object[]{jobId}, String.class);
+    }
+}
+Step 3: Security and Transaction Management
+Ensure that each data source has the appropriate transaction management. Since SSIS operations are directly executed with JdbcTemplate, you may not need to manage transactions unless the operations involve multiple update steps that must be atomic.
+
+Security Considerations:
+
+Keep sensitive data secure: Use Spring Security to secure endpoints that trigger SSIS jobs.
+Validate inputs: Especially for any IDs or parameters passed to SQL queries to prevent SQL injection.
+Step 4: Testing
+Thoroughly test each part of your application:
+
+CRUD Operations: Test all repository methods to ensure they interact correctly with the primary data source.
+SSIS Operations: Test SSIS job start and status queries to ensure they are executed correctly and that the application correctly handles the responses.
+By keeping your SSIS data source configuration separate and tailored for SQL operations while maintaining your primary data source for JPA, you create a clear separation of concerns that aligns with the nature of the operations each data source handles. 
+This setup ensures that modifications in one part of the application do not inadvertently affect the other, maintaining robustness and clarity in your application architecture.
