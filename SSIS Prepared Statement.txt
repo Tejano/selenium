@@ -1,0 +1,96 @@
+
+If you prefer to use a prepared statement instead of using JdbcTemplate 
+for executing SQL queries, you can do this directly using the Java JDBC API with 
+a DataSource. This approach provides you with more control, especially if you need 
+to work closely with the connection, such as managing transactions or handling specific database features.
+
+Here's how you can modify your SSISJobService to use a prepared statement for executing SQL commands instead of JdbcTemplate:
+
+Step 1: Inject the DataSource
+First, inject the DataSource directly instead of JdbcTemplate. This allows you to create connections and prepare statements manually:
+
+import javax.sql.DataSource;
+import java.sql.*;
+
+@Service
+public class SSISJobService {
+
+    @Autowired
+    @Qualifier("ssisDataSource")
+    private DataSource ssisDataSource;
+
+    public void startJob() throws SQLException {
+        try (Connection conn = ssisDataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("EXEC job_start")) {
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error executing job_start", e);
+        }
+    }
+
+    public String getJobStatus(int jobId) throws SQLException {
+        try (Connection conn = ssisDataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("EXEC get_job_status ?")) {
+            stmt.setInt(1, jobId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString(1);
+                } else {
+                    return "No status found";
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error querying job status", e);
+        }
+    }
+}
+Step 2: Error Handling
+The code includes basic error handling to manage SQL exceptions. Depending on your application's requirements, 
+you might want to implement more sophisticated error management strategies, 
+such as retry logic or custom exception classes that can provide more information about the error to the calling service.
+
+Step 3: Transaction Management
+When using DataSource and manual connection management as shown above, you need to handle transactions 
+manually if this is required. This might not be necessary for simple queries but is crucial for 
+operations that modify data and need to be rolled back in case of errors.
+
+Here’s how you could manage transactions manually:
+public void startJob() throws SQLException {
+    Connection conn = null;
+    PreparedStatement stmt = null;
+    try {
+        conn = ssisDataSource.getConnection();
+        conn.setAutoCommit(false); // Start transaction
+        stmt = conn.prepareStatement("EXEC job_start");
+        stmt.executeUpdate();
+        conn.commit(); // Commit transaction
+    } catch (SQLException e) {
+        if (conn != null) {
+            try {
+                conn.rollback(); // Rollback transaction
+            } catch (SQLException ex) {
+                // handle rollback error
+            }
+        }
+        throw new RuntimeException("Error executing job_start", e);
+    } finally {
+        if (stmt != null) {
+            try {
+                stmt.close();
+            } catch (SQLException e) {
+                // handle statement close error
+            }
+        }
+        if (conn != null) {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                // handle connection close error
+            }
+        }
+    }
+}
+Conclusion
+Using prepared statements directly from DataSource gives you finer control over the execution of SQL statements, 
+including handling of parameters, transactions, and connections. It's particularly useful when you need to execute complex transactions or utilize specific 
+database features that are not fully supported or conveniently accessible through higher-level abstractions like JdbcTemplate
