@@ -1,0 +1,44 @@
+Step 3: Implement a Method to Check Job Status
+You can use JdbcTemplate to execute the sp_help_job stored procedure to
+ retrieve job details. Here’s an example of a method in a service class that checks if a job is currently running:
+ 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class SSISJobService {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    public String checkJobStatus(String jobName) {
+        String sql = "EXEC msdb.dbo.sp_help_job @job_name = ?, @job_aspect = 'JOB';";
+        List<Map<String, Object>> results = jdbcTemplate.queryForList(sql, jobName);
+
+        if (!results.isEmpty()) {
+            Map<String, Object> job = results.get(0);
+            int currentExecutionStatus = (Integer) job.get("current_execution_status");
+
+            switch (currentExecutionStatus) {
+                case 1:
+                    return "Executing";
+                case 2:
+                    return "Waiting for thread";
+                case 3:
+                    return "Between retries";
+                case 4:
+                    return "Idle";
+                case 5:
+                    return "Suspended";
+                case 7:
+                    return "Performing completion actions";
+                default:
+                    return "Unknown status";
+            }
+        }
+        return "Job not found";
+    }
+}
