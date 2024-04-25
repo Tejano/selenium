@@ -42,3 +42,58 @@ public class SSISJobService {
         return "Job not found";
     }
 }
+
+
+Step 2: Modify the checkJobStatus Method
+Now, let’s rewrite the checkJobStatus method to use a DataSource and a PreparedStatement:
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
+
+@Service
+public class JobStatusService {
+
+    @Autowired
+    @Qualifier("appDataSource")
+    private DataSource dataSource;
+
+    public String checkJobStatus(String jobName) {
+        String sql = "EXEC msdb.dbo.sp_help_job @job_name = ?, @job_aspect = 'JOB';";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             
+            stmt.setString(1, jobName);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    int currentExecutionStatus = rs.getInt("current_execution_status");
+                    switch (currentExecutionStatus) {
+                        case 1:
+                            return "Executing";
+                        case 2:
+                            return "Waiting for thread";
+                        case 3:
+                            return "Between retries";
+                        case 4:
+                            return "Idle";
+                        case 5:
+                            return "Suspended";
+                        case 7:
+                            return "Performing completion actions";
+                        default:
+                            return "Unknown status";
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error querying job status", e);
+        }
+        return "Job not found";
+    }
+}
