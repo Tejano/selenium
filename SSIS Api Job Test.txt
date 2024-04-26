@@ -1,0 +1,62 @@
+Testing a Spring Boot controller's @PostMapping method effectively involves using Spring Boot's test framework, 
+which provides several utilities to mock web requests, inspect your controllers, and assert the responses. For the @PostMapping method you've shown, 
+you can use MockMvc to simulate HTTP requests and check the responses without starting a full HTTP server.
+Here’s how you can write a test case for your executeJob method:
+
+1. Setup Test Dependencies
+First, ensure you have the necessary dependencies for testing in your pom.xml 
+(if using Maven) or build.gradle (if using Gradle). Here's an example for Maven:
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <scope>test</scope>
+</dependency>
+
+2. Create a Test Class
+You'll need to create a test class using @WebMvcTest to focus solely on the web layer without 
+starting a full HTTP server. You can mock your service layer to ensure the controller is isolated from other components.
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+
+import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(controllers = SSISController.class)
+public class SSISControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private SSIService ssisService;  // Assuming SSIService is your service class
+
+    @Test
+    public void testExecuteJob() throws Exception {
+        String jobName = "exampleJob";
+        String expectedResponse = "Job started";
+
+        // Mocking the service call
+        given(ssisService.executeJob(jobName)).willReturn(expectedResponse);
+
+        // Perform the post request
+        mockMvc.perform(MockMvcRequestBuilders.post("/execute-job")
+                        .param("jobName", jobName)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                .andExpect(status().isOk())  // Assert the response status code
+                .andExpect(MockMvcResultMatchers.content().string(expectedResponse));  // Assert the response content
+    }
+}
+
+Key Points in the Test:
+@WebMvcTest(SSISController.class): This annotation is used for unit testing Spring MVC applications. 
+It disables full auto-configuration and instead applies only configuration relevant to MVC tests.
+@MockBean SSIService: This mocks the SSIService that your controller depends on, allowing you to define behaviors and assertions for this mock.
+mockMvc.perform(...) and .andExpect(...): These methods are used to execute the request and assert 
+the conditions on the response. Here, it checks that the HTTP status is 200 OK and that the response content matches the expected response.
+.param("jobName", jobName): This adds a request parameter to your test request, simulating what would be sent in a real HTTP request.
