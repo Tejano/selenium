@@ -60,3 +60,72 @@ It disables full auto-configuration and instead applies only configuration relev
 mockMvc.perform(...) and .andExpect(...): These methods are used to execute the request and assert 
 the conditions on the response. Here, it checks that the HTTP status is 200 OK and that the response content matches the expected response.
 .param("jobName", jobName): This adds a request parameter to your test request, simulating what would be sent in a real HTTP request.
+
+When testing a controller method in Spring Boot where the response could vary due to 
+asynchronous processes or time-sensitive data, it’s important to account for different
+ possible outcomes in your test cases. Since your executeJob might return different statuses such as
+ "Executing" or "Idle" depending on how quickly the job completes, you need to create flexible tests that can handle these scenarios.
+
+Here’s how you can enhance your test to handle multiple potential outcomes for your executeJob API:
+
+1. Extend the Test with Parameterized Tests
+You can use JUnit 5's @ParameterizedTest feature to run the same test multiple times with different 
+expected results. This is especially useful when the method under test might return different results under normal operation.
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(controllers = SSISController.class)
+public class SSISControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private SSIService ssisService;
+
+    @ParameterizedTest
+    @CsvSource({
+        "exampleJob, Executing",
+        "exampleJob, Idle"
+    })
+    public void testExecuteJob(String jobName, String expectedStatus) throws Exception {
+        // Mock the service to return different statuses based on the job name
+        when(ssisService.executeJob(jobName)).thenReturn(expectedStatus);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/execute-job")
+                .param("jobName", jobName)
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                .andExpect(status().isOk())
+                .andExpect(content().string(expectedStatus));
+    }
+}
+
+2. Handle Asynchronous Behavior
+If the job status changes over time due to asynchronous processes, and you need to test these changes, you might need to 
+simulate these changes within your service layer mocks. However, if the result is directly dependent on the 
+immediate return of the executeJob method and reflects only the start status, the above method is sufficient.
+
+3. Testing Asynchronous Processes
+For truly asynchronous operations, where the status might change after the initial response, consider 
+adding integration tests that check the system's behavior over time. These tests might not be suitable for 
+@WebMvcTest which is primarily designed for request/response testing. Instead, use @SpringBootTest with some form of timed delay or event listeners to capture state changes.
+
+4. Consider Using Mocks to Simulate Real-Time Data
+If your system includes components that update the job status in real-time, consider using advanced mocking techniques or an in-memory database to simulate this behavior during testing.
+
+Running the Tests
+Execute these tests via your IDE or through your build tool (Maven or Gradle), ensuring your CI/CD pipeline 
+is configured to handle parameterized tests if they are part of your testing strategy.
+
+This approach helps ensure that your application can handle various scenarios that may occur in production, improving reliability and robustness.
