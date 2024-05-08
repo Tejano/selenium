@@ -1,0 +1,38 @@
+
+If you need to find and update all jobs owned by a specific user in SSIS 2019,
+you can use a T-SQL script that iterates through all jobs and updates the owner 
+where the current owner matches your specified criteria. This approach is particularly 
+useful if you have multiple jobs that need the owner changed and you want to automate the process.
+
+Here’s a T-SQL script to accomplish this:
+
+USE msdb;
+GO
+
+DECLARE @old_owner SYSNAME = 'current_owner_login_name';  -- Set the current owner's login name
+DECLARE @new_owner SYSNAME = 'new_owner_login_name';      -- Set the new owner's login name
+
+DECLARE job_cursor CURSOR FOR 
+    SELECT job_id 
+    FROM dbo.sysjobs 
+    WHERE owner_sid = SUSER_SID(@old_owner);
+
+DECLARE @job_id UNIQUEIDENTIFIER;
+
+OPEN job_cursor;
+
+FETCH NEXT FROM job_cursor INTO @job_id;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    EXEC dbo.sp_update_job 
+        @job_id = @job_id,
+        @owner_login_name = @new_owner;
+
+    FETCH NEXT FROM job_cursor INTO @job_id;
+END
+
+CLOSE job_cursor;
+DEALLOCATE job_cursor;
+
+GO
