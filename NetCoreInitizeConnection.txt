@@ -1,0 +1,25 @@
+public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+{
+    // Other configuration code...
+
+    // Warm-up code
+    InitializeDatabaseConnections();
+}
+
+private void InitializeDatabaseConnections()
+{
+    try
+    {
+        // Assuming you have a DB context or similar
+        using (var context = new YourDbContext())
+        {
+            // This could be a simple query that forces a connection to open
+            context.Database.ExecuteSqlRaw("SELECT 1");
+        }
+    }
+    catch (Exception ex)
+    {
+        // Handle or log exception appropriately
+        Console.WriteLine("Error during database warm-up: " + ex.Message);
+    }
+}
