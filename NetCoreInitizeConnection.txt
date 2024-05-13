@@ -23,3 +23,30 @@ private void InitializeDatabaseConnections()
         Console.WriteLine("Error during database warm-up: " + ex.Message);
     }
 }
+//
+public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider serviceProvider)
+{
+    // Other configuration code...
+
+    // Warm-up code
+    InitializeDatabaseConnections(serviceProvider);
+}
+
+private void InitializeDatabaseConnections(IServiceProvider serviceProvider)
+{
+    using (var scope = serviceProvider.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<YourDbContext>();
+        try
+        {
+            // This could be a simple query that forces a connection to open
+            dbContext.Database.ExecuteSqlRaw("SELECT 1");
+        }
+        catch (Exception ex)
+        {
+            // Log the error using a logging framework or system that's appropriate
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Startup>>();
+            logger.LogError(ex, "Error during database warm-up");
+        }
+    }
+}
