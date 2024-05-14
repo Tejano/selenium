@@ -1,0 +1,97 @@
+
+To move SQL Server Reporting Services (SSRS) reports and folders from a UAT/Non-Prod environment to a Production environment, you can follow a structured approach. Here are the typical steps:
+
+Backup Existing Reports (Optional but Recommended):
+
+Before moving new reports to Production, it's a good practice to back up existing reports and folders in the Production environment.
+Use Report Server Web Service (RSS) Scripts:
+
+Create RSS scripts to automate the deployment of reports and folders. These scripts can be used to upload reports to the Production server. SQL Server Management Studio (SSMS) or Report Builder can be used to create these scripts.
+Report Export and Import via SSRS Report Manager:
+
+You can manually download reports from the UAT environment and upload them to the Production environment via the SSRS Report Manager interface. This is more tedious but straightforward for smaller numbers of reports.
+ReportSync Tool:
+
+Tools like ReportSync can help synchronize reports and folders between environments. This tool allows you to compare and deploy SSRS reports between servers.
+SSRS Web Portal or Management Studio:
+
+Use the SSRS Web Portal or SSMS to deploy the reports and data sources. In SSMS, you can connect to the Report Server and deploy the reports from one server to another.
+Here’s a step-by-step guide using SSMS and RSS scripts:
+
+Step-by-Step Guide Using SSMS and RSS Scripts
+Step 1: Create the RSS Script for Downloading Reports
+
+Open SSMS and connect to the UAT Report Server.
+Create a script (RSS script) to download the reports and folders from UAT.
+Example of an RSS script to download reports:
+
+vb
+Copy code
+Public Sub Main()
+    Dim items As CatalogItem() = rs.ListChildren("/UATFolder", True)
+    For Each item As CatalogItem In items
+        If item.TypeName = "Report" Then
+            Dim definition As Byte() = rs.GetReportDefinition(item.Path)
+            Dim reportName As String = item.Path.Replace("/", "_") & ".rdl"
+            Dim fs As New FileStream("C:\Temp\" & reportName, FileMode.Create)
+            fs.Write(definition, 0, definition.Length)
+            fs.Close()
+        End If
+    Next
+End Sub
+Step 2: Run the RSS Script to Download Reports
+
+Save the script as DownloadReports.rss.
+Run the script using the RS.exe utility:
+sh
+Copy code
+rs.exe -i C:\Path\To\DownloadReports.rss -s http://UATReportServer/ReportServer
+Step 3: Create the RSS Script for Uploading Reports to Production
+
+Create a script (RSS script) to upload the downloaded reports to the Production environment.
+Example of an RSS script to upload reports:
+
+vb
+Copy code
+Public Sub Main()
+    Dim reportFiles As String() = Directory.GetFiles("C:\Temp\", "*.rdl")
+    For Each reportFile As String In reportFiles
+        Dim reportName As String = Path.GetFileNameWithoutExtension(reportFile).Replace("_", "/")
+        Dim reportPath As String = "/ProductionFolder" & reportName
+        Dim definition As Byte() = File.ReadAllBytes(reportFile)
+        rs.CreateReport(reportName, reportPath, False, definition, Nothing)
+    Next
+End Sub
+Step 4: Run the RSS Script to Upload Reports
+
+Save the script as UploadReports.rss.
+Run the script using the RS.exe utility:
+sh
+Copy code
+rs.exe -i C:\Path\To\UploadReports.rss -s http://ProdReportServer/ReportServer
+Using ReportSync Tool
+Download and Install ReportSync:
+
+ReportSync is a third-party tool available online. Download and install it on your machine.
+Configure Source and Destination:
+
+Open ReportSync and configure the source (UAT) and destination (Production) report servers.
+Select Reports and Folders:
+
+Select the reports and folders you want to synchronize from UAT to Production.
+Synchronize:
+
+Start the synchronization process. ReportSync will compare the reports and folders and deploy the differences to the Production environment.
+Manual Method via SSRS Report Manager
+Download Reports from UAT:
+
+Go to the UAT Report Manager.
+Navigate to the folder containing the reports.
+Download each report (.rdl file).
+Upload Reports to Production:
+
+Go to the Production Report Manager.
+Navigate to the folder where you want to upload the reports.
+Upload each report (.rdl file).
+Conclusion
+The method you choose depends on the number of reports and folders, your familiarity with scripting, and whether you prefer manual or automated deployment. For a larger number of reports, automated methods using RSS scripts or tools like ReportSync are more efficient and reduce the risk of errors.
