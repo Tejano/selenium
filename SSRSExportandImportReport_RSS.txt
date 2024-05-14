@@ -1,0 +1,103 @@
+
+If you only have access to the reports and need to create an RSS file to move them from UAT to Production, you can automate the deployment process using RSS scripts. Here's a step-by-step guide to create and use RSS scripts for this purpose:
+
+Step-by-Step Guide
+Prepare the Environment:
+
+Ensure you have the RS.exe utility available on your local machine. This is usually found in the SQL Server tools directory (e.g., C:\Program Files\Microsoft SQL Server\Reporting Services\RSClient\).
+Script to Download Reports and Data Sources from UAT:
+
+Create a script to download the reports and data sources from UAT.
+DownloadReports.rss:
+Public Sub Main()
+    ' Define the path to the UAT folder containing the reports and data sources
+    Dim sourceFolder As String = "/Comm"
+    Dim targetFolder As String = "C:\Temp\Reports"
+
+    ' Ensure the target folder exists
+    If Not System.IO.Directory.Exists(targetFolder) Then
+        System.IO.Directory.CreateDirectory(targetFolder)
+    End If
+
+    ' Download all items in the source folder
+    DownloadItems(sourceFolder, targetFolder)
+End Sub
+
+Private Sub DownloadItems(sourceFolder As String, targetFolder As String)
+    ' List all items in the source folder
+    Dim items As CatalogItem() = rs.ListChildren(sourceFolder, True)
+    For Each item As CatalogItem In items
+        Dim targetPath As String = System.IO.Path.Combine(targetFolder, item.Path.Replace("/", "_"))
+
+        If item.TypeName = "Report" Then
+            ' Download report definition
+            Dim definition As Byte() = rs.GetReportDefinition(item.Path)
+            System.IO.File.WriteAllBytes(targetPath & ".rdl", definition)
+        ElseIf item.TypeName = "DataSource" Then
+            ' Download data source definition
+            Dim definition As DataSourceDefinition = rs.GetDataSourceContents(item.Path)
+            SaveDataSourceDefinition(targetPath & ".ds", definition)
+        End If
+    Next
+End Sub
+
+Private Sub SaveDataSourceDefinition(filePath As String, definition As DataSourceDefinition)
+    Dim xml As New System.Xml.Serialization.XmlSerializer(definition.GetType())
+    Using fs As New System.IO.FileStream(filePath, System.IO.FileMode.Create)
+        xml.Serialize(fs, definition)
+    End Using
+End Sub
+
+Run the Download Script:
+Use the RS.exe utility to run the script and download the reports and data sources.
+rs.exe -i C:\Path\To\DownloadReports.rss -s http://UATReportServer/ReportServer
+
+Script to Upload Reports and Data Sources to Production:
+Create a script to upload the downloaded reports and data sources to the Production environment.
+UploadReports.rss:
+Public Sub Main()
+    ' Define the path to the local folder containing the downloaded reports and data sources
+    Dim sourceFolder As String = "C:\Temp\Reports"
+    Dim targetFolder As String = "/Comm"
+
+    ' Upload all items in the source folder
+    UploadItems(sourceFolder, targetFolder)
+End Sub
+
+Private Sub UploadItems(sourceFolder As String, targetFolder As String)
+    Dim files As String() = System.IO.Directory.GetFiles(sourceFolder, "*.*", System.IO.SearchOption.AllDirectories)
+
+    For Each file As String In files
+        Dim relativePath As String = file.Substring(sourceFolder.Length).Replace("_", "/").Replace(".rdl", "").Replace(".ds", "")
+        Dim targetPath As String = targetFolder & relativePath
+
+        If file.EndsWith(".rdl") Then
+            ' Upload report definition
+            Dim definition As Byte() = System.IO.File.ReadAllBytes(file)
+            rs.CreateReport(System.IO.Path.GetFileNameWithoutExtension(file), targetPath, False, definition, Nothing)
+        ElseIf file.EndsWith(".ds") Then
+            ' Upload data source definition
+            Dim definition As DataSourceDefinition = LoadDataSourceDefinition(file)
+            rs.CreateDataSource(System.IO.Path.GetFileNameWithoutExtension(file), targetPath, False, definition, Nothing)
+        End If
+    Next
+End Sub
+
+Private Function LoadDataSourceDefinition(filePath As String) As DataSourceDefinition
+    Dim xml As New System.Xml.Serialization.XmlSerializer(GetType(DataSourceDefinition))
+    Using fs As New System.IO.FileStream(filePath, System.IO.FileMode.Open)
+        Return CType(xml.Deserialize(fs), DataSourceDefinition)
+    End Using
+End Function
+
+Run the Upload Script:
+Use the RS.exe utility to run the script and upload the reports and data sources to the Production environmen
+
+Notes:
+Ensure the paths and URLs are correctly specified in the scripts.
+Adjust the target folder paths as needed to match your Production environment's folder structure.
+Ensure you have appropriate permissions to upload reports and data sources to the Production Report Server.
+
+Conclusion
+By following these steps, you can automate the process of moving reports and data sources from the UAT environment to the Production environment using RSS scripts.
+This approach ensures consistency and reduces the risk of manual errors during the deployment process.
