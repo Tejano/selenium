@@ -1,0 +1,126 @@
+To review the connections from your services in the SQL Server database, 
+you can use several SQL queries that provide insights into the current and
+ historical state of database connections. Here are some useful queries:
+ 
+ View current active connections:
+This query shows the currently active connections to your SQL Server instance.
+
+SELECT 
+    session_id,
+    login_name,
+    host_name,
+    program_name,
+    client_interface_name,
+    connect_time,
+    last_request_start_time,
+    reads,
+    writes,
+    logical_reads
+FROM 
+    sys.dm_exec_sessions
+WHERE 
+    is_user_process = 1;
+
+View current connections with detailed information:
+This query provides more detailed information about each active connection, including the associated query.
+
+SELECT 
+    c.session_id,
+    c.net_transport,
+    c.encrypt_option,
+    c.auth_scheme,
+    s.host_name,
+    s.program_name,
+    s.client_interface_name,
+    s.login_name,
+    s.last_request_start_time,
+    s.last_request_end_time,
+    s.reads,
+    s.writes,
+    s.logical_reads,
+    r.command,
+    r.status,
+    r.wait_type,
+    r.wait_time,
+    r.last_wait_type,
+    r.cpu_time,
+    r.total_elapsed_time,
+    t.text AS sql_text
+FROM 
+    sys.dm_exec_connections AS c
+    INNER JOIN sys.dm_exec_sessions AS s ON c.session_id = s.session_id
+    LEFT OUTER JOIN sys.dm_exec_requests AS r ON c.session_id = r.session_id
+    CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) AS t
+WHERE 
+    s.is_user_process = 1;
+	
+View connection pool statistics:
+This query provides information about the connection pool, including the number of connections and the pool's status.
+
+SELECT 
+    p.pool_id,
+    p.database_id,
+    p.pool_alloc_size,
+    p.cached_pool_size,
+    p.pool_size,
+    p.cache_hit_ratio
+FROM 
+    sys.dm_exec_cached_plans AS p
+WHERE 
+    p.objtype = 'Proc';
+
+View connections over time using Extended Events:
+To track connections over time, you can set up Extended Events to log connection information. 
+First, create an Extended Events session:
+
+CREATE EVENT SESSION [ConnectionTracking]
+ON SERVER
+ADD EVENT sqlserver.login(
+    ACTION(sqlserver.client_app_name, sqlserver.client_hostname, sqlserver.username)
+    WHERE ([sqlserver].[database_id]=(DB_ID('YourDatabaseName')))
+)
+ADD TARGET package0.event_file(
+    SET filename=N'ConnectionTracking.xel', 
+        max_file_size=(5), 
+        max_rollover_files=(2)
+)
+WITH (MAX_MEMORY=4096 KB, EVENT_RETENTION_MODE=ALLOW_SINGLE_EVENT_LOSS, 
+      MAX_DISPATCH_LATENCY=30 SECONDS, MAX_EVENT_SIZE=0 KB, MEMORY_PARTITION_MODE=NONE, 
+      TRACK_CAUSALITY=OFF, STARTUP_STATE=OFF);
+GO
+
+-- Start the session
+ALTER EVENT SESSION [ConnectionTracking] ON SERVER STATE = START;
+
+To query the data collected by the Extended Events session:
+SELECT 
+    event_data.value('(event/@name)[1]', 'nvarchar(50)') AS event_name,
+    event_data.value('(event/data[@name="client_app_name"]/value)[1]', 'nvarchar(256)') AS client_app_name,
+    event_data.value('(event/data[@name="client_hostname"]/value)[1]', 'nvarchar(256)') AS client_hostname,
+    event_data.value('(event/data[@name="username"]/value)[1]', 'nvarchar(256)') AS username,
+    event_data.value('(event/@timestamp)[1]', 'datetime') AS event_timestamp
+FROM 
+    sys.fn_xe_file_target_read_file('ConnectionTracking*.xel', NULL, NULL, NULL)
+    CROSS APPLY (SELECT CAST(event_data AS XML) AS event_data) AS t;
+
+View login and logout events:
+This query uses the default trace to view login and logout events.
+
+SELECT 
+    LoginName,
+    StartTime,
+    HostName,
+    ApplicationName,
+    EventClass,
+    DatabaseName
+FROM 
+    sys.fn_trace_gettable(CONVERT(VARCHAR(150), (SELECT REVERSE(SUBSTRING(REVERSE(path), CHARINDEX('\', REVERSE(path)), 256)) + 'log.trc' 
+                                            FROM sys.traces WHERE is_default = 1)), DEFAULT)
+WHERE 
+    EventClass IN (14, 15)
+ORDER BY 
+    StartTime DESC;
+	
+	
+These queries will help you monitor and analyze the connections made to your SQL Server database from your .NET 
+Core microservices. Adjust the queries as needed to fit your specific requirements and database schema.
