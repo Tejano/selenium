@@ -1,0 +1,38 @@
+
+In SQL Server Reporting Services (SSRS), there are several ways to get the query that a report executes when generating the report.
+
+Using Report Manager:
+
+Navigate to the Report Manager web portal.
+Find your report in the list of reports and click on it to open.
+In the toolbar, click on "View" and then select "Report Data."
+This will display the dataset used in the report along with its query.
+SQL Server Management Studio (SSMS):
+
+Connect to the SQL Server instance where your SSRS database is hosted.
+Navigate to the database that holds the report data.
+Expand the "Views" or "Tables" node to find the dataset used by the report.
+Right-click on the dataset and select "Script as" > "SELECT to" > "New Query Editor Window" to see the query.
+Report Server Database:
+
+SSRS stores report metadata in its ReportServer database.
+You can query the ReportServer database to get information about the reports, including their datasets and queries.
+Here's an example query to get the query text for a specific report:
+sql
+SELECT CommandText
+FROM [ReportServer].[dbo].[Catalog] C
+JOIN [ReportServer].[dbo].[DataSet] DS ON C.ItemID = DS.ItemID
+JOIN [ReportServer].[dbo].[DataSource] DsS ON DS.DataSourceID = DsS.ItemID
+WHERE C.Name = 'YourReportName'
+
+Exporting RDL:
+
+If you have access to the Report Definition Language (RDL) file of the report, you can open it in a text editor to see the query.
+Search for <Query> tags within the RDL file to find the query text.
+Each of these methods provides a way to access the query that an SSRS report executes when generating the report. Choose the method that is most convenient for your situation.
+
+
+
+
+
+
