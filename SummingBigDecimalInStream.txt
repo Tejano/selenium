@@ -33,3 +33,20 @@ We use the stream() method to convert the list of DTOs into a stream of BigDecim
 We use the map() function to extract the commTotal values from each DTO.
 We use the reduce() function with an initial value of BigDecimal.ZERO and the BigDecimal::add operation to accumulate and sum the commTotal values.
 Now, you can call the sumCommTotal method with your list of DTOs to get the sum of commTotal values.
+
+
+
+You're correct that a Spring Data JPA repository is typically tied to a single data source. 
+If you have two different data sources (one for 2016 and one for 2019) 
+and you want to use a native query to fetch data from both sources, you will need to handle this scenario 
+outside of the standard Spring Data JPA repository approach.
+
+One way to approach this is to create custom repository methods that use separate EntityManager instances, one for each data source, and then execute the native query on each data source separately. Here's an outline of how you can do this:
+
+Create two separate EntityManagerFactory instances, one for 2016 and one for 2019, each configured with its own data source.
+
+Create two separate EntityManager instances, one for each EntityManagerFactory. You can do this in your service or repository class.
+
+Execute the native query on each EntityManager instance, fetching the data from both the 2016 and 2019 data sources.
+
+Here's an example of how you might structure your service or repository to achieve this:
