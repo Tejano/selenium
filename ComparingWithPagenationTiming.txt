@@ -290,3 +290,4 @@ Adjust the timeout settings in your JDBC connection string or data source config
 Example JDBC URL adjustment
 spring.datasource.url=jdbc:sqlserver://server-name;databaseName=mydatabase;connectTimeout=300;socketTimeout=480
 
+25337312713
