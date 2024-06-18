@@ -4,7 +4,8 @@ Sub ImportObjectsFromADP()
     Dim tdf As DAO.TableDef
     Dim qdf As DAO.QueryDef
     Dim doc As DAO.Document
-    Dim docType As AcObjectType
+    Dim docTypeArray As Variant
+    Dim i As Integer
 
     adpPath = "C:\Path\To\Your\ADPFile.adp"
     Set db = CurrentDb()
@@ -24,8 +25,9 @@ Sub ImportObjectsFromADP()
     Next qdf
 
     ' Import forms, reports, macros, and modules
-    For Each docType In Array(acForm, acReport, acMacro, acModule)
-        Select Case docType
+    docTypeArray = Array(acForm, acReport, acMacro, acModule)
+    For i = LBound(docTypeArray) To UBound(docTypeArray)
+        Select Case docTypeArray(i)
             Case acForm
                 For Each doc In CurrentProject.AllForms
                     DoCmd.TransferDatabase acImport, "Microsoft Access", adpPath, acForm, doc.Name, doc.Name
@@ -43,7 +45,8 @@ Sub ImportObjectsFromADP()
                     DoCmd.TransferDatabase acImport, "Microsoft Access", adpPath, acModule, doc.Name, doc.Name
                 Next doc
         End Select
-    Next docType
+    Next i
 
     MsgBox "Import completed!"
 End Sub
+
