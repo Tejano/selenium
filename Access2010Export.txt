@@ -1,0 +1,42 @@
+To handle this programmatically, we will split the task into two main parts:
+
+Exporting Objects from ADP using Access 2010:
+This part involves exporting forms, reports, macros, and modules from the ADP file.
+Importing Objects into ACCDB using Access 2016:
+This part involves importing the previously exported objects into a new ACCDB file and linking SQL Server tables.
+Given the limitations, it is best to perform the export part from Access 2010 where ADP is still supported and then switch to Access 2016 for the import and linking steps.
+
+Step-by-Step Programmatic Approach
+Step 1: Export Objects from ADP (Access 2010)
+Use Access 2010 to export forms, reports, macros, and modules programmatically.
+Sub ExportObjectsFromADP()
+    Dim obj As AccessObject
+    Dim objType As Integer
+    Dim exportPath As String
+
+    exportPath = "C:\ExportedObjects\" ' Ensure this directory exists
+
+    ' Export forms
+    For Each obj In CurrentProject.AllForms
+        DoCmd.SaveAsText acForm, obj.Name, exportPath & obj.Name & ".txt"
+    Next obj
+
+    ' Export reports
+    For Each obj In CurrentProject.AllReports
+        DoCmd.SaveAsText acReport, obj.Name, exportPath & obj.Name & ".txt"
+    Next obj
+
+    ' Export macros
+    For Each obj In CurrentProject.AllMacros
+        DoCmd.SaveAsText acMacro, obj.Name, exportPath & obj.Name & ".txt"
+    Next obj
+
+    ' Export modules
+    For Each obj In CurrentProject.AllModules
+        DoCmd.SaveAsText acModule, obj.Name, exportPath & obj.Name & ".txt"
+    Next obj
+
+    MsgBox "Export completed!"
+End Sub
+Open Access 2010 and create a new module.
+Run the ExportObjectsFromADP subroutine to export all objects to text files.

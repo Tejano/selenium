@@ -1,0 +1,94 @@
+Step 2: Import Objects into ACCDB (Access 2016)
+Use Access 2016 to import the exported text files into the ACCDB file and link SQL Server tables.
+Sub ImportObjectsToACCDB()
+    Dim objTypeArray As Variant
+    Dim i As Integer
+    Dim importPath As String
+    Dim fileName As String
+
+    importPath = "C:\ExportedObjects\" ' Ensure this matches the export path
+
+    ' Array of object types to import
+    objTypeArray = Array(acForm, acReport, acMacro, acModule)
+
+    For i = LBound(objTypeArray) To UBound(objTypeArray)
+        Select Case objTypeArray(i)
+            Case acForm
+                fileName = Dir(importPath & "*.txt")
+                While fileName <> ""
+                    DoCmd.LoadFromText acForm, Left(fileName, Len(fileName) - 4), importPath & fileName
+                    fileName = Dir
+                Wend
+            Case acReport
+                fileName = Dir(importPath & "*.txt")
+                While fileName <> ""
+                    DoCmd.LoadFromText acReport, Left(fileName, Len(fileName) - 4), importPath & fileName
+                    fileName = Dir
+                Wend
+            Case acMacro
+                fileName = Dir(importPath & "*.txt")
+                While fileName <> ""
+                    DoCmd.LoadFromText acMacro, Left(fileName, Len(fileName) - 4), importPath & fileName
+                    fileName = Dir
+                Wend
+            Case acModule
+                fileName = Dir(importPath & "*.txt")
+                While fileName <> ""
+                    DoCmd.LoadFromText acModule, Left(fileName, Len(fileName) - 4), importPath & fileName
+                    fileName = Dir
+                Wend
+        End Select
+    Next i
+
+    MsgBox "Import completed!"
+End Sub
+
+Sub LinkSQLServerTables()
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim serverName As String
+    Dim databaseName As String
+    Dim userId As String
+    Dim password As String
+    Dim connString As String
+
+    serverName = "YourServerName"
+    databaseName = "YourDatabaseName"
+    userId = "YourUserId"
+    password = "YourPassword"
+
+    connString = "ODBC;Driver={SQL Server};Server=" & serverName & ";Database=" & databaseName & ";UID=" & userId & ";PWD=" & password & ";"
+
+    Set db = CurrentDb()
+
+    ' Example of linking a table
+    ' You will need to iterate through all tables you want to link
+    Set tdf = db.CreateTableDef("YourTableName")
+    tdf.Connect = connString
+    tdf.SourceTableName = "YourTableName"
+    db.TableDefs.Append tdf
+
+    MsgBox "Tables linked successfully!"
+End Sub
+
+Open Access 2016 and create a new module.
+Run the ImportObjectsToACCDB subroutine to import all exported objects.
+Run the LinkSQLServerTables subroutine to link the SQL Server tables.
+Summary
+Export Objects from ADP in Access 2010:
+
+Use the ExportObjectsFromADP subroutine to export forms, reports, macros, and modules to text files.
+Create a New ACCDB in Access 2016:
+
+Open Access 2016 and create a new blank database.
+Import Objects into ACCDB:
+
+Use the ImportObjectsToACCDB subroutine to import the exported objects into the new ACCDB file.
+Link SQL Server Tables:
+
+Use the LinkSQLServerTables subroutine to link the SQL Server tables to the ACCDB file.
+Update VBA Code:
+
+Ensure all VBA code references are updated to the new linked tables and adjust any necessary code to be compatible with Access 2016.
+This approach allows you to programmatically handle the conversion of an ADP file to an ACCDB file while ensuring all
+ forms, reports, macros, and modules are correctly imported and SQL Server tables are linked.
