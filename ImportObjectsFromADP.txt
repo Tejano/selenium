@@ -1,52 +1,78 @@
 Sub ImportObjectsFromADP()
     Dim adpPath As String
     Dim db As DAO.Database
-    Dim tdf As DAO.TableDef
-    Dim qdf As DAO.QueryDef
-    Dim doc As DAO.Document
+    Dim conn As ADODB.Connection
+    Dim rs As ADODB.Recordset
+    Dim strSQL As String
+    Dim objName As String
     Dim docTypeArray As Variant
     Dim i As Integer
 
     adpPath = "C:\Path\To\Your\ADPFile.adp"
     Set db = CurrentDb()
+    Set conn = New ADODB.Connection
+
+    On Error GoTo ErrorHandler
+
+    ' Open a connection to the ADP file
+    conn.Open "Provider=Microsoft.Access.OLEDB.10.0;Data Source=" & adpPath
 
     ' Import tables
-    For Each tdf In db.TableDefs
-        If Left(tdf.Name, 4) <> "MSys" Then
-            DoCmd.TransferDatabase acImport, "Microsoft Access", adpPath, acTable, tdf.Name, tdf.Name
-        End If
-    Next tdf
+    strSQL = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'"
+    Set rs = conn.Execute(strSQL)
+    Do While Not rs.EOF
+        objName = rs.Fields("TABLE_NAME").Value
+        DoCmd.TransferDatabase acImport, "ODBC Database", _
+            "ODBC;DSN=MS Access Database;DBQ=" & adpPath, acTable, objName, objName
+        rs.MoveNext
+    Loop
+    rs.Close
 
     ' Import queries
-    For Each qdf In db.QueryDefs
-        If Left(qdf.Name, 4) <> "~sq_" Then
-            DoCmd.TransferDatabase acImport, "Microsoft Access", adpPath, acQuery, qdf.Name, qdf.Name
-        End If
-    Next qdf
+    strSQL = "SELECT [name] FROM sysobjects WHERE xtype IN ('V', 'P')"
+    Set rs = conn.Execute(strSQL)
+    Do While Not rs.EOF
+        objName = rs.Fields("name").Value
+        DoCmd.TransferDatabase acImport, "ODBC Database", _
+            "ODBC;DSN=MS Access Database;DBQ=" & adpPath, acQuery, objName, objName
+        rs.MoveNext
+    Loop
+    rs.Close
 
     ' Import forms, reports, macros, and modules
     docTypeArray = Array(acForm, acReport, acMacro, acModule)
     For i = LBound(docTypeArray) To UBound(docTypeArray)
         Select Case docTypeArray(i)
             Case acForm
-                For Each doc In CurrentProject.AllForms
-                    DoCmd.TransferDatabase acImport, "Microsoft Access", adpPath, acForm, doc.Name, doc.Name
-                Next doc
+                strSQL = "SELECT [name] FROM msysobjects WHERE [type] = -32768"
             Case acReport
-                For Each doc In CurrentProject.AllReports
-                    DoCmd.TransferDatabase acImport, "Microsoft Access", adpPath, acReport, doc.Name, doc.Name
-                Next doc
+                strSQL = "SELECT [name] FROM msysobjects WHERE [type] = -32764"
             Case acMacro
-                For Each doc In CurrentProject.AllMacros
-                    DoCmd.TransferDatabase acImport, "Microsoft Access", adpPath, acMacro, doc.Name, doc.Name
-                Next doc
+                strSQL = "SELECT [name] FROM msysobjects WHERE [type] = -32766"
             Case acModule
-                For Each doc In CurrentProject.AllModules
-                    DoCmd.TransferDatabase acImport, "Microsoft Access", adpPath, acModule, doc.Name, doc.Name
-                Next doc
+                strSQL = "SELECT [name] FROM msysobjects WHERE [type] = -32761"
         End Select
+        
+        Set rs = conn.Execute(strSQL)
+        Do While Not rs.EOF
+            objName = rs.Fields("name").Value
+            DoCmd.TransferDatabase acImport, "ODBC Database", _
+                "ODBC;DSN=MS Access Database;DBQ=" & adpPath, docTypeArray(i), objName, objName
+            rs.MoveNext
+        Loop
+        rs.Close
     Next i
 
+    conn.Close
+    Set conn = Nothing
+
     MsgBox "Import completed!"
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "An error occurred: " & Err.Description, vbCritical
+    If Not rs Is Nothing Then rs.Close
+    If Not conn Is Nothing Then conn.Close
+    Exit Sub
 End Sub
 
