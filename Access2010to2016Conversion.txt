@@ -1,0 +1,39 @@
+
+To convert a 2010 ADP (Access Data Project) Access database to Access 2016, follow these steps:
+
+Backup Your Database:
+
+Always start by making a backup of your original 2010 ADP file to avoid any potential data loss during the conversion process.
+Convert ADP to ACCDB:
+
+Since Access 2013 and later versions do not support ADP files, you need to convert your ADP file to an ACCDB file format. This involves importing the objects 
+from the ADP into a new ACCDB database.
+Create a New Blank Database:
+
+Open Access 2016 and create a new blank database in the ACCDB format.
+Import Database Objects:
+
+Use the import functionality in Access 2016 to import all tables, queries, forms, reports, 
+macros, and modules from your ADP file. To do this:
+Click on the External Data tab.
+Select Access from the Import & Link group.
+In the Get External Data - Access Database dialog box, browse to your ADP file and select it.
+Choose the option to import the source data into the current database and follow the prompts to import all objects.
+Recreate Connections:
+
+ADP files are directly connected to SQL Server databases, whereas ACCDB files use linked tables 
+for SQL Server connections. You will need to recreate the connection to your SQL Server:
+Go to the External Data tab.
+Select ODBC Database from the Import & Link group.
+Choose the option to link to the data source by creating a linked table.
+Follow the prompts to set up a new ODBC data source to your SQL Server and link the tables.
+Update Queries and Code:
+
+Review and update any queries, forms, reports, macros, and VBA code that may reference the old 
+ADP connection objects to ensure they work with the new linked tables.
+Test Thoroughly:
+
+After completing the conversion, thoroughly test your new Access 2016 ACCDB database to ensure that 
+all functionality works as expected.
+By following these steps, you can successfully convert a 2010 ADP Access database to Access 2016, 
+allowing you to leverage the new features and capabilities of the updated Access version.

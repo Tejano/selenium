@@ -1,0 +1,105 @@
+When converting an ADP to an ACCDB, the way tables are linked to the SQL Server 
+will change significantly. In an ADP, tables are directly connected to SQL Server.
+ In an ACCDB, you need to create linked tables that 
+connect to SQL Server via ODBC. Here's how to handle the transition:
+
+Steps to Update Linked Tables
+Remove Existing Links (If Any):
+
+Before creating new linked tables, remove any existing links to avoid conflicts.
+Create Linked Tables with Dynamic Connection Strings:
+
+Use a VBA script to create linked tables based on the environment-specific connection string.
+Handle Linked Table Updates in Your VBA Script:
+
+Incorporate the creation of linked tables into your conversion script.
+Detailed Implementation
+1. Configuration Table
+Ensure you have a configuration table to store connection strings as described previously.
+
+2. Function to Get Connection String
+Use the function provided earlier to get the connection string based on the environment.
+
+3. VBA Script to Link Tables
+Here's a VBA script to remove existing linked tables and create new ones based on the 
+dynamic connection string:
+
+Sub RefreshLinkedTables(env As String)
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim connString As String
+    Dim strTableName As String
+    Dim strLinkedTableName As String
+    Dim strConnect As String
+
+    connString = GetConnectionString(env)
+    If connString = "" Then Exit Sub ' Exit if no connection string is found
+
+    Set db = CurrentDb()
+
+    ' Remove existing linked tables
+    For Each tdf In db.TableDefs
+        If tdf.Attributes And dbAttachedODBC Then
+            db.TableDefs.Delete tdf.Name
+        End If
+    Next tdf
+
+    ' Create new linked tables
+    For Each strTableName In Array("Table1", "Table2", "Table3") ' List your table names here
+        strLinkedTableName = strTableName
+        strConnect = "ODBC;" & connString & ";"
+
+        Set tdf = db.CreateTableDef(strLinkedTableName)
+        tdf.Connect = strConnect
+        tdf.SourceTableName = strTableName
+        db.TableDefs.Append tdf
+    Next strTableName
+
+    MsgBox "Linked tables refreshed!"
+End Sub
+
+Function GetConnectionString(env As String) As String
+    Dim rs As DAO.Recordset
+    Dim connString As String
+    
+    Set rs = CurrentDb.OpenRecordset("SELECT ConnectionString FROM tblConnectionConfig WHERE EnvironmentName = '" & env & "'")
+    
+    If Not rs.EOF Then
+        connString = rs!ConnectionString
+    Else
+        MsgBox "No connection string found for environment: " & env, vbCritical
+        connString = ""
+    End If
+    
+    rs.Close
+    Set rs = Nothing
+    
+    GetConnectionString = connString
+End Function
+
+4. Update Your Main Conversion Script
+Include the RefreshLinkedTables call in your main conversion script:
+
+Sub ConvertADPToACCDB(env As String)
+    Call ImportObjectsFromADP
+    Call UpdateConnectionStrings(env)
+    Call UpdateSQLQueries
+    Call RefreshLinkedTables(env)
+    MsgBox "Conversion completed!"
+End Sub
+
+' Example of running the conversion for the QA environment
+Call ConvertADPToACCDB("qa")
+
+Running the Updated Conversion Script
+When you run the ConvertADPToACCDB script with the appropriate environment parameter, it will:
+
+1. Import objects from the ADP file.
+2. Update the connection strings in your VBA code.
+3. Update SQL queries if necessary.
+4. Refresh the linked tables to use the new connection string.
+
+Summary
+By using the above scripts, you can dynamically update the linked tables based on 
+the environment (dev, qa, uat, prod). This ensures that your Access database remains flexible
+and can easily switch between different environments without manual reconfiguration

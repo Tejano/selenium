@@ -1,0 +1,88 @@
+Yes, you can automate the execution of every query in your database to test if they run
+ without issues and log the queries that encounter problems. Here's a detailed approach to achieving this:
+
+1. Create a Logging Table
+Ensure you have a table to store logs of problematic queries.
+CREATE TABLE tblQueryIssuesLog (
+    QueryName VARCHAR(255),
+    ErrorMessage VARCHAR(255),
+    LogDate DATETIME
+);
+2. Write VBA Script to Execute and Log Queries
+Create a VBA script that iterates through all the queries, executes each one, and logs any errors 
+encountered.
+Sub TestAndLogQueries()
+    Dim db As DAO.Database
+    Dim qdf As DAO.QueryDef
+    Dim strSQL As String
+    Dim rs As DAO.Recordset
+    Dim logSQL As String
+    Dim qryStartTime As Date
+    Dim qryEndTime As Date
+
+    Set db = CurrentDb()
+
+    On Error GoTo ErrorHandler ' Enable error handling
+
+    For Each qdf In db.QueryDefs
+        On Error Resume Next ' Resume next statement on error
+        qryStartTime = Now()
+        strSQL = qdf.SQL
+        
+        ' Execute the query
+        Set rs = db.OpenRecordset(qdf.Name, dbOpenDynaset)
+        qryEndTime = Now()
+        
+        If Err.Number <> 0 Then ' Check if an error occurred
+            logSQL = "INSERT INTO tblQueryIssuesLog (QueryName, ErrorMessage, LogDate, StartTime, EndTime) " & _
+                     "VALUES ('" & qdf.Name & "', '" & Err.Description & "', Now(), '" & qryStartTime & "', '" & qryEndTime & "')"
+            db.Execute logSQL
+            Err.Clear ' Clear the error
+        End If
+
+        rs.Close
+        Set rs = Nothing
+    Next qdf
+
+    MsgBox "Query testing completed!"
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "An unexpected error occurred: " & Err.Description, vbCritical
+    Exit Sub
+End Sub
+
+Explanation
+Iterate Through Queries:
+
+The script iterates through each query in the database using a For Each loop.
+Execute Each Query:
+
+Each query is executed using db.OpenRecordset(qdf.Name, dbOpenDynaset). This will run select queries and catch any errors.
+Error Handling:
+
+If an error occurs, it is logged in the tblQueryIssuesLog table along with the query name, error message, and the start and end times of the query execution.
+Logging:
+
+The logSQL variable constructs an SQL insert statement to log the error details into the tblQueryIssuesLog table.
+Considerations
+Query Types:
+
+This script assumes that all queries are of type select. If you have action queries (insert, update, delete), you might need to handle them differently. For example, you might need to execute them using db.Execute instead of db.OpenRecordset.
+Error Details:
+
+The ErrorHandler section ensures that any unexpected errors during the script's execution are reported.
+Query Execution Time:
+
+The script logs the start and end times of each query to help identify performance issues.
+Example of Running the Script
+To run the script, simply call the TestAndLogQueries subroutine from the VBA editor or attach
+ it to a button in your Access application.
+ 
+ Sub RunTestAndLogQueries()
+    Call TestAndLogQueries
+End Sub
+
+By implementing this script, you can automatically test every query in your Access database, 
+log any issues, and review the logs to address any problems. This approach helps ensure that all 
+queries function correctly after converting from ADP to ACCDB.
