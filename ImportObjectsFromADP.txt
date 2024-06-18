@@ -1,0 +1,49 @@
+Sub ImportObjectsFromADP()
+    Dim adpPath As String
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim qdf As DAO.QueryDef
+    Dim doc As DAO.Document
+    Dim docType As AcObjectType
+
+    adpPath = "C:\Path\To\Your\ADPFile.adp"
+    Set db = CurrentDb()
+
+    ' Import tables
+    For Each tdf In db.TableDefs
+        If Left(tdf.Name, 4) <> "MSys" Then
+            DoCmd.TransferDatabase acImport, "Microsoft Access", adpPath, acTable, tdf.Name, tdf.Name
+        End If
+    Next tdf
+
+    ' Import queries
+    For Each qdf In db.QueryDefs
+        If Left(qdf.Name, 4) <> "~sq_" Then
+            DoCmd.TransferDatabase acImport, "Microsoft Access", adpPath, acQuery, qdf.Name, qdf.Name
+        End If
+    Next qdf
+
+    ' Import forms, reports, macros, and modules
+    For Each docType In Array(acForm, acReport, acMacro, acModule)
+        Select Case docType
+            Case acForm
+                For Each doc In CurrentProject.AllForms
+                    DoCmd.TransferDatabase acImport, "Microsoft Access", adpPath, acForm, doc.Name, doc.Name
+                Next doc
+            Case acReport
+                For Each doc In CurrentProject.AllReports
+                    DoCmd.TransferDatabase acImport, "Microsoft Access", adpPath, acReport, doc.Name, doc.Name
+                Next doc
+            Case acMacro
+                For Each doc In CurrentProject.AllMacros
+                    DoCmd.TransferDatabase acImport, "Microsoft Access", adpPath, acMacro, doc.Name, doc.Name
+                Next doc
+            Case acModule
+                For Each doc In CurrentProject.AllModules
+                    DoCmd.TransferDatabase acImport, "Microsoft Access", adpPath, acModule, doc.Name, doc.Name
+                Next doc
+        End Select
+    Next docType
+
+    MsgBox "Import completed!"
+End Sub
