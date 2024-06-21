@@ -151,7 +151,47 @@ QueryExportError:
     If Not conn Is Nothing Then conn.Close
 End Sub
 
+Sub ExportQueriesUsingADO()
+    On Error GoTo QueryExportError
 
+    Dim conn As ADODB.Connection
+    Dim rs As ADODB.Recordset
+    Dim exportPath As String
+    Dim fileNum As Integer
+    Dim filePath As String
+    Dim sqlText As String
 
+    ' Set the export path and ensure the directory exists
+    exportPath = "C:\ExportedObjects\Queries\"
+    If Dir(exportPath, vbDirectory) = "" Then MkDir exportPath
+
+    ' Use the existing connection
+    Set conn = CurrentProject.Connection
+
+    ' Retrieve the query definitions
+    Set rs = conn.OpenSchema(adSchemaViews)
+
+    ' Loop through the recordset and export each query
+    Do While Not rs.EOF
+        sqlText = rs!VIEW_DEFINITION
+        filePath = exportPath & rs!TABLE_NAME & ".sql"
+        fileNum = FreeFile
+        Open filePath For Output As #fileNum
+        Print #fileNum, sqlText
+        Close #fileNum
+        rs.MoveNext
+    Loop
+
+    rs.Close
+    Set rs = Nothing
+    Set conn = Nothing
+
+    MsgBox "Query export completed!"
+    Exit Sub
+
+QueryExportError:
+    MsgBox "An error occurred during query export: " & Err.Description, vbCritical
+    If Not rs Is Nothing Then rs.Close
+End Sub
 Open Access 2010 and create a new module.
 Run the ExportObjectsFromADP subroutine to export all objects to text files.
