@@ -11,29 +11,35 @@ Step 1: Export Objects from ADP (Access 2010)
 Use Access 2010 to export forms, reports, macros, and modules programmatically.
 Sub ExportObjectsFromADP()
     Dim obj As AccessObject
-    Dim objType As Integer
     Dim exportPath As String
 
     exportPath = "C:\ExportedObjects\" ' Ensure this directory exists
 
+    ' Ensure subdirectories exist
+    If Dir(exportPath & "Forms\", vbDirectory) = "" Then MkDir exportPath & "Forms\"
+    If Dir(exportPath & "Reports\", vbDirectory) = "" Then MkDir exportPath & "Reports\"
+    If Dir(exportPath & "Macros\", vbDirectory) = "" Then MkDir exportPath & "Macros\"
+    If Dir(exportPath & "Modules\", vbDirectory) = "" Then MkDir exportPath & "Modules\"
+    If Dir(exportPath & "Queries\", vbDirectory) = "" Then MkDir exportPath & "Queries\"
+
     ' Export forms
     For Each obj In CurrentProject.AllForms
-        Application.SaveAsText acForm, obj.Name, exportPath & obj.Name & ".txt"
+        Application.SaveAsText acForm, obj.Name, exportPath & "Forms\" & obj.Name & ".txt"
     Next obj
 
     ' Export reports
     For Each obj In CurrentProject.AllReports
-        Application.SaveAsText acReport, obj.Name, exportPath & obj.Name & ".txt"
+        Application.SaveAsText acReport, obj.Name, exportPath & "Reports\" & obj.Name & ".txt"
     Next obj
 
     ' Export macros
     For Each obj In CurrentProject.AllMacros
-        Application.SaveAsText acMacro, obj.Name, exportPath & obj.Name & ".txt"
+        Application.SaveAsText acMacro, obj.Name, exportPath & "Macros\" & obj.Name & ".txt"
     Next obj
 
     ' Export modules
     For Each obj In CurrentProject.AllModules
-        Application.SaveAsText acModule, obj.Name, exportPath & obj.Name & ".txt"
+        Application.SaveAsText acModule, obj.Name, exportPath & "Modules\" & obj.Name & ".txt"
     Next obj
 
     ' Export queries
@@ -65,6 +71,7 @@ Sub ExportQueriesFromADP()
 
     MsgBox "Query export completed!"
 End Sub
+
 
 Open Access 2010 and create a new module.
 Run the ExportObjectsFromADP subroutine to export all objects to text files.
