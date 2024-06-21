@@ -84,6 +84,24 @@ Sub ExportQueriesFromADP()
     MsgBox "Query export completed!"
 End Sub
 
+Sub TestCurrentDb()
+    Dim db As DAO.Database
+    
+    ' Attempt to get the current database
+    On Error GoTo ErrorHandler
+    Set db = CurrentDb()
+    
+    ' Check if the database object is set
+    If db Is Nothing Then
+        MsgBox "CurrentDb returned Nothing.", vbCritical
+    Else
+        MsgBox "CurrentDb is working correctly.", vbInformation
+    End If
 
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "An error occurred: " & Err.Description, vbCritical
+End Sub
 Open Access 2010 and create a new module.
 Run the ExportObjectsFromADP subroutine to export all objects to text files.
