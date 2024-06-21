@@ -187,9 +187,17 @@ Sub ImportQueriesToACCDB()
     Dim sqlText As String
     Dim filePath As String
     Dim strLine As String
+    Dim logPath As String
+    Dim logFileNum As Integer
 
     importPath = "C:\ExportedObjects\Queries\" ' Ensure this matches the export path
+    logPath = "C:\ExportedObjects\ImportErrors.log"
+
     Set db = CurrentDb()
+
+    ' Open the log file for writing
+    logFileNum = FreeFile
+    Open logPath For Append As #logFileNum
 
     ' Loop through all .sql files in the import path
     fileName = Dir(importPath & "*.sql")
@@ -206,18 +214,38 @@ Sub ImportQueriesToACCDB()
         Loop
         Close #fileNum
 
+        On Error Resume Next ' Continue on error
+
+        ' Check if the query already exists and delete it
+        Set qdf = Nothing
+        Set qdf = db.QueryDefs(Left(fileName, Len(fileName) - 4))
+        If Not qdf Is Nothing Then
+            db.QueryDefs.Delete qdf.Name
+            db.QueryDefs.Refresh
+        End If
+
         ' Create the query in the ACCDB
         Set qdf = db.CreateQueryDef(Left(fileName, Len(fileName) - 4))
         qdf.SQL = sqlText
+        If Err.Number <> 0 Then
+            Print #logFileNum, "Failed to import query: " & fileName & " - Error: " & Err.Description
+            Err.Clear
+        End If
+
+        On Error GoTo QueryImportError ' Resume normal error handling
 
         fileName = Dir
     Loop
 
+    Close #logFileNum
     MsgBox "Query import completed!"
     Exit Sub
 
 QueryImportError:
-    MsgBox "An error occurred during query import: " & Err.Description, vbCritical
+    Print #logFileNum, "An error occurred during query import: " & Err.Description
+    If Not qdf Is Nothing Then qdf.Close
+    If Not db Is Nothing Then db.Close
+    Close #logFileNum
 End Sub
 
 Sub LinkSQLServerTables()
