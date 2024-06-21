@@ -18,25 +18,53 @@ Sub ExportObjectsFromADP()
 
     ' Export forms
     For Each obj In CurrentProject.AllForms
-        DoCmd.SaveAsText acForm, obj.Name, exportPath & obj.Name & ".txt"
+        Application.SaveAsText acForm, obj.Name, exportPath & obj.Name & ".txt"
     Next obj
 
     ' Export reports
     For Each obj In CurrentProject.AllReports
-        DoCmd.SaveAsText acReport, obj.Name, exportPath & obj.Name & ".txt"
+        Application.SaveAsText acReport, obj.Name, exportPath & obj.Name & ".txt"
     Next obj
 
     ' Export macros
     For Each obj In CurrentProject.AllMacros
-        DoCmd.SaveAsText acMacro, obj.Name, exportPath & obj.Name & ".txt"
+        Application.SaveAsText acMacro, obj.Name, exportPath & obj.Name & ".txt"
     Next obj
 
     ' Export modules
     For Each obj In CurrentProject.AllModules
-        DoCmd.SaveAsText acModule, obj.Name, exportPath & obj.Name & ".txt"
+        Application.SaveAsText acModule, obj.Name, exportPath & obj.Name & ".txt"
     Next obj
+
+    ' Export queries
+    ExportQueriesFromADP
 
     MsgBox "Export completed!"
 End Sub
+
+Sub ExportQueriesFromADP()
+    Dim db As DAO.Database
+    Dim qdf As DAO.QueryDef
+    Dim exportPath As String
+    Dim fileNum As Integer
+    Dim filePath As String
+
+    exportPath = "C:\ExportedObjects\Queries\" ' Ensure this directory exists
+    Set db = CurrentDb
+
+    ' Export each query's SQL definition to a text file
+    For Each qdf In db.QueryDefs
+        If Left(qdf.Name, 4) <> "~sq_" Then ' Exclude system and temporary queries
+            filePath = exportPath & qdf.Name & ".sql"
+            fileNum = FreeFile
+            Open filePath For Output As #fileNum
+            Print #fileNum, qdf.SQL
+            Close #fileNum
+        End If
+    Next qdf
+
+    MsgBox "Query export completed!"
+End Sub
+
 Open Access 2010 and create a new module.
 Run the ExportObjectsFromADP subroutine to export all objects to text files.
