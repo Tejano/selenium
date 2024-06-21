@@ -193,5 +193,37 @@ QueryExportError:
     MsgBox "An error occurred during query export: " & Err.Description, vbCritical
     If Not rs Is Nothing Then rs.Close
 End Sub
+
+Sub ExportQueriesUsingCurrentProject()
+    On Error GoTo QueryExportError
+
+    Dim obj As AccessObject
+    Dim qdf As DAO.QueryDef
+    Dim exportPath As String
+    Dim fileNum As Integer
+    Dim filePath As String
+    Dim sqlText As String
+
+    ' Set the export path and ensure the directory exists
+    exportPath = "C:\ExportedObjects\Queries\"
+    If Dir(exportPath, vbDirectory) = "" Then MkDir exportPath
+
+    ' Loop through all queries in the CurrentProject
+    For Each obj In CurrentProject.AllQueries
+        Set qdf = CurrentDb.QueryDefs(obj.Name)
+        sqlText = qdf.SQL
+        filePath = exportPath & obj.Name & ".sql"
+        fileNum = FreeFile
+        Open filePath For Output As #fileNum
+        Print #fileNum, sqlText
+        Close #fileNum
+    Next obj
+
+    MsgBox "Query export completed!"
+    Exit Sub
+
+QueryExportError:
+    MsgBox "An error occurred during query export: " & Err.Description, vbCritical
+End Sub
 Open Access 2010 and create a new module.
 Run the ExportObjectsFromADP subroutine to export all objects to text files.
