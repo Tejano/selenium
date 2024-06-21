@@ -55,8 +55,20 @@ Sub ExportQueriesFromADP()
     Dim fileNum As Integer
     Dim filePath As String
 
-    exportPath = "C:\ExportedObjects\Queries\" ' Ensure this directory exists
-    Set db = CurrentDb
+    ' Set the export path and ensure the directory exists
+    exportPath = "C:\ExportedObjects\Queries\"
+    If Dir(exportPath, vbDirectory) = "" Then
+        MkDir exportPath
+    End If
+
+    ' Get the current database
+    Set db = CurrentDb()
+
+    ' Check if the database object is set
+    If db Is Nothing Then
+        MsgBox "Failed to get the current database.", vbCritical
+        Exit Sub
+    End If
 
     ' Export each query's SQL definition to a text file
     For Each qdf In db.QueryDefs
