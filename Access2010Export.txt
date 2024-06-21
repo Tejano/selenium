@@ -244,7 +244,7 @@ Sub ExportQueriesUsingConnection()
     Set conn = CurrentProject.Connection
 
     ' Retrieve the query definitions
-    Set rs = conn.Execute("SELECT [name], [definition] FROM sys.sql_modules m JOIN sys.objects o ON m.object_id = o.object_id WHERE type = 'V' OR type = 'P'")
+    Set rs = conn.Execute("SELECT o.name, m.definition FROM sys.sql_modules m JOIN sys.objects o ON m.object_id = o.object_id WHERE o.type IN ('V', 'P')")
 
     ' Loop through the recordset and export each query
     Do While Not rs.EOF
@@ -275,5 +275,6 @@ QueryExportError:
     If Not rs Is Nothing Then rs.Close
     If Not conn Is Nothing Then conn.Close
 End Sub
+
 Open Access 2010 and create a new module.
 Run the ExportObjectsFromADP subroutine to export all objects to text files.
