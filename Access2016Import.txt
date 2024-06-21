@@ -8,33 +8,33 @@ Sub ImportObjectsToACCDB()
 
     importPath = "C:\ExportedObjects\" ' Ensure this matches the export path
 
-    ' Array of object types to import
-    objTypeArray = Array(acForm, acReport, acMacro, acModule)
+    ' Array of object types and corresponding subdirectory names
+    objTypeArray = Array("Forms\", "Reports\", "Macros\", "Modules\")
 
     For i = LBound(objTypeArray) To UBound(objTypeArray)
         Select Case objTypeArray(i)
-            Case acForm
-                fileName = Dir(importPath & "*.txt")
+            Case "Forms\"
+                fileName = Dir(importPath & "Forms\" & "*.txt")
                 While fileName <> ""
-                    Application.LoadFromText acForm, Left(fileName, Len(fileName) - 4), importPath & fileName
+                    Application.LoadFromText acForm, Left(fileName, Len(fileName) - 4), importPath & "Forms\" & fileName
                     fileName = Dir
                 Wend
-            Case acReport
-                fileName = Dir(importPath & "*.txt")
+            Case "Reports\"
+                fileName = Dir(importPath & "Reports\" & "*.txt")
                 While fileName <> ""
-                    Application.LoadFromText acReport, Left(fileName, Len(fileName) - 4), importPath & fileName
+                    Application.LoadFromText acReport, Left(fileName, Len(fileName) - 4), importPath & "Reports\" & fileName
                     fileName = Dir
                 Wend
-            Case acMacro
-                fileName = Dir(importPath & "*.txt")
+            Case "Macros\"
+                fileName = Dir(importPath & "Macros\" & "*.txt")
                 While fileName <> ""
-                    Application.LoadFromText acMacro, Left(fileName, Len(fileName) - 4), importPath & fileName
+                    Application.LoadFromText acMacro, Left(fileName, Len(fileName) - 4), importPath & "Macros\" & fileName
                     fileName = Dir
                 Wend
-            Case acModule
-                fileName = Dir(importPath & "*.txt")
+            Case "Modules\"
+                fileName = Dir(importPath & "Modules\" & "*.txt")
                 While fileName <> ""
-                    Application.LoadFromText acModule, Left(fileName, Len(fileName) - 4), importPath & fileName
+                    Application.LoadFromText acModule, Left(fileName, Len(fileName) - 4), importPath & "Modules\" & fileName
                     fileName = Dir
                 Wend
         End Select
@@ -113,6 +113,7 @@ Sub LinkSQLServerTables()
 End Sub
 
 
+
 Open Access 2016 and create a new module.
 Run the ImportObjectsToACCDB subroutine to import all exported objects.
 Run the LinkSQLServerTables subroutine to link the SQL Server tables.
@@ -120,17 +121,17 @@ Summary
 Export Objects from ADP in Access 2010:
 
 Use the ExportObjectsFromADP subroutine to export forms, reports, macros, and modules to text files.
+
 Create a New ACCDB in Access 2016:
-
 Open Access 2016 and create a new blank database.
+
 Import Objects into ACCDB:
-
 Use the ImportObjectsToACCDB subroutine to import the exported objects into the new ACCDB file.
+
 Link SQL Server Tables:
-
 Use the LinkSQLServerTables subroutine to link the SQL Server tables to the ACCDB file.
-Update VBA Code:
 
+Update VBA Code:
 Ensure all VBA code references are updated to the new linked tables and adjust any necessary code to be compatible with Access 2016.
 This approach allows you to programmatically handle the conversion of an ADP file to an ACCDB file while ensuring all
  forms, reports, macros, and modules are correctly imported and SQL Server tables are linked.
