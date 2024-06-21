@@ -233,7 +233,8 @@ Sub ExportQueriesUsingConnection()
     Dim exportPath As String
     Dim fileNum As Integer
     Dim filePath As String
-    Dim sqlText As String
+    Dim sqlText As Variant
+    Dim queryName As Variant
 
     ' Set the export path and ensure the directory exists
     exportPath = "C:\ExportedObjects\Queries\"
@@ -248,11 +249,17 @@ Sub ExportQueriesUsingConnection()
     ' Loop through the recordset and export each query
     Do While Not rs.EOF
         sqlText = rs!definition
-        filePath = exportPath & rs!name & ".sql"
-        fileNum = FreeFile
-        Open filePath For Output As #fileNum
-        Print #fileNum, sqlText
-        Close #fileNum
+        queryName = rs!name
+        
+        ' Check for Null values
+        If Not IsNull(sqlText) And Not IsNull(queryName) Then
+            filePath = exportPath & queryName & ".sql"
+            fileNum = FreeFile
+            Open filePath For Output As #fileNum
+            Print #fileNum, sqlText
+            Close #fileNum
+        End If
+
         rs.MoveNext
     Loop
 
@@ -268,6 +275,5 @@ QueryExportError:
     If Not rs Is Nothing Then rs.Close
     If Not conn Is Nothing Then conn.Close
 End Sub
-
 Open Access 2010 and create a new module.
 Run the ExportObjectsFromADP subroutine to export all objects to text files.
