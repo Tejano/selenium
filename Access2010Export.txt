@@ -120,7 +120,8 @@ Sub ExportQueriesUsingADO()
 
     ' Initialize the ADO connection
     Set conn = New ADODB.Connection
-    conn.Open "Provider=Microsoft.Access.OLEDB.10.0;Data Source=" & CurrentProject.FullName
+    conn.ConnectionString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & CurrentProject.FullName
+    conn.Open
 
     ' Retrieve the query definitions
     Set rs = conn.OpenSchema(adSchemaViews)
@@ -149,6 +150,7 @@ QueryExportError:
     If Not rs Is Nothing Then rs.Close
     If Not conn Is Nothing Then conn.Close
 End Sub
+
 
 
 Open Access 2010 and create a new module.
