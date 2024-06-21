@@ -16,31 +16,72 @@ Sub ImportObjectsToACCDB()
             Case acForm
                 fileName = Dir(importPath & "*.txt")
                 While fileName <> ""
-                    DoCmd.LoadFromText acForm, Left(fileName, Len(fileName) - 4), importPath & fileName
+                    Application.LoadFromText acForm, Left(fileName, Len(fileName) - 4), importPath & fileName
                     fileName = Dir
                 Wend
             Case acReport
                 fileName = Dir(importPath & "*.txt")
                 While fileName <> ""
-                    DoCmd.LoadFromText acReport, Left(fileName, Len(fileName) - 4), importPath & fileName
+                    Application.LoadFromText acReport, Left(fileName, Len(fileName) - 4), importPath & fileName
                     fileName = Dir
                 Wend
             Case acMacro
                 fileName = Dir(importPath & "*.txt")
                 While fileName <> ""
-                    DoCmd.LoadFromText acMacro, Left(fileName, Len(fileName) - 4), importPath & fileName
+                    Application.LoadFromText acMacro, Left(fileName, Len(fileName) - 4), importPath & fileName
                     fileName = Dir
                 Wend
             Case acModule
                 fileName = Dir(importPath & "*.txt")
                 While fileName <> ""
-                    DoCmd.LoadFromText acModule, Left(fileName, Len(fileName) - 4), importPath & fileName
+                    Application.LoadFromText acModule, Left(fileName, Len(fileName) - 4), importPath & fileName
                     fileName = Dir
                 Wend
         End Select
     Next i
 
+    ' Import queries
+    ImportQueriesToACCDB
+
     MsgBox "Import completed!"
+End Sub
+
+Sub ImportQueriesToACCDB()
+    Dim db As DAO.Database
+    Dim qdf As DAO.QueryDef
+    Dim importPath As String
+    Dim fileNum As Integer
+    Dim fileName As String
+    Dim sqlText As String
+    Dim filePath As String
+    Dim strLine As String
+
+    importPath = "C:\ExportedObjects\Queries\" ' Ensure this matches the export path
+    Set db = CurrentDb
+
+    ' Loop through all .sql files in the import path
+    fileName = Dir(importPath & "*.sql")
+    Do While fileName <> ""
+        filePath = importPath & fileName
+        fileNum = FreeFile
+
+        ' Read the SQL definition from the file
+        Open filePath For Input As #fileNum
+        sqlText = ""
+        Do While Not EOF(fileNum)
+            Line Input #fileNum, strLine
+            sqlText = sqlText & vbCrLf & strLine
+        Loop
+        Close #fileNum
+
+        ' Create the query in the ACCDB
+        Set qdf = db.CreateQueryDef(Left(fileName, Len(fileName) - 4))
+        qdf.SQL = sqlText
+
+        fileName = Dir
+    Loop
+
+    MsgBox "Query import completed!"
 End Sub
 
 Sub LinkSQLServerTables()
@@ -70,6 +111,7 @@ Sub LinkSQLServerTables()
 
     MsgBox "Tables linked successfully!"
 End Sub
+
 
 Open Access 2016 and create a new module.
 Run the ImportObjectsToACCDB subroutine to import all exported objects.
