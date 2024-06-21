@@ -242,10 +242,8 @@ Sub ImportQueriesToACCDB()
     Exit Sub
 
 QueryImportError:
-    Print #logFileNum, "An error occurred during query import: " & Err.Description
-    If Not qdf Is Nothing Then qdf.Close
-    If Not db Is Nothing Then db.Close
-    Close #logFileNum
+    MsgBox "An error occurred during query import: " & Err.Description, vbCritical
+    If Not logFileNum = 0 Then Close #logFileNum
 End Sub
 
 Sub LinkSQLServerTables()
