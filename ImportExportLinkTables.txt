@@ -1,0 +1,132 @@
+
+
+
+Revised Approach to Export Table Names
+We will use ADO to connect to the SQL Server and retrieve the table names.
+
+Step 1: Export Table Names from ADP Using ADO
+
+Sub ExportTableNamesFromADP()
+    On Error GoTo ExportError
+
+    Dim conn As ADODB.Connection
+    Dim rs As ADODB.Recordset
+    Dim exportPath As String
+    Dim fileNum As Integer
+    Dim filePath As String
+
+    exportPath = "C:\ExportedObjects\" ' Ensure this directory exists
+    filePath = exportPath & "TableNames.txt"
+    fileNum = FreeFile
+
+    ' Use the existing ADP connection
+    Set conn = CurrentProject.Connection
+
+    ' Open the file for writing
+    Open filePath For Output As #fileNum
+
+    ' Retrieve table names from the SQL Server database
+    Set rs = conn.Execute("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'")
+
+    ' Write each table name to the file
+    Do While Not rs.EOF
+        Print #fileNum, rs!TABLE_NAME
+        rs.MoveNext
+    Loop
+
+    ' Close the file and recordset
+    Close #fileNum
+    rs.Close
+
+    MsgBox "Table names exported successfully!"
+    Exit Sub
+
+ExportError:
+    MsgBox "An error occurred during export: " & Err.Description, vbCritical
+    If Not fileNum = 0 Then Close #fileNum
+    If Not rs Is Nothing Then rs.Close
+End Sub
+
+Sub ImportAndLinkTables()
+    On Error GoTo ImportError
+
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim serverName As String
+    Dim databaseName As String
+    Dim userId As String
+    Dim password As String
+    Dim connString As String
+    Dim importPath As String
+    Dim fileName As String
+    Dim fileNum As Integer
+    Dim tableName As String
+
+    serverName = "YourServerName"
+    databaseName = "YourDatabaseName"
+    userId = "YourUserId"
+    password = "YourPassword"
+    connString = "ODBC;Driver={SQL Server};Server=" & serverName & ";Database=" & databaseName & ";UID=" & userId & ";PWD=" & password & ";"
+
+    importPath = "C:\ExportedObjects\TableNames.txt"
+    fileNum = FreeFile
+
+    Set db = CurrentDb()
+
+    ' Open the file for reading
+    Open importPath For Input As #fileNum
+
+    ' Loop through each line in the file
+    Do While Not EOF(fileNum)
+        Line Input #fileNum, tableName
+        
+        ' Link the table
+        On Error Resume Next
+        Set tdf = db.CreateTableDef(tableName)
+        tdf.Connect = connString
+        tdf.SourceTableName = tableName
+        db.TableDefs.Append tdf
+        On Error GoTo 0
+    Loop
+
+    ' Close the file
+    Close #fileNum
+
+    MsgBox "Tables linked successfully!"
+    Exit Sub
+
+
+
+ImportError:
+    MsgBox "An error occurred while linking tables: " & Err.Description, vbCritical
+    If Not fileNum = 0 Then Close #fileNum
+End Sub
+Explanation
+Export Table Names Using ADO:
+
+ExportTableNamesFromADP subroutine uses ADO to connect to the SQL Server via the existing ADP connection (CurrentProject.Connection).
+The subroutine retrieves the table names from the INFORMATION_SCHEMA.TABLES view and writes them to a text file.
+Import and Link Tables in Access 2016:
+
+ImportAndLinkTables subroutine reads the table names from TableNames.txt.
+Each table name is used to create a linked table in the Access 2016 database using the provided ODBC connection string.
+Usage
+Export Table Names from ADP:
+
+Open your ADP database in Access 2010.
+Open the VBA editor (Alt + F11), create a new module, and paste the ExportTableNamesFromADP subroutine.
+Run the ExportTableNamesFromADP subroutine to export the table names.
+Import and Link Tables in Access 2016:
+
+Open your new ACCDB file in Access 2016.
+Open the VBA editor (Alt + F11), create a new module, and paste the ImportAndLinkTables subroutine.
+Update the serverName, databaseName, userId, and password variables with your SQL Server connection details.
+Run the ImportAndLinkTables subroutine to link the tables.
+By following these steps, you can successfully export the table names from your ADP database and then link them in Access 2016, ensuring a smooth transition of your database objects.
+
+
+
+
+
+
+
