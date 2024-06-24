@@ -261,12 +261,8 @@ Sub LinkTable(tableName As String, connString As String, logFilePath As String)
     Dim fileNum As Integer
     Dim sourceTableName As String
 
-    ' Assuming schema-qualified names, split the schema and table name if present
-    If InStr(tableName, ".") > 0 Then
-        sourceTableName = tableName
-    Else
-        sourceTableName = "dbo." & tableName
-    End If
+    ' Clean the table name to remove brackets and ensure schema
+    sourceTableName = CleanTableName(tableName)
 
     Set db = CurrentDb()
     
@@ -291,6 +287,7 @@ LinkError:
     Close #fileNum
     Err.Clear
 End Sub
+
 
 Sub LinkUsedTables()
     Dim colTables As Collection
@@ -322,3 +319,180 @@ Sub LinkUsedTables()
 
     MsgBox "Linking process completed! Check " & logFilePath & " for any errors."
 End Sub
+
+
+
+
+
+
+
+Function CleanTableName(tableName As String) As String
+    ' Remove brackets from the table name
+    tableName = Replace(tableName, "[", "")
+    tableName = Replace(tableName, "]", "")
+    
+    ' If no schema is specified, prepend "dbo."
+    If InStr(tableName, ".") = 0 Then
+        tableName = "dbo." & tableName
+    End If
+    
+    CleanTableName = tableName
+End Function
+
+Sub LinkTable(tableName As String, connString As String, logFilePath As String)
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim fileNum As Integer
+    Dim sourceTableName As String
+
+    ' Clean the table name to remove brackets and ensure schema
+    sourceTableName = CleanTableName(tableName)
+
+    Set db = CurrentDb()
+    
+    ' Delete existing table link if it exists
+    On Error Resume Next
+    db.TableDefs.Delete tableName
+    On Error GoTo 0
+
+    ' Create new table link
+    On Error GoTo LinkError
+    Set tdf = db.CreateTableDef(tableName)
+    tdf.Connect = connString
+    tdf.SourceTableName = sourceTableName
+    db.TableDefs.Append tdf
+    Exit Sub
+
+LinkError:
+    ' Log the error to the file
+    fileNum = FreeFile
+    Open logFilePath For Append As #fileNum
+    Print #fileNum, "Failed to link table: " & tableName & " (" & sourceTableName & ") - Error Number: " & Err.Number & " - Description: " & Err.Description
+    Close #fileNum
+    Err.Clear
+End Sub
+
+Function LinkTablesFromQueries(connString As String, logFilePath As String) As Collection
+    Dim db As DAO.Database
+    Dim qdf As DAO.QueryDef
+    Dim colTables As New Collection
+    Dim strSQL As String
+    Dim tableName As String
+    Dim tableNames As Variant
+    Dim i As Integer
+
+    Set db = CurrentDb()
+
+    ' Loop through all queries
+    For Each qdf In db.QueryDefs
+        strSQL = qdf.SQL
+        tableNames = ExtractTableNamesFromSQL(strSQL)
+        For i = LBound(tableNames) To UBound(tableNames)
+            tableName = CleanTableName(tableNames(i))
+            On Error Resume Next
+            colTables.Add tableName, tableName ' Avoid duplicates
+            On Error GoTo 0
+            LinkTable tableName, connString, logFilePath ' Link the table
+        Next i
+    Next qdf
+
+    Set LinkTablesFromQueries = colTables
+End Function
+
+Function LinkTablesFromFormsReports(connString As String, logFilePath As String) As Collection
+    Dim colTables As New Collection
+    Dim obj As AccessObject
+    Dim frm As Form
+    Dim rpt As Report
+    Dim ctl As Control
+    Dim strSQL As String
+    Dim tableName As String
+    Dim tableNames As Variant
+    Dim i As Integer
+
+    ' Loop through all forms
+    For Each obj In CurrentProject.AllForms
+        DoCmd.OpenForm obj.Name, acDesign
+        Set frm = Forms(obj.Name)
+        strSQL = frm.RecordSource
+        If Len(strSQL) > 0 Then
+            tableNames = ExtractTableNamesFromSQL(strSQL)
+            For i = LBound(tableNames) To UBound(tableNames)
+                tableName = CleanTableName(tableNames(i))
+                On Error Resume Next
+                colTables.Add tableName, tableName ' Avoid duplicates
+                On Error GoTo 0
+                LinkTable tableName, connString, logFilePath ' Link the table
+            Next i
+        End If
+        For Each ctl In frm.Controls
+            If ctl.ControlType = acComboBox Or ctl.ControlType = acListBox Then
+                strSQL = ctl.RowSource
+                If Len(strSQL) > 0 Then
+                    tableNames = ExtractTableNamesFromSQL(strSQL)
+                    For i = LBound(tableNames) To UBound(tableNames)
+                        tableName = CleanTableName(tableNames(i))
+                        On Error Resume Next
+                        colTables.Add tableName, tableName ' Avoid duplicates
+                        On Error GoTo 0
+                        LinkTable tableName, connString, logFilePath ' Link the table
+                    Next i
+                End If
+            End If
+        Next ctl
+        DoCmd.Close acForm, obj.Name, acSaveYes
+    Next obj
+
+    ' Loop through all reports
+    For Each obj In CurrentProject.AllReports
+        DoCmd.OpenReport obj.Name, acDesign
+        Set rpt = Reports(obj.Name)
+        strSQL = rpt.RecordSource
+        If Len(strSQL) > 0 Then
+            tableNames = ExtractTableNamesFromSQL(strSQL)
+            For i = LBound(tableNames) To UBound(tableNames)
+                tableName = CleanTableName(tableNames(i))
+                On Error Resume Next
+                colTables.Add tableName, tableName ' Avoid duplicates
+                On Error GoTo 0
+                LinkTable tableName, connString, logFilePath ' Link the table
+            Next i
+        End If
+        DoCmd.Close acReport, obj.Name, acSaveYes
+    Next obj
+
+    Set LinkTablesFromFormsReports = colTables
+End Function
+
+
+Sub LinkUsedTables()
+    Dim colTables As Collection
+    Dim tbl As Variant
+    Dim connString As String
+    Dim logFilePath As String
+
+    ' Use the appropriate ODBC driver with Windows Authentication
+    connString = "ODBC;Driver={ODBC Driver 17 for SQL Server};Server=YourServerName;Database=YourDatabaseName;Trusted_Connection=Yes;"
+    logFilePath = "C:\ExportedObjects\LinkErrors.log"
+
+    ' Create or clear the log file
+    Open logFilePath For Output As #1
+    Print #1, "Log started at " & Now
+    Close #1
+
+    ' Get table names from queries, forms, and reports and link them
+    Set colTables = New Collection
+    For Each tbl In LinkTablesFromQueries(connString, logFilePath)
+        On Error Resume Next
+        colTables.Add tbl, tbl ' Avoid duplicates
+        On Error GoTo 0
+    Next tbl
+    For Each tbl In LinkTablesFromFormsReports(connString, logFilePath)
+        On Error Resume Next
+        colTables.Add tbl, tbl ' Avoid duplicates
+        On Error GoTo 0
+    Next tbl
+
+    MsgBox "Linking process completed! Check " & logFilePath & " for any errors."
+End Sub
+
