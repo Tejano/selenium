@@ -1,0 +1,186 @@
+To extract the table names used in Access 2016 objects, we need to take a different approach. We should parse the SQL strings and check 
+for table names within them. Here’s how you can do it:
+
+Step 1: Extract Table Names from Queries
+We will manually parse the SQL statements to identify table names.
+ This is a simplified approach and might not cover all SQL syntax cases, 
+ but it should work for most straightforward queries.
+ 
+ Function GetTablesFromQueries() As Collection
+    Dim db As DAO.Database
+    Dim qdf As DAO.QueryDef
+    Dim colTables As New Collection
+    Dim strSQL As String
+    Dim tableName As String
+    Dim tableNames As Variant
+    Dim i As Integer
+
+    Set db = CurrentDb()
+
+    ' Loop through all queries
+    For Each qdf In db.QueryDefs
+        strSQL = qdf.SQL
+        tableNames = ExtractTableNamesFromSQL(strSQL)
+        For i = LBound(tableNames) To UBound(tableNames)
+            tableName = tableNames(i)
+            On Error Resume Next
+            colTables.Add tableName, tableName ' Avoid duplicates
+            On Error GoTo 0
+        Next i
+    Next qdf
+
+    Set GetTablesFromQueries = colTables
+End Function
+
+Function ExtractTableNamesFromSQL(strSQL As String) As Variant
+    Dim tableNames() As String
+    Dim matches As Object
+    Dim regex As Object
+    Dim i As Integer
+
+    ' Initialize regex object
+    Set regex = CreateObject("VBScript.RegExp")
+    regex.Global = True
+    regex.IgnoreCase = True
+    regex.Pattern = "FROM\s+([^\s,]+)"
+
+    ' Execute regex to find all matches
+    Set matches = regex.Execute(strSQL)
+    ReDim tableNames(matches.Count - 1)
+
+    ' Extract table names from matches
+    For i = 0 To matches.Count - 1
+        tableNames(i) = matches(i).SubMatches(0)
+    Next i
+
+    ExtractTableNamesFromSQL = tableNames
+End Function
+
+Step 2: Extract Table Names from Forms and Reports
+We will similarly extract table names from the RecordSource properties and control sources.
+Function GetTablesFromFormsReports() As Collection
+    Dim colTables As New Collection
+    Dim obj As AccessObject
+    Dim frm As Form
+    Dim rpt As Report
+    Dim ctl As Control
+    Dim strSQL As String
+    Dim tableName As String
+    Dim tableNames As Variant
+    Dim i As Integer
+
+    ' Loop through all forms
+    For Each obj In CurrentProject.AllForms
+        DoCmd.OpenForm obj.Name, acDesign
+        Set frm = Forms(obj.Name)
+        strSQL = frm.RecordSource
+        If Len(strSQL) > 0 Then
+            tableNames = ExtractTableNamesFromSQL(strSQL)
+            For i = LBound(tableNames) To UBound(tableNames)
+                tableName = tableNames(i)
+                On Error Resume Next
+                colTables.Add tableName, tableName ' Avoid duplicates
+                On Error GoTo 0
+            Next i
+        End If
+        For Each ctl In frm.Controls
+            If ctl.ControlType = acComboBox Or ctl.ControlType = acListBox Then
+                strSQL = ctl.RowSource
+                If Len(strSQL) > 0 Then
+                    tableNames = ExtractTableNamesFromSQL(strSQL)
+                    For i = LBound(tableNames) To UBound(tableNames)
+                        tableName = tableNames(i)
+                        On Error Resume Next
+                        colTables.Add tableName, tableName ' Avoid duplicates
+                        On Error GoTo 0
+                    Next i
+                End If
+            End If
+        Next ctl
+        DoCmd.Close acForm, obj.Name, acSaveYes
+    Next obj
+
+    ' Loop through all reports
+    For Each obj In CurrentProject.AllReports
+        DoCmd.OpenReport obj.Name, acDesign
+        Set rpt = Reports(obj.Name)
+        strSQL = rpt.RecordSource
+        If Len(strSQL) > 0 Then
+            tableNames = ExtractTableNamesFromSQL(strSQL)
+            For i = LBound(tableNames) To UBound(tableNames)
+                tableName = tableNames(i)
+                On Error Resume Next
+                colTables.Add tableName, tableName ' Avoid duplicates
+                On Error GoTo 0
+            Next i
+        End If
+        DoCmd.Close acReport, obj.Name, acSaveYes
+    Next obj
+
+    Set GetTablesFromFormsReports = colTables
+End Function
+
+Step 3: Combine and Export the List of Used Tables
+This step remains the same. We combine the results from the queries, forms, and reports, and export them to a text file.
+
+Sub ExportUsedTableNames()
+    Dim colTables As Collection
+    Dim tbl As Variant
+    Dim exportPath As String
+    Dim fileNum As Integer
+    Dim filePath As String
+
+    exportPath = "C:\ExportedObjects\" ' Ensure this directory exists
+    filePath = exportPath & "UsedTableNames.txt"
+    fileNum = FreeFile
+
+    ' Get table names from queries, forms, and reports
+    Set colTables = New Collection
+    For Each tbl In GetTablesFromQueries
+        On Error Resume Next
+        colTables.Add tbl, tbl ' Avoid duplicates
+        On Error GoTo 0
+    Next tbl
+    For Each tbl In GetTablesFromFormsReports
+        On Error Resume Next
+        colTables.Add tbl, tbl ' Avoid duplicates
+        On Error GoTo 0
+    Next tbl
+
+    ' Open the file for writing
+    Open filePath For Output As #fileNum
+
+    ' Write each table name to the file
+    For Each tbl In colTables
+        Print #fileNum, tbl
+    Next tbl
+
+    ' Close the file
+    Close #fileNum
+
+    MsgBox "Used table names exported successfully!"
+End Sub
+
+Explanation
+GetTablesFromQueries:
+
+Connects to the current Access database.
+Iterates over all queries and extracts table names using ExtractTableNamesFromSQL.
+
+
+ExtractTableNamesFromSQL:
+
+Uses regular expressions to extract table names from SQL statements.
+This is a simplified parser that looks for the FROM clause in the SQL statement.
+
+
+GetTablesFromFormsReports:
+
+Iterates over all forms and reports.
+Extracts table names from RecordSource properties and control sources using ExtractTableNamesFromSQL.
+
+ExportUsedTableNames:
+
+Combines table names from queries, forms, and reports.
+Writes the unique table names to a text file.
+By following these steps, you can identify and export the list of tables used by your forms, reports, and queries in Access 2016.
