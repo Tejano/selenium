@@ -1,0 +1,101 @@
+Export Table Link Names to a File
+Open the Source Database:
+
+Open the Access 2016 database containing the linked tables.
+Open VBA Editor:
+
+Press Alt + F11 to open the VBA editor.
+Insert a New Module:
+
+Go to Insert > Module.
+Paste the Following Code:
+
+Sub ExportLinkedTables()
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim filePath As String
+    Dim fileNumber As Integer
+
+    ' Specify the file path to export the table link names
+    filePath = "C:\path\to\exported_table_links.txt"
+    fileNumber = FreeFile
+    
+    Open filePath For Output As #fileNumber
+    
+    Set db = CurrentDb
+    
+    ' Loop through each table definition in the database
+    For Each tdf In db.TableDefs
+        ' Check if the table is a linked table
+        If Left(tdf.Connect, 10) = ";DATABASE=" Then
+            ' Write the linked table name and connection string to the file
+            Print #fileNumber, tdf.Name & "|" & tdf.Connect
+        End If
+    Next tdf
+    
+    Close #fileNumber
+    
+    MsgBox "Linked table names and connections have been exported.", vbInformation
+End Sub
+Replace "C:\path\to\exported_table_links.txt" with the desired path to save the file.
+Run the Code:
+
+Close the VBA editor.
+Press Alt + F8, select ExportLinkedTables, and click Run.
+Import Table Links from File to Another Database
+Open the Destination Database:
+
+Open the Access 2016 database where you want to import the table links.
+Open VBA Editor:
+
+Press Alt + F11 to open the VBA editor.
+Insert a New Module:
+
+Go to Insert > Module.
+Paste the Following Code:
+
+Sub ImportLinkedTables()
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim filePath As String
+    Dim fileNumber As Integer
+    Dim line As String
+    Dim tableName As String
+    Dim connectString As String
+    Dim pos As Integer
+
+    ' Specify the file path to import the table link names
+    filePath = "C:\path\to\exported_table_links.txt"
+    fileNumber = FreeFile
+    
+    Set db = CurrentDb
+    
+    Open filePath For Input As #fileNumber
+    
+    ' Loop through each line in the file
+    Do While Not EOF(fileNumber)
+        Line Input #fileNumber, line
+        pos = InStr(line, "|")
+        
+        If pos > 0 Then
+            tableName = Left(line, pos - 1)
+            connectString = Mid(line, pos + 1)
+            
+            ' Create a new linked table definition
+            Set tdf = db.CreateTableDef(tableName)
+            tdf.Connect = connectString
+            tdf.SourceTableName = tableName
+            db.TableDefs.Append tdf
+        End If
+    Loop
+    
+    Close #fileNumber
+    
+    MsgBox "Linked tables have been imported.", vbInformation
+End Sub
+Replace "C:\path\to\exported_table_links.txt" with the path to the file you exported in the first step.
+Run the Code:
+
+Close the VBA editor.
+Press Alt + F8, select ImportLinkedTables, and click Run.
+This process will export the linked table names and connection strings from the source database to a text file, and then import them into the destination database, creating the linked tables in the destination database. Make sure the file path is correct and accessible during both export and import operations.
