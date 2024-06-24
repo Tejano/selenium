@@ -254,3 +254,71 @@ Sub LogLinkedTables()
     ' Notify the user
     MsgBox "Linked tables have been logged to " & filePath
 End Sub
+
+Sub LinkTable(tableName As String, connString As String, logFilePath As String)
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim fileNum As Integer
+    Dim sourceTableName As String
+
+    ' Assuming schema-qualified names, split the schema and table name if present
+    If InStr(tableName, ".") > 0 Then
+        sourceTableName = tableName
+    Else
+        sourceTableName = "dbo." & tableName
+    End If
+
+    Set db = CurrentDb()
+    
+    ' Delete existing table link if it exists
+    On Error Resume Next
+    db.TableDefs.Delete tableName
+    On Error GoTo 0
+
+    ' Create new table link
+    On Error GoTo LinkError
+    Set tdf = db.CreateTableDef(tableName)
+    tdf.Connect = connString
+    tdf.SourceTableName = sourceTableName
+    db.TableDefs.Append tdf
+    Exit Sub
+
+LinkError:
+    ' Log the error to the file
+    fileNum = FreeFile
+    Open logFilePath For Append As #fileNum
+    Print #fileNum, "Failed to link table: " & tableName & " (" & sourceTableName & ") - Error Number: " & Err.Number & " - Description: " & Err.Description
+    Close #fileNum
+    Err.Clear
+End Sub
+
+Sub LinkUsedTables()
+    Dim colTables As Collection
+    Dim tbl As Variant
+    Dim connString As String
+    Dim logFilePath As String
+
+    ' Use the appropriate ODBC driver with Windows Authentication
+    connString = "ODBC;Driver={ODBC Driver 17 for SQL Server};Server=YourServerName;Database=YourDatabaseName;Trusted_Connection=Yes;"
+    logFilePath = "C:\ExportedObjects\LinkErrors.log"
+
+    ' Create or clear the log file
+    Open logFilePath For Output As #1
+    Print #1, "Log started at " & Now
+    Close #1
+
+    ' Get table names from queries, forms, and reports and link them
+    Set colTables = New Collection
+    For Each tbl In LinkTablesFromQueries(connString, logFilePath)
+        On Error Resume Next
+        colTables.Add tbl, tbl ' Avoid duplicates
+        On Error GoTo 0
+    Next tbl
+    For Each tbl In LinkTablesFromFormsReports(connString, logFilePath)
+        On Error Resume Next
+        colTables.Add tbl, tbl ' Avoid duplicates
+        On Error GoTo 0
+    Next tbl
+
+    MsgBox "Linking process completed! Check " & logFilePath & " for any errors."
+End Sub
