@@ -194,3 +194,31 @@ Access 2016 database and log any errors to the specified log file.
 By following these steps, you can identify the tables used by your forms, 
 reports, and queries in Access 2016, link them directly to your SQL Server database, 
 and log any errors encountered during the linking process.
+
+Sub TestSQLServerConnection()
+    Dim conn As ADODB.Connection
+    Dim connString As String
+
+    connString = "Driver={ODBC Driver 17 for SQL Server};Server=YourServerName;Database=YourDatabaseName;Trusted_Connection=Yes;"
+
+    Set conn = New ADODB.Connection
+
+    On Error GoTo ConnectionError
+
+    conn.Open connString
+
+    If conn.State = adStateOpen Then
+        MsgBox "Connection successful!"
+    Else
+        MsgBox "Connection failed!"
+    End If
+
+    conn.Close
+    Set conn = Nothing
+
+    Exit Sub
+
+ConnectionError:
+    MsgBox "Connection failed: " & Err.Description
+    Set conn = Nothing
+End Sub
