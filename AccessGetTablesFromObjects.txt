@@ -46,15 +46,22 @@ Function ExtractTableNamesFromSQL(strSQL As String) As Variant
 
     ' Execute regex to find all matches
     Set matches = regex.Execute(strSQL)
-    ReDim tableNames(matches.Count - 1)
 
-    ' Extract table names from matches
-    For i = 0 To matches.Count - 1
-        tableNames(i) = matches(i).SubMatches(0)
-    Next i
+    ' Check if there are matches before resizing the array
+    If matches.Count > 0 Then
+        ReDim tableNames(matches.Count - 1)
+
+        ' Extract table names from matches
+        For i = 0 To matches.Count - 1
+            tableNames(i) = matches(i).SubMatches(0)
+        Next i
+    Else
+        ReDim tableNames(0)
+    End If
 
     ExtractTableNamesFromSQL = tableNames
 End Function
+
 
 Step 2: Extract Table Names from Forms and Reports
 We will similarly extract table names from the RecordSource properties and control sources.
