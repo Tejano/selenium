@@ -1,0 +1,74 @@
+Verify the Connection String: Ensure the connection string is correct and that the SQL Server is accessible.
+Check the Table Name Handling: Ensure that the table names are being processed correctly without unnecessary characters or formatting issues.
+Simplify the Process: Create a direct subroutine to link a single table for debugging.
+Simplified Debugging Subroutine
+First, let's create a simplified subroutine to attempt to link a single table, dbo.Broker, and log any errors encountered.
+
+Sub TestLinkSingleTable()
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim connString As String
+    Dim tableName As String
+    Dim logFilePath As String
+    Dim fileNum As Integer
+
+    ' Connection string with Windows Authentication
+    connString = "ODBC;Driver={ODBC Driver 17 for SQL Server};Server=YourServerName;Database=YourDatabaseName;Trusted_Connection=Yes;"
+    logFilePath = "C:\ExportedObjects\LinkErrors.log"
+    tableName = "dbo.Broker"
+
+    ' Create or clear the log file
+    Open logFilePath For Output As #1
+    Print #1, "Log started at " & Now
+    Close #1
+
+    ' Open the current database
+    Set db = CurrentDb()
+
+    ' Attempt to link the table
+    On Error GoTo LinkError
+    ' Delete existing table link if it exists
+    On Error Resume Next
+    db.TableDefs.Delete tableName
+    On Error GoTo 0
+
+    ' Create new table link
+    Set tdf = db.CreateTableDef(tableName)
+    tdf.Connect = connString
+    tdf.SourceTableName = tableName
+    db.TableDefs.Append tdf
+    MsgBox "Table linked successfully!"
+    Exit Sub
+
+LinkError:
+    ' Log the error to the file
+    fileNum = FreeFile
+    Open logFilePath For Append As #fileNum
+    Print #fileNum, "Failed to link table: " & tableName & " - Error Number: " & Err.Number & " - Description: " & Err.Description
+    Close #fileNum
+    MsgBox "Failed to link table. Check log for details."
+    Err.Clear
+End Sub
+
+
+Steps to Execute
+Run the TestLinkSingleTable Subroutine:
+This will attempt to link the dbo.Broker table and log any errors encountered to LinkErrors.log.
+Further Debugging
+If the simplified subroutine still fails to link the table, consider these additional checks:
+
+Verify SQL Server Accessibility:
+
+Ensure that you can connect to the SQL Server and access the dbo.Broker table using SQL Server Management Studio (SSMS).
+Check SQL Server Permissions:
+
+Verify that the Windows account running Access has the necessary permissions to read the dbo.Broker table in SQL Server.
+Test Connection String Independently:
+
+Create a UDL file to test the connection string independently of Access:
+Create a new text file and change its extension to .udl.
+Double-click the UDL file to open the Data Link Properties window.
+Configure the connection settings and test the connection.
+Check ODBC Driver Installation:
+
+Ensure that the ODBC Driver 17 for SQL Server is installed on the machine running Access.
