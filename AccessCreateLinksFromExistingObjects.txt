@@ -324,6 +324,35 @@ End Sub
 
 
 
+Function ExtractTableNamesFromSQL(strSQL As String) As Variant
+    Dim tableNames() As String
+    Dim matches As Object
+    Dim regex As Object
+    Dim i As Integer
+
+    ' Initialize regex object
+    Set regex = CreateObject("VBScript.RegExp")
+    regex.Global = True
+    regex.IgnoreCase = True
+    regex.Pattern = "FROM\s+([^\s,]+)"
+
+    ' Execute regex to find all matches
+    Set matches = regex.Execute(strSQL)
+
+    ' Check if there are matches before resizing the array
+    If matches.Count > 0 Then
+        ReDim tableNames(matches.Count - 1)
+
+        ' Extract table names from matches
+        For i = 0 To matches.Count - 1
+            tableNames(i) = matches(i).SubMatches(0)
+        Next i
+    Else
+        ReDim tableNames(0)
+    End If
+
+    ExtractTableNamesFromSQL = tableNames
+End Function
 
 
 Function CleanTableName(tableName As String) As String
