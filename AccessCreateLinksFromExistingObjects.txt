@@ -222,3 +222,35 @@ ConnectionError:
     MsgBox "Connection failed: " & Err.Description
     Set conn = Nothing
 End Sub
+
+Sub LogLinkedTables()
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim filePath As String
+    Dim fileNum As Integer
+
+    ' Set the path for the log file
+    filePath = "C:\ExportedObjects\LinkedTables.log"
+    
+    ' Open the file for writing (creates or clears the file)
+    fileNum = FreeFile
+    Open filePath For Output As #fileNum
+
+    ' Get the current database
+    Set db = CurrentDb()
+
+    ' Loop through all table definitions
+    For Each tdf In db.TableDefs
+        ' Check if the table is a linked table
+        If Len(tdf.Connect) > 0 Then
+            ' Log the table name
+            Print #fileNum, tdf.Name
+        End If
+    Next tdf
+
+    ' Close the file
+    Close #fileNum
+
+    ' Notify the user
+    MsgBox "Linked tables have been logged to " & filePath
+End Sub
