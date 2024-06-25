@@ -104,7 +104,7 @@ creating the linked tables in the destination database. Make sure the file path
  is correct and accessible during both export and import operations.
  
  
- Expor Link Tables
+ Export Link Tables
  
  Sub ExportLinkedTables()
     Dim db As DAO.Database
