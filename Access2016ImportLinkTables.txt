@@ -1,0 +1,80 @@
+Import Table Links and Refresh Links
+Open the Destination Database:
+
+Open the Access 2016 database where you want to import and refresh the table links.
+Open VBA Editor:
+
+Press Alt + F11 to open the VBA editor.
+Insert a New Module:
+
+Go to Insert > Module.
+Paste the Following Code:
+
+Sub ImportAndRefreshLinkedTables()
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim filePath As String
+    Dim fileNumber As Integer
+    Dim line As String
+    Dim tableName As String
+    Dim connectString As String
+    Dim pos As Integer
+
+    ' Specify the file path to import the table link names
+    filePath = "C:\path\to\exported_table_links.txt"
+    fileNumber = FreeFile
+    
+    Set db = CurrentDb
+    
+    Open filePath For Input As #fileNumber
+    
+    ' Loop through each line in the file
+    Do While Not EOF(fileNumber)
+        Line Input #fileNumber, line
+        pos = InStr(line, "|")
+        
+        If pos > 0 Then
+            tableName = Left(line, pos - 1)
+            connectString = Mid(line, pos + 1)
+            
+            ' Check if the table already exists
+            On Error Resume Next
+            Set tdf = db.TableDefs(tableName)
+            If Err.Number <> 0 Then
+                ' Table does not exist, create a new linked table definition
+                Set tdf = db.CreateTableDef(tableName)
+                tdf.Connect = connectString
+                tdf.SourceTableName = tableName
+                db.TableDefs.Append tdf
+            Else
+                ' Table exists, update the connection string
+                tdf.Connect = connectString
+                tdf.SourceTableName = tableName
+            End If
+            On Error GoTo 0
+        End If
+    Loop
+    
+    Close #fileNumber
+    
+    ' Refresh links for all linked tables
+    For Each tdf In db.TableDefs
+        If Len(tdf.Connect) > 0 Then
+            tdf.RefreshLink
+        End If
+    Next tdf
+    
+    MsgBox "Linked tables have been imported and refreshed.", vbInformation
+End Sub
+Replace "C:\path\to\exported_table_links.txt" with the path to the file you exported previously.
+Run the Code:
+
+Close the VBA editor.
+Press Alt + F8, select ImportAndRefreshLinkedTables, and click Run.
+Explanation of the Code
+The script reads the linked table names and connection strings from the specified file.
+It checks if the table already exists in the destination database.
+If the table does not exist, it creates a new linked table definition.
+If the table exists, it updates the connection string.
+After importing the table links, it refreshes all linked tables to ensure they are up to date.
+This ensures that all linked tables in the destination database are properly imported and refreshed, reflecting any changes in the source database.

@@ -98,4 +98,59 @@ Run the Code:
 
 Close the VBA editor.
 Press Alt + F8, select ImportLinkedTables, and click Run.
-This process will export the linked table names and connection strings from the source database to a text file, and then import them into the destination database, creating the linked tables in the destination database. Make sure the file path is correct and accessible during both export and import operations.
+This process will export the linked table names and connection strings from the source 
+database to a text file, and then import them into the destination database, 
+creating the linked tables in the destination database. Make sure the file path
+ is correct and accessible during both export and import operations.
+ 
+ 
+ Expor Link Tables
+ 
+ Sub ExportLinkedTables()
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim filePath As String
+    Dim fileNumber As Integer
+    Dim tempFilePath As String
+    Dim exportFilePath As String
+    
+    ' Specify the file path to export the table link names
+    exportFilePath = "C:\path\to\exported_table_links.txt"
+    tempFilePath = "C:\path\to\temp_exported_table_links.txt"
+    fileNumber = FreeFile
+    
+    On Error GoTo ErrorHandler
+    
+    ' Open a temporary file for output
+    Open tempFilePath For Output As #fileNumber
+    
+    Set db = CurrentDb
+    
+    ' Loop through each table definition in the database
+    For Each tdf In db.TableDefs
+        ' Check if the table is a linked table by looking for a non-empty Connect property
+        If Len(tdf.Connect) > 0 Then
+            ' Write the linked table name and connection string to the temporary file
+            Print #fileNumber, tdf.Name & "|" & tdf.Connect
+        End If
+    Next tdf
+    
+    Close #fileNumber
+    
+    ' Clean up and replace the old export file with the new one
+    If Len(Dir(exportFilePath)) > 0 Then
+        Kill exportFilePath
+    End If
+    
+    Name tempFilePath As exportFilePath
+    
+    MsgBox "Linked table names and connections have been exported.", vbInformation
+    Exit Sub
+    
+ErrorHandler:
+    MsgBox "An error occurred: " & Err.Description, vbCritical
+    If Len(Dir(tempFilePath)) > 0 Then
+        Close #fileNumber
+        Kill tempFilePath
+    End If
+End Sub
