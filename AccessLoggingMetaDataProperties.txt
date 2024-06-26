@@ -1,0 +1,120 @@
+Sub LogMessage(message As String)
+    Dim filePath As String
+    Dim fileNumber As Integer
+    
+    ' Define the log file path
+    filePath = "C:\Path\To\Your\LogFile.txt"
+    
+    ' Get the next available file number
+    fileNumber = FreeFile
+    
+    ' Open the file for appending
+    Open filePath For Append As #fileNumber
+    
+    ' Write the message to the file
+    Print #fileNumber, message
+    
+    ' Close the file
+    Close #fileNumber
+End Sub
+
+Sub ListDatabaseProperties()
+    Dim db As DAO.Database
+    Dim prop As DAO.Property
+    
+    Set db = CurrentDb()
+    
+    LogMessage "Database Properties:"
+    For Each prop In db.Properties
+        On Error Resume Next ' Some properties may not be accessible
+        LogMessage prop.Name & ": " & prop.Value
+        On Error GoTo 0
+    Next prop
+    
+    Set prop = Nothing
+    Set db = Nothing
+End Sub
+
+Sub CheckLinkedTables()
+    Dim db As DAO.Database
+    Dim tbl As DAO.TableDef
+    
+    Set db = CurrentDb()
+    
+    LogMessage "Linked Tables and Connection Strings:"
+    For Each tbl In db.TableDefs
+        If tbl.Connect <> "" Then
+            LogMessage tbl.Name & ": " & tbl.Connect
+        End If
+    Next tbl
+    
+    Set tbl = Nothing
+    Set db = Nothing
+End Sub
+
+Sub CheckQueries()
+    Dim db As DAO.Database
+    Dim qry As DAO.QueryDef
+    
+    Set db = CurrentDb()
+    
+    LogMessage "Queries and SQL:"
+    For Each qry In db.QueryDefs
+        LogMessage qry.Name & ": " & qry.SQL
+    Next qry
+    
+    Set qry = Nothing
+    Set db = Nothing
+End Sub
+Sub CheckForms()
+    Dim db As DAO.Database
+    Dim doc As Document
+    Dim prop As AccessObjectProperty
+    Dim frm As Form
+    
+    Set db = CurrentDb()
+    
+    LogMessage "Forms and Properties:"
+    For Each doc In CurrentProject.AllForms
+        DoCmd.OpenForm doc.Name, acDesign, , , , acHidden
+        Set frm = Forms(doc.Name)
+        
+        ' Check form properties
+        For Each prop In frm.Properties
+            On Error Resume Next ' Some properties may not be accessible
+            If VarType(prop.Value) = vbString And InStr(prop.Value, "OldConnectionString") > 0 Then
+                LogMessage frm.Name & " - " & prop.Name & ": " & prop.Value
+            End If
+            On Error GoTo 0
+        Next prop
+        
+        DoCmd.Close acForm, frm.Name, acSaveNo
+    Next doc
+    
+    Set prop = Nothing
+    Set doc = Nothing
+    Set db = Nothing
+End Sub
+
+
+Execution
+Run the Subroutines:
+
+Open the VBA editor (press ALT + F11).
+Insert a new module and add the above subroutines.
+Run each subroutine individually to write the metadata information to the log file.
+Analyze the Log File:
+
+Open the log file (specified in the LogMessage subroutine) and review the logged information for any references to old connection strings.
+Example Usage
+Sub AnalyzeDatabase()
+    Call ListDatabaseProperties
+    Call CheckLinkedTables
+    Call CheckQueries
+    Call CheckForms
+End Sub
+
+Run the AnalyzeDatabase subroutine to execute all checks and log the results to the file.
+
+By following these steps, you will have a log file containing detailed information about the metadata in your 
+Access database, which you can use to identify and resolve any lingering references to old connection strings.
