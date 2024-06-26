@@ -1,0 +1,105 @@
+To ensure that the linked tables in Access are refreshed to point to the different servers dynamically, you need to update the connection string for each linked table whenever the server environment is switched. Here's a more detailed step-by-step approach to accomplish this:
+
+Step-by-Step Guide
+Store Connection Strings and Initialization Logic:
+
+Define the connection strings for each environment.
+Write a subroutine to set the connection string based on the selected environment and refresh linked tables.
+Create a Form for Environment Selection:
+
+Use a form to select the environment.
+Add a button to confirm the selection and initialize the connection.
+Module: Define Connection Strings and Initialization Logic
+Create a new module and add the following code:
+
+Public Sub InitializeConnectionString(environment As String)
+    Dim connString As String
+    
+    ' Define connection strings for each environment
+    Select Case environment
+        Case "DEV"
+            connString = "ODBC;Driver={SQL Server};Server=DevServerName;Database=DevDatabaseName;Trusted_Connection=Yes;"
+        Case "QA"
+            connString = "ODBC;Driver={SQL Server};Server=QAServerName;Database=QADatabaseName;Trusted_Connection=Yes;"
+        Case "UAT"
+            connString = "ODBC;Driver={SQL Server};Server=UATServerName;Database=UATDatabaseName;Trusted_Connection=Yes;"
+        Case "PROD"
+            connString = "ODBC;Driver={SQL Server};Server=ProdServerName;Database=ProdDatabaseName;Trusted_Connection=Yes;"
+        Case Else
+            MsgBox "Invalid environment specified.", vbCritical
+            Exit Sub
+    End Select
+    
+    ' Set the connection string for the current project
+    CurrentProject.BaseConnectionString = connString
+    
+    ' Refresh linked tables to ensure they use the new connection string
+    RefreshLinkedTables connString
+    
+    MsgBox "Connected to " & environment & " environment.", vbInformation
+End Sub
+
+Public Sub RefreshLinkedTables(connString As String)
+    Dim db As DAO.Database
+    Dim tbl As DAO.TableDef
+    
+    Set db = CurrentDb
+    
+    ' Loop through all table definitions
+    For Each tbl In db.TableDefs
+        ' Check if the table is linked (i.e., it has a non-empty Connect string)
+        If tbl.Connect <> "" Then
+            ' Update the Connect string with the new connection string
+            tbl.Connect = connString
+            ' Refresh the link to ensure the table uses the new connection string
+            tbl.RefreshLink
+        End If
+    Next tbl
+    
+    Set tbl = Nothing
+    Set db = Nothing
+End Sub
+
+Form: Environment Selection
+Create a new form (e.g., frmSelectEnvironment) with the following controls:
+
+Combo Box (cmbEnvironment):
+
+Populate it with the values "DEV", "QA", "UAT", "PROD".
+Command Button (btnSetEnvironment):
+
+Set the caption to "Set Environment".
+Form Code
+Add the following code to the form's code module:
+
+Private Sub btnSetEnvironment_Click()
+    Dim selectedEnvironment As String
+    
+    ' Get the selected environment from the combo box
+    selectedEnvironment = Me.cmbEnvironment.Value
+    
+    ' Call the initialization subroutine to set the connection string
+    InitializeConnectionString selectedEnvironment
+End Sub
+
+Explanation
+Define Connection Strings:
+
+Use the Select Case statement to define the connection strings for each environment.
+Set Connection String:
+
+CurrentProject.BaseConnectionString = connString sets the connection string for the current project.
+Refresh Linked Tables:
+
+The RefreshLinkedTables subroutine loops through all table definitions, updates the Connect 
+string with the new connection string, and calls RefreshLink to ensure the tables use the new connection string.
+User Interface:
+
+A form allows users to select the environment and dynamically switch the connection.
+Additional Considerations
+Environment Selection: Ensure the environment selection form is accessible and user-friendly.
+Security: Secure the selection mechanism to prevent unauthorized changes.
+Error Handling: Add appropriate error handling to manage cases where setting the connection string or refreshing links might fail.
+By following these steps, you can dynamically switch between different environments in Access 2016, 
+ensuring that your application correctly connects to the appropriate SQL Server instance and that all linked tables are updated accordingly.
+
