@@ -67,34 +67,33 @@ Sub CheckQueries()
     Set db = Nothing
 End Sub
 Sub CheckForms()
-    Dim db As DAO.Database
-    Dim doc As Document
-    Dim prop As AccessObjectProperty
+    Dim obj As AccessObject
+    Dim prop As Property
     Dim frm As Form
-    
-    Set db = CurrentDb()
+    Dim frmName As String
     
     LogMessage "Forms and Properties:"
-    For Each doc In CurrentProject.AllForms
-        DoCmd.OpenForm doc.Name, acDesign, , , , acHidden
-        Set frm = Forms(doc.Name)
+    For Each obj In CurrentProject.AllForms
+        frmName = obj.Name
+        DoCmd.OpenForm frmName, acDesign, , , , acHidden
+        Set frm = Forms(frmName)
         
         ' Check form properties
         For Each prop In frm.Properties
             On Error Resume Next ' Some properties may not be accessible
             If VarType(prop.Value) = vbString And InStr(prop.Value, "OldConnectionString") > 0 Then
-                LogMessage frm.Name & " - " & prop.Name & ": " & prop.Value
+                LogMessage frmName & " - " & prop.Name & ": " & prop.Value
             End If
             On Error GoTo 0
         Next prop
         
         DoCmd.Close acForm, frm.Name, acSaveNo
-    Next doc
+    Next obj
     
     Set prop = Nothing
-    Set doc = Nothing
-    Set db = Nothing
+    Set frm = Nothing
 End Sub
+
 
 
 Execution
