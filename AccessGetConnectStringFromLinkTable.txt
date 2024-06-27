@@ -1,0 +1,39 @@
+Optimized Approach
+If you know the name of a specific linked table whose connection string you want to use,
+ you can directly access that table instead of looping through all tables. Here is how you can do it:
+
+Function to Retrieve Connection String from a Specific Linked Table
+
+Function GetConnectionString(Optional tableName As String = "") As String
+    Dim db As DAO.Database
+    Dim tbl As DAO.TableDef
+    Dim connString As String
+    
+    Set db = CurrentDb()
+    
+    If tableName = "" Then
+        ' Default to the first linked table if no table name is provided
+        For Each tbl In db.TableDefs
+            If tbl.Connect <> "" Then
+                connString = tbl.Connect
+                Exit For
+            End If
+        Next tbl
+    Else
+        ' Use the specified table name
+        Set tbl = db.TableDefs(tableName)
+        If tbl.Connect <> "" Then
+            connString = tbl.Connect
+        End If
+    End If
+    
+    Set tbl = Nothing
+    Set db = Nothing
+    
+    ' Remove the "ODBC;" prefix if present
+    If InStr(connString, "ODBC;") = 1 Then
+        connString = Mid(connString, 6)
+    End If
+    
+    GetConnectionString = connString
+End Function
