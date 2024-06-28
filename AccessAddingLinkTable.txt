@@ -45,3 +45,47 @@ Private Sub btnLinkTable_Click()
     
     MsgBox "Table linked successfully!", vbInformation
 End Sub
+
+
+Function GetConnectionString(Optional tableName As String = "", Optional connType As String = "ADO") As String
+    Dim db As DAO.Database
+    Dim tbl As DAO.TableDef
+    Dim connString As String
+    
+    Set db = CurrentDb()
+    
+    If tableName = "" Then
+        ' Default to the first linked table if no table name is provided
+        For Each tbl In db.TableDefs
+            If tbl.Connect <> "" Then
+                connString = tbl.Connect
+                Exit For
+            End If
+        Next tbl
+    Else
+        ' Use the specified table name
+        Set tbl = db.TableDefs(tableName)
+        If tbl.Connect <> "" Then
+            connString = tbl.Connect
+        End If
+    End If
+    
+    Set tbl = Nothing
+    Set db = Nothing
+    
+    ' Include or remove the "ODBC;" prefix based on the connection type
+    If UCase(connType) = "DAO" Then
+        If InStr(connString, "ODBC;") <> 1 Then
+            connString = "ODBC;" & connString
+        End If
+    ElseIf UCase(connType) = "ADO" Then
+        If InStr(connString, "ODBC;") = 1 Then
+            connString = Mid(connString, 6)
+        End If
+    Else
+        ' Invalid connection type
+        Err.Raise vbObjectError + 513, "GetConnectionString", "Invalid connection type specified. Use 'ADO' or 'DAO'."
+    End If
+    
+    GetConnectionString = connString
+End Function
