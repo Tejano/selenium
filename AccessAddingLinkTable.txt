@@ -1,0 +1,47 @@
+Step 2: Add VBA Code
+Open the VBA Editor:
+
+In the Form Design view, select the button you added.
+Go to the Event tab in the property sheet and click on the [...] next to the On Click event to open the VBA editor.
+Add the VBA Code:
+
+Below is an example of the VBA code to link the table using the DSN-less connection string:
+
+
+Private Sub btnLinkTable_Click()
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim strConnect As String
+    Dim strServer As String
+    Dim strDatabase As String
+    Dim strUsername As String
+    Dim strPassword As String
+    Dim strTableName As String
+    Dim strLinkedTableName As String
+    
+    ' Get user input from the form
+    strServer = Me.txtServer.Value
+    strDatabase = Me.txtDatabase.Value
+    strUsername = Me.txtUsername.Value
+    strPassword = Me.txtPassword.Value
+    strTableName = Me.txtTableName.Value
+    strLinkedTableName = "Linked_" & strTableName ' Optional: Add a prefix to the linked table name
+    
+    ' Define the DSN-less connection string
+    strConnect = "ODBC;DRIVER=SQL Server;SERVER=" & strServer & ";DATABASE=" & strDatabase & ";UID=" & strUsername & ";PWD=" & strPassword & ";"
+    
+    ' Create a new table definition
+    Set db = CurrentDb()
+    Set tdf = db.CreateTableDef(strLinkedTableName)
+    tdf.SourceTableName = strTableName
+    tdf.Connect = strConnect
+    
+    ' Append the new table definition to the TableDefs collection
+    db.TableDefs.Append tdf
+    
+    ' Cleanup
+    Set tdf = Nothing
+    Set db = Nothing
+    
+    MsgBox "Table linked successfully!", vbInformation
+End Sub
