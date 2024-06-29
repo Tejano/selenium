@@ -168,7 +168,6 @@ Function ExecuteStoredProcedureWithParams(spName As String, Optional params As V
     Set cmd.ActiveConnection = conn
     cmd.CommandText = spName
     cmd.CommandType = 4 ' adCmdStoredProc
-    cmd.Properties("CursorLocation") = 3 ' adUseClient
 
     ' Check if parameters are provided
     If Not IsMissing(params) Then
@@ -178,12 +177,10 @@ Function ExecuteStoredProcedureWithParams(spName As String, Optional params As V
         Next i
     End If
 
-    ' Set the command properties for a static cursor and lock type
-    cmd.Properties("CursorType") = 3 ' adOpenStatic
-    cmd.Properties("LockType") = 1 ' adLockReadOnly
-
     ' Execute the stored procedure and get the ADO recordset
-    Set rsADO = cmd.Execute
+    Set rsADO = CreateObject("ADODB.Recordset")
+    rsADO.CursorLocation = 3 ' adUseClient
+    rsADO.Open cmd, , 3, 1 ' adOpenStatic, adLockReadOnly
 
     ' Disconnect the recordset
     Set rsADO.ActiveConnection = Nothing
