@@ -1,0 +1,83 @@
+Function ExecuteStoredProcedureWithParams(spName As String, Optional ParamArray params() As Variant) As Object
+    Dim conn As Object
+    Dim cmd As Object
+    Dim rs As Object
+    Dim i As Integer
+
+    ' Create a new ADO connection object
+    Set conn = CreateObject("ADODB.Connection")
+    Set cmd = CreateObject("ADODB.Command")
+
+    ' Open the connection to the SQL Server
+    conn.ConnectionString = "Provider=SQLOLEDB;Data Source=YourServerName;Initial Catalog=YourDatabaseName;Integrated Security=SSPI;"
+    conn.Open
+
+    ' Set up the command object
+    Set cmd.ActiveConnection = conn
+    cmd.CommandText = spName
+    cmd.CommandType = 4 ' adCmdStoredProc
+
+    ' Check if parameters are provided
+    If Not IsMissing(params) Then
+        ' Add parameters to the command
+        For i = LBound(params) To UBound(params) Step 2
+            Dim paramValue As Variant
+            Dim paramType As Integer
+
+            paramValue = params(i)
+            paramType = params(i + 1)
+
+            cmd.Parameters.Append cmd.CreateParameter("param" & (i \ 2) + 1, paramType, adParamInput, , paramValue)
+        Next i
+    End If
+
+    ' Execute the stored procedure and get the recordset
+    Set rs = cmd.Execute
+
+    ' Clean up command and connection
+    Set cmd = Nothing
+    conn.Close
+    Set conn = Nothing
+
+    ' Return the recordset
+    Set ExecuteStoredProcedureWithParams = rs
+End Function
+
+Subroutine to Open Form and Bind Recordset
+Sub OpenReadOnlyForm(spName As String, Optional ParamArray params() As Variant)
+    Dim rs As Object
+    Dim frm As Access.Form
+
+    ' Execute the stored procedure and get the recordset
+    Set rs = ExecuteStoredProcedureWithParams(spName, params)
+
+    ' Create a new form to display the data
+    Set frm = CreateForm
+
+    ' Set the form properties to make it read-only
+    frm.RecordSource = "" ' Clear any existing record source
+    frm.RecordsetType = 1 ' Dynaset
+    Set frm.Recordset = rs
+
+    frm.AllowAdditions = False
+    frm.AllowDeletions = False
+    frm.AllowEdits = False
+
+    ' Save the form and open it in Datasheet View
+    DoCmd.Save acForm, frm.Name
+    DoCmd.OpenForm frm.Name, acFormDS
+
+    ' Clean up
+    Set rs = Nothing
+End Sub
+
+Sub RunStoredProcedureWithoutParams()
+    OpenReadOnlyForm "usp_YourStoredProcedureName"
+End Sub
+
+Sub RunStoredProcedureWithParams()
+    ' Pass parameters in pairs: value and type
+    OpenReadOnlyForm "usp_YourStoredProcedureName", 123, adInteger, "SomeString", adVarChar, True, adBoolean
+End Sub
+
+
