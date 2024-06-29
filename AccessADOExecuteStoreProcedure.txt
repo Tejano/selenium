@@ -143,3 +143,67 @@ End Function
     rsADO.Close
     Set rsADO = Nothing
 End Sub
+
+************************************************
+Function ExecuteStoredProcedureWithParams(spName As String, Optional params As Variant) As Object
+    Dim conn As Object
+    Dim cmd As Object
+    Dim rsADO As Object
+    Dim i As Integer
+
+    On Error GoTo ErrorHandler
+
+    ' Create a new ADO connection object
+    Set conn = CreateObject("ADODB.Connection")
+    Set cmd = CreateObject("ADODB.Command")
+
+    ' Set the cursor location to client-side to allow disconnection
+    conn.CursorLocation = 3 ' adUseClient
+
+    ' Open the connection to the SQL Server
+    conn.ConnectionString = "Provider=SQLOLEDB;Data Source=YourServerName;Initial Catalog=YourDatabaseName;Integrated Security=SSPI;"
+    conn.Open
+
+    ' Set up the command object
+    Set cmd.ActiveConnection = conn
+    cmd.CommandText = spName
+    cmd.CommandType = 4 ' adCmdStoredProc
+    cmd.Properties("CursorLocation") = 3 ' adUseClient
+
+    ' Check if parameters are provided
+    If Not IsMissing(params) Then
+        ' Add parameters to the command
+        For i = LBound(params) To UBound(params) Step 3
+            cmd.Parameters.Append cmd.CreateParameter(, params(i + 1), params(i + 2), , params(i))
+        Next i
+    End If
+
+    ' Set the command properties for a static cursor and lock type
+    cmd.Properties("CursorType") = 3 ' adOpenStatic
+    cmd.Properties("LockType") = 1 ' adLockReadOnly
+
+    ' Execute the stored procedure and get the ADO recordset
+    Set rsADO = cmd.Execute
+
+    ' Disconnect the recordset
+    Set rsADO.ActiveConnection = Nothing
+
+    ' Clean up ADO command and connection
+    Set cmd = Nothing
+    conn.Close
+    Set conn = Nothing
+
+    ' Return the ADO recordset
+    Set ExecuteStoredProcedureWithParams = rsADO
+
+    Exit Function
+
+ErrorHandler:
+    MsgBox "Error " & Err.Number & ": " & Err.Description
+    If Not conn Is Nothing Then
+        If conn.State = 1 Then conn.Close
+    End If
+    Set cmd = Nothing
+    Set conn = Nothing
+    Set ExecuteStoredProcedureWithParams = Nothing
+End Function
