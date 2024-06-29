@@ -86,14 +86,16 @@ Form Properties: The properties AllowAdditions, AllowDeletions, and AllowEdits a
 DoCmd.Save and DoCmd.OpenForm: These methods save the form and open it in Datasheet View.
 This complete example demonstrates how to create a read-only form and bind it to a recordset returned by a stored procedure
 
-
+***************************************************
 
 In Access VBA, the ParamArray keyword cannot be used with Optional. To accommodate an optional parameter array, you need to handle it differently. 
 Instead of using ParamArray, you can use a variant array to handle multiple parameters. Here’s how to modify the function:
+Modified Function to Execute Stored Procedure and Return ADO Recordset
+
 Function ExecuteStoredProcedureWithParams(spName As String, Optional params As Variant) As Object
     Dim conn As Object
     Dim cmd As Object
-    Dim rs As Object
+    Dim rsADO As Object
     Dim i As Integer
     Dim paramValue As Variant
     Dim paramType As Integer
@@ -131,36 +133,73 @@ Function ExecuteStoredProcedureWithParams(spName As String, Optional params As V
     Set returnParam = cmd.CreateParameter("ReturnCode", adInteger, adParamReturnValue)
     cmd.Parameters.Append returnParam
 
-    ' Execute the stored procedure and get the recordset
-    Set rs = cmd.Execute
+    ' Execute the stored procedure and get the ADO recordset
+    Set rsADO = cmd.Execute
 
     ' Store the return code in a global variable (or handle as needed)
     Debug.Print "Return Code: " & returnParam.Value
 
-    ' Clean up command and connection
+    ' Clean up ADO command and connection
     Set cmd = Nothing
     conn.Close
     Set conn = Nothing
 
-    ' Return the recordset
-    Set ExecuteStoredProcedureWithParams = rs
+    ' Return the ADO recordset
+    Set ExecuteStoredProcedureWithParams = rsADO
 End Function
 
+
+Function to Convert ADO Recordset to DAO Recordset
+
+Function ConvertToDAORecordset(adoRS As Object) As DAO.Recordset
+    Dim daoRS As DAO.Recordset
+    Dim fld As Object
+
+    ' Create a new DAO recordset
+    Set daoRS = CurrentDb.OpenRecordset("SELECT * FROM [" & adoRS.Fields(0).Name & "] WHERE 1=0")
+
+    ' Add fields to the DAO recordset
+    For Each fld In adoRS.Fields
+        daoRS.Fields.Append daoRS.CreateField(fld.Name, fld.Type, fld.DefinedSize)
+    Next fld
+
+    ' Copy ADO records to DAO recordset
+    adoRS.MoveFirst
+    Do While Not adoRS.EOF
+        daoRS.AddNew
+        For Each fld In adoRS.Fields
+            daoRS.Fields(fld.Name).Value = fld.Value
+        Next fld
+        daoRS.Update
+        adoRS.MoveNext
+    Loop
+
+    ' Return the DAO recordset
+    Set ConvertToDAORecordset = daoRS
+End Function
+
+
+
 Subroutine to Open Form and Bind Recordset
+Subroutine to Open Form and Bind DAO Recordset
 
 Sub OpenReadOnlyForm(spName As String, Optional params As Variant)
-    Dim rs As Object
+    Dim rsADO As Object
+    Dim rsDAO As DAO.Recordset
     Dim frm As Access.Form
     Dim frmName As String
 
-    ' Execute the stored procedure and get the recordset
-    Set rs = ExecuteStoredProcedureWithParams(spName, params)
+    ' Execute the stored procedure and get the ADO recordset
+    Set rsADO = ExecuteStoredProcedureWithParams(spName, params)
 
     ' Check if the recordset is empty
-    If rs Is Nothing Then
+    If rsADO Is Nothing Or (rsADO.BOF And rsADO.EOF) Then
         MsgBox "The recordset is empty. No data to display."
         Exit Sub
     End If
+
+    ' Convert the ADO recordset to DAO recordset
+    Set rsDAO = ConvertToDAORecordset(rsADO)
 
     ' Create a new form in Design View
     Set frm = CreateForm
@@ -177,10 +216,11 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant)
 
     ' Reopen the form and set its Recordset
     DoCmd.OpenForm frmName, acFormDS
-    Set Forms(frmName).Recordset = rs
+    Set Forms(frmName).Recordset = rsDAO
 
     ' Clean up
-    Set rs = Nothing
+    Set rsADO = Nothing
+    Set rsDAO = Nothing
 End Sub
 
 
