@@ -152,33 +152,58 @@ End Function
 Function to Convert ADO Recordset to DAO Recordset
 
 Function ConvertToDAORecordset(adoRS As Object) As DAO.Recordset
-    Dim daoRS As DAO.Recordset
+    Dim db As DAO.Database
+    Dim tempRS As DAO.Recordset
     Dim fld As Object
 
-    ' Create a new DAO recordset
-    Set daoRS = CurrentDb.OpenRecordset("SELECT * FROM [" & adoRS.Fields(0).Name & "] WHERE 1=0")
+    ' Create a temporary table
+    Set db = CurrentDb()
+    db.Execute "CREATE TABLE TempTable (TempID COUNTER PRIMARY KEY)"
 
-    ' Add fields to the DAO recordset
+    ' Append fields to the temporary table
     For Each fld In adoRS.Fields
-        daoRS.Fields.Append daoRS.CreateField(fld.Name, fld.Type, fld.DefinedSize)
+        db.Execute "ALTER TABLE TempTable ADD COLUMN [" & fld.Name & "] " & GetDAOType(fld.Type, fld.DefinedSize)
     Next fld
+
+    ' Open a recordset on the temporary table
+    Set tempRS = db.OpenRecordset("TempTable", dbOpenDynaset)
 
     ' Copy ADO records to DAO recordset
     adoRS.MoveFirst
     Do While Not adoRS.EOF
-        daoRS.AddNew
+        tempRS.AddNew
         For Each fld In adoRS.Fields
-            daoRS.Fields(fld.Name).Value = fld.Value
+            tempRS.Fields(fld.Name).Value = fld.Value
         Next fld
-        daoRS.Update
+        tempRS.Update
         adoRS.MoveNext
     Loop
 
     ' Return the DAO recordset
-    Set ConvertToDAORecordset = daoRS
+    Set ConvertToDAORecordset = tempRS
+
+    ' Clean up
+    Set tempRS = Nothing
+    Set db = Nothing
 End Function
 
-
+Function GetDAOType(adoType As Long, size As Long) As String
+    Select Case adoType
+        Case adVarWChar, adWChar
+            GetDAOType = "TEXT(" & size & ")"
+        Case adInteger
+            GetDAOType = "LONG"
+        Case adBoolean
+            GetDAOType = "YESNO"
+        Case adDate
+            GetDAOType = "DATETIME"
+        Case adDouble
+            GetDAOType = "DOUBLE"
+        Case Else
+            GetDAOType = "TEXT(255)" ' Default to TEXT
+    End Select
+End Function
+n
 
 Subroutine to Open Form and Bind Recordset
 Subroutine to Open Form and Bind DAO Recordset
@@ -192,8 +217,8 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant)
     ' Execute the stored procedure and get the ADO recordset
     Set rsADO = ExecuteStoredProcedureWithParams(spName, params)
 
-    ' Check if the recordset is empty
-    If rsADO Is Nothing Or (rsADO.BOF And rsADO.EOF) Then
+    ' Check if the recordset is open and has values
+    If rsADO.State = adStateClosed Or (rsADO.BOF And rsADO.EOF) Then
         MsgBox "The recordset is empty. No data to display."
         Exit Sub
     End If
@@ -222,6 +247,7 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant)
     Set rsADO = Nothing
     Set rsDAO = Nothing
 End Sub
+
 
 
 Calling the Subroutine Without Parameters
