@@ -151,35 +151,38 @@ Subroutine to Open Form and Bind Recordset
 Sub OpenReadOnlyForm(spName As String, Optional params As Variant)
     Dim rs As Object
     Dim frm As Access.Form
+    Dim frmName As String
 
     ' Execute the stored procedure and get the recordset
     Set rs = ExecuteStoredProcedureWithParams(spName, params)
-	
+
     ' Check if the recordset is empty
     If rs Is Nothing Then
         MsgBox "The recordset is empty. No data to display."
         Exit Sub
     End If
-	
-    ' Create a new form to display the data
+
+    ' Create a new form in Design View
     Set frm = CreateForm
+    frmName = frm.Name
 
     ' Set the form properties to make it read-only
-    frm.RecordSource = "" ' Clear any existing record source
-    frm.RecordsetType = 1 ' Dynaset
-    Set frm.Recordset = rs
-
     frm.AllowAdditions = False
     frm.AllowDeletions = False
     frm.AllowEdits = False
 
-    ' Save the form and open it in Datasheet View
-    DoCmd.Save acForm, frm.Name
-    DoCmd.OpenForm frm.Name, acFormDS
+    ' Save and close the new form
+    DoCmd.Save acForm, frmName
+    DoCmd.Close acForm, frmName
+
+    ' Reopen the form and set its Recordset
+    DoCmd.OpenForm frmName, acFormDS
+    Set Forms(frmName).Recordset = rs
 
     ' Clean up
     Set rs = Nothing
 End Sub
+
 
 Calling the Subroutine Without Parameters
 Sub RunStoredProcedureWithoutParams()
