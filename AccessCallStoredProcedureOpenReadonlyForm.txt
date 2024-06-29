@@ -80,4 +80,9 @@ Sub RunStoredProcedureWithParams()
     OpenReadOnlyForm "usp_YourStoredProcedureName", 123, adInteger, "SomeString", adVarChar, True, adBoolean
 End Sub
 
+Explanation:
+CreateForm: This method is used to create a new, temporary form in Design View.
+Form Properties: The properties AllowAdditions, AllowDeletions, and AllowEdits are set to False to make the form read-only.
+DoCmd.Save and DoCmd.OpenForm: These methods save the form and open it in Datasheet View.
+This complete example demonstrates how to create a read-only form and bind it to a recordset returned by a stored procedure
 
