@@ -145,14 +145,22 @@ Function ExecuteStoredProcedureWithParams(spName As String, Optional params As V
     ' Return the recordset
     Set ExecuteStoredProcedureWithParams = rs
 End Function
+
 Subroutine to Open Form and Bind Recordset
+
 Sub OpenReadOnlyForm(spName As String, Optional params As Variant)
     Dim rs As Object
     Dim frm As Access.Form
 
     ' Execute the stored procedure and get the recordset
     Set rs = ExecuteStoredProcedureWithParams(spName, params)
-
+	
+    ' Check if the recordset is empty
+    If rs Is Nothing Then
+        MsgBox "The recordset is empty. No data to display."
+        Exit Sub
+    End If
+	
     ' Create a new form to display the data
     Set frm = CreateForm
 
@@ -172,15 +180,18 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant)
     ' Clean up
     Set rs = Nothing
 End Sub
+
 Calling the Subroutine Without Parameters
 Sub RunStoredProcedureWithoutParams()
     OpenReadOnlyForm "usp_YourStoredProcedureName"
 End Sub
 
 Calling the Subroutine with Parameters, Including Output Parameters
-
-Sub RunStoredProcedureWithoutParams()
-    OpenReadOnlyForm "usp_YourStoredProcedureName"
+Sub RunStoredProcedureWithParams()
+    ' Pass parameters as an array of triples: value, type, direction
+    Dim params As Variant
+    params = Array(123, adInteger, adParamInput, "SomeString", adVarChar, adParamInput, True, adBoolean, adParamInput, "", adVarChar, adParamOutput)
+    OpenReadOnlyForm "usp_YourStoredProcedureName", params
 End Sub
 Explanation:
 Optional Variant Parameter: The params parameter is now a single optional Variant array instead of a ParamArray.
