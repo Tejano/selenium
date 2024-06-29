@@ -86,3 +86,110 @@ Form Properties: The properties AllowAdditions, AllowDeletions, and AllowEdits a
 DoCmd.Save and DoCmd.OpenForm: These methods save the form and open it in Datasheet View.
 This complete example demonstrates how to create a read-only form and bind it to a recordset returned by a stored procedure
 
+
+
+In Access VBA, the ParamArray keyword cannot be used with Optional. To accommodate an optional parameter array, you need to handle it differently. 
+Instead of using ParamArray, you can use a variant array to handle multiple parameters. Here’s how to modify the function:
+Function ExecuteStoredProcedureWithParams(spName As String, Optional params As Variant) As Object
+    Dim conn As Object
+    Dim cmd As Object
+    Dim rs As Object
+    Dim i As Integer
+    Dim paramValue As Variant
+    Dim paramType As Integer
+    Dim paramDirection As Integer
+
+    ' Create a new ADO connection object
+    Set conn = CreateObject("ADODB.Connection")
+    Set cmd = CreateObject("ADODB.Command")
+
+    ' Open the connection to the SQL Server
+    conn.ConnectionString = "Provider=SQLOLEDB;Data Source=YourServerName;Initial Catalog=YourDatabaseName;Integrated Security=SSPI;"
+    conn.Open
+
+    ' Set up the command object
+    Set cmd.ActiveConnection = conn
+    cmd.CommandText = spName
+    cmd.CommandType = 4 ' adCmdStoredProc
+
+    ' Check if parameters are provided
+    If Not IsMissing(params) Then
+        ' Add parameters to the command
+        For i = LBound(params) To UBound(params) Step 3
+            paramValue = params(i)
+            paramType = params(i + 1)
+            paramDirection = params(i + 2)
+            
+            Dim param As Object
+            Set param = cmd.CreateParameter("param" & (i \ 3) + 1, paramType, paramDirection, , paramValue)
+            cmd.Parameters.Append param
+        Next i
+    End If
+
+    ' Add a parameter for the return code
+    Dim returnParam As Object
+    Set returnParam = cmd.CreateParameter("ReturnCode", adInteger, adParamReturnValue)
+    cmd.Parameters.Append returnParam
+
+    ' Execute the stored procedure and get the recordset
+    Set rs = cmd.Execute
+
+    ' Store the return code in a global variable (or handle as needed)
+    Debug.Print "Return Code: " & returnParam.Value
+
+    ' Clean up command and connection
+    Set cmd = Nothing
+    conn.Close
+    Set conn = Nothing
+
+    ' Return the recordset
+    Set ExecuteStoredProcedureWithParams = rs
+End Function
+Subroutine to Open Form and Bind Recordset
+Sub OpenReadOnlyForm(spName As String, Optional params As Variant)
+    Dim rs As Object
+    Dim frm As Access.Form
+
+    ' Execute the stored procedure and get the recordset
+    Set rs = ExecuteStoredProcedureWithParams(spName, params)
+
+    ' Create a new form to display the data
+    Set frm = CreateForm
+
+    ' Set the form properties to make it read-only
+    frm.RecordSource = "" ' Clear any existing record source
+    frm.RecordsetType = 1 ' Dynaset
+    Set frm.Recordset = rs
+
+    frm.AllowAdditions = False
+    frm.AllowDeletions = False
+    frm.AllowEdits = False
+
+    ' Save the form and open it in Datasheet View
+    DoCmd.Save acForm, frm.Name
+    DoCmd.OpenForm frm.Name, acFormDS
+
+    ' Clean up
+    Set rs = Nothing
+End Sub
+Calling the Subroutine Without Parameters
+Sub RunStoredProcedureWithoutParams()
+    OpenReadOnlyForm "usp_YourStoredProcedureName"
+End Sub
+
+Calling the Subroutine with Parameters, Including Output Parameters
+
+Sub RunStoredProcedureWithoutParams()
+    OpenReadOnlyForm "usp_YourStoredProcedureName"
+End Sub
+Explanation:
+Optional Variant Parameter: The params parameter is now a single optional Variant array instead of a ParamArray.
+Handling Parameters: The params array is checked with If Not IsMissing(params) to ensure it is provided before attempting to add parameters.
+Return Code Parameter: An additional parameter for the return code is added to the command with adParamReturnValue as the direction.
+This modification makes the function compatible with Access VBA and allows it to handle optional parameters appropriately.
+
+
+
+
+
+
