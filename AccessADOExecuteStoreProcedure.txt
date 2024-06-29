@@ -1,0 +1,62 @@
+
+In Access 2016, the DoCmd.OpenStoredProcedure method is no longer supported as it was in Access ADP projects. 
+To open and execute stored procedures, you need to switch to using a different approach, 
+typically involving ADO (ActiveX Data Objects) or DAO (Data Access Objects) 
+for executing stored procedures directly through VBA code.
+
+Here's an example of how you can modify the code to execute a stored procedure using ADO:
+
+Add a reference to the ADO library:
+
+In the VBA editor, go to Tools -> References.
+Check Microsoft ActiveX Data Objects 6.x Library (or the version available on your system).
+Modify the code to use ADO to execute the stored procedure:
+
+
+Sub ExecuteStoredProcedure(spName As String)
+    Dim conn As Object
+    Dim cmd As Object
+    Dim rs As Object
+
+    ' Create a new ADO connection object
+    Set conn = CreateObject("ADODB.Connection")
+    Set cmd = CreateObject("ADODB.Command")
+
+    ' Open the connection to the SQL Server
+    conn.ConnectionString = "Provider=SQLOLEDB;Data Source=YourServerName;Initial Catalog=YourDatabaseName;Integrated Security=SSPI;"
+    conn.Open
+
+    ' Set up the command object
+    Set cmd.ActiveConnection = conn
+    cmd.CommandText = spName
+    cmd.CommandType = 4 ' adCmdStoredProc
+
+    ' Execute the stored procedure
+    Set rs = cmd.Execute
+
+    ' If the stored procedure returns a recordset, you can process it here
+    ' For example:
+    ' Do While Not rs.EOF
+    '     Debug.Print rs.Fields(0).Value
+    '     rs.MoveNext
+    ' Loop
+
+    ' Clean up
+    rs.Close
+    Set rs = Nothing
+    Set cmd = Nothing
+    conn.Close
+    Set conn = Nothing
+End Sub
+
+Call the ExecuteStoredProcedure subroutine with the name of the stored procedure:
+Sub OpenMyStoredProcedure()
+    ExecuteStoredProcedure "usp_YourStoredProcedureName"
+End Sub
+
+This approach uses ADO to connect to the SQL Server, set up a command object 
+to execute the stored procedure, and then execute it. The ConnectionString should be updated to 
+reflect your actual SQL Server connection details.
+
+By using this method, you can replace the DoCmd.OpenStoredProcedure functionality with
+ code that is compatible with Access 2016 and later versions.
