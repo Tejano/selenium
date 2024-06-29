@@ -139,6 +139,11 @@ Function ExecuteStoredProcedureWithParams(spName As String, Optional params As V
     ' Store the return code in a global variable (or handle as needed)
     Debug.Print "Return Code: " & returnParam.Value
 
+    ' Ensure the recordset is open before returning it
+    If rsADO.State = adStateClosed Then
+        Set rsADO = Nothing
+    End If
+
     ' Clean up ADO command and connection
     Set cmd = Nothing
     conn.Close
@@ -147,6 +152,7 @@ Function ExecuteStoredProcedureWithParams(spName As String, Optional params As V
     ' Return the ADO recordset
     Set ExecuteStoredProcedureWithParams = rsADO
 End Function
+
 
 
 Function to Convert ADO Recordset to DAO Recordset
@@ -203,7 +209,7 @@ Function GetDAOType(adoType As Long, size As Long) As String
             GetDAOType = "TEXT(255)" ' Default to TEXT
     End Select
 End Function
-n
+
 
 Subroutine to Open Form and Bind Recordset
 Subroutine to Open Form and Bind DAO Recordset
@@ -217,8 +223,8 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant)
     ' Execute the stored procedure and get the ADO recordset
     Set rsADO = ExecuteStoredProcedureWithParams(spName, params)
 
-    ' Check if the recordset is open and has values
-    If rsADO.State = adStateClosed Or (rsADO.BOF And rsADO.EOF) Then
+    ' Check if the recordset is valid and has values
+    If rsADO Is Nothing Or rsADO.State = adStateClosed Or (rsADO.BOF And rsADO.EOF) Then
         MsgBox "The recordset is empty. No data to display."
         Exit Sub
     End If
