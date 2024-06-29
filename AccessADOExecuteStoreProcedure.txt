@@ -60,3 +60,86 @@ reflect your actual SQL Server connection details.
 
 By using this method, you can replace the DoCmd.OpenStoredProcedure functionality with
  code that is compatible with Access 2016 and later versions.
+ 
+ Function ExecuteStoredProcedureWithParams(spName As String, Optional params As Variant) As Object
+    Dim conn As Object
+    Dim cmd As Object
+    Dim rsADO As Object
+    Dim i As Integer
+
+    On Error GoTo ErrorHandler
+
+    ' Create a new ADO connection object
+    Set conn = CreateObject("ADODB.Connection")
+    Set cmd = CreateObject("ADODB.Command")
+
+    ' Open the connection to the SQL Server
+    conn.ConnectionString = "Provider=SQLOLEDB;Data Source=YourServerName;Initial Catalog=YourDatabaseName;Integrated Security=SSPI;"
+    conn.Open
+
+    ' Set up the command object
+    Set cmd.ActiveConnection = conn
+    cmd.CommandText = spName
+    cmd.CommandType = 4 ' adCmdStoredProc
+
+    ' Check if parameters are provided
+    If Not IsMissing(params) Then
+        ' Add parameters to the command
+        For i = LBound(params) To UBound(params) Step 3
+            cmd.Parameters.Append cmd.CreateParameter(, params(i + 1), params(i + 2), , params(i))
+        Next i
+    End If
+
+    ' Execute the stored procedure and get the ADO recordset
+    Set rsADO = cmd.Execute
+
+    ' Clean up ADO command and connection
+    Set cmd = Nothing
+    conn.Close
+    Set conn = Nothing
+
+    ' Return the ADO recordset
+    Set ExecuteStoredProcedureWithParams = rsADO
+
+    Exit Function
+
+ErrorHandler:
+    MsgBox "Error " & Err.Number & ": " & Err.Description
+    If Not conn Is Nothing Then
+        If conn.State = 1 Then conn.Close
+    End If
+    Set cmd = Nothing
+    Set conn = Nothing
+    Set ExecuteStoredProcedureWithParams = Nothing
+End Function
+
+ Sub TestStoredProcedure()
+    Dim rsADO As Object
+
+    ' Call the stored procedure and get the recordset
+    Set rsADO = ExecuteStoredProcedureWithParams("YourStoredProcedureName")
+
+    ' Check if the recordset is valid
+    If rsADO Is Nothing Then
+        MsgBox "The recordset is nothing."
+        Exit Sub
+    End If
+
+    ' Check if the recordset has data
+    If rsADO.BOF And rsADO.EOF Then
+        MsgBox "The recordset is empty. No data to display."
+        rsADO.Close
+        Set rsADO = Nothing
+        Exit Sub
+    End If
+
+    ' Print the records to the Immediate Window
+    Do While Not rsADO.EOF
+        Debug.Print rsADO.Fields(0).Value & ":" & rsADO.Fields(0).Value
+        rsADO.MoveNext
+    Loop
+
+    ' Clean up
+    rsADO.Close
+    Set rsADO = Nothing
+End Sub
