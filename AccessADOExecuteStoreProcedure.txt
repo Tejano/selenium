@@ -246,27 +246,25 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant, Optional form
     ' Create a new form in Design View
     Set frm = CreateForm
 
-    ' Save the new form with a temporary name
-    DoCmd.Save acForm, frm.Name
-    DoCmd.Close acForm, frm.Name
+    ' Set the form properties to make it read-only
+    frm.AllowAdditions = False
+    frm.AllowDeletions = False
+    frm.AllowEdits = False
 
-    ' Rename the saved form to the desired name
-    DoCmd.Rename frmName, acForm, frm.Name
+    ' Save the new form with the desired name
+    DoCmd.Save acForm, frmName
+    DoCmd.Close acForm, frm.Name
 
     ' Reopen the form and set its Recordset
     DoCmd.OpenForm frmName, acFormDS
     Set Forms(frmName).Recordset = rsDAO
-
-    ' Set the form properties to make it read-only
-    Forms(frmName).AllowAdditions = False
-    Forms(frmName).AllowDeletions = False
-    Forms(frmName).AllowEdits = False
 
     ' Clean up
     rsADO.Close
     Set rsADO = Nothing
     Set rsDAO = Nothing
 End Sub
+
 
 **********************************************************************
 **********************************************************************
