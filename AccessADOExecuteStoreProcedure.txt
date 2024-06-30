@@ -248,6 +248,9 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant, Optional form
     Set frm = CreateForm
     tempFormName = frm.Name
 
+    ' Set the form's RecordSource to TempTable
+    frm.RecordSource = "TempTable"
+
     ' Set the form properties to make it read-only
     frm.AllowAdditions = False
     frm.AllowDeletions = False
@@ -269,6 +272,7 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant, Optional form
     Set rsADO = Nothing
     Set rsDAO = Nothing
 End Sub
+
 
 **********************************************************************
 **********************************************************************
