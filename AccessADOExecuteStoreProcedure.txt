@@ -216,6 +216,10 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant, Optional form
     Dim frm As Access.Form
     Dim tempFormName As String
     Dim frmName As String
+    Dim fld As DAO.Field
+    Dim ctl As Access.Control
+    Dim intDataX As Integer
+    Dim intDataY As Integer
 
     ' Execute the stored procedure and get the ADO recordset
     Set rsADO = ExecuteStoredProcedureWithParams(spName, params)
@@ -251,6 +255,15 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant, Optional form
     ' Set the form's RecordSource to TempTable
     frm.RecordSource = "TempTable"
 
+    ' Add fields to the form
+    intDataX = 100
+    intDataY = 100
+    For Each fld In rsDAO.Fields
+        Set ctl = CreateControl(frm.Name, acTextBox, , , fld.Name, intDataX, intDataY)
+        ctl.ControlSource = fld.Name
+        intDataY = intDataY + 350
+    Next fld
+
     ' Set the form properties to make it read-only
     frm.AllowAdditions = False
     frm.AllowDeletions = False
@@ -272,6 +285,7 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant, Optional form
     Set rsADO = Nothing
     Set rsDAO = Nothing
 End Sub
+
 
 
 **********************************************************************
