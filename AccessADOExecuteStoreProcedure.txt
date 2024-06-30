@@ -144,7 +144,9 @@ End Function
     Set rsADO = Nothing
 End Sub
 
-************************************************
+*************************************************************************************************
+*************************************************************************************************
+
 Function ExecuteStoredProcedureWithParams(spName As String, Optional params As Variant) As Object
     Dim conn As Object
     Dim cmd As Object
@@ -205,6 +207,9 @@ ErrorHandler:
     Set ExecuteStoredProcedureWithParams = Nothing
 End Function
 
+***********************************************************************************************
+***********************************************************************************************
+
 Sub OpenReadOnlyForm(spName As String, Optional params As Variant, Optional formName As String)
     Dim rsADO As Object
     Dim rsDAO As DAO.Recordset
@@ -260,3 +265,59 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant, Optional form
     Set rsADO = Nothing
     Set rsDAO = Nothing
 End Sub
+
+**********************************************************************
+**********************************************************************
+
+Function ConvertToDAORecordset(adoRS As Object) As DAO.Recordset
+    Dim db As DAO.Database
+    Dim tempRS As DAO.Recordset
+    Dim fld As Object
+
+    ' Create a temporary table
+    Set db = CurrentDb()
+    db.Execute "CREATE TABLE TempTable (TempID COUNTER PRIMARY KEY)"
+
+    ' Append fields to the temporary table
+    For Each fld In adoRS.Fields
+        db.Execute "ALTER TABLE TempTable ADD COLUMN [" & fld.Name & "] " & GetDAOType(fld.Type, fld.DefinedSize)
+    Next fld
+
+    ' Open a recordset on the temporary table
+    Set tempRS = db.OpenRecordset("TempTable", dbOpenDynaset)
+
+    ' Copy ADO records to DAO recordset
+    adoRS.MoveFirst
+    Do While Not adoRS.EOF
+        tempRS.AddNew
+        For Each fld In adoRS.Fields
+            tempRS.Fields(fld.Name).Value = fld.Value
+        Next fld
+        tempRS.Update
+        adoRS.MoveNext
+    Loop
+
+    ' Return the DAO recordset
+    Set ConvertToDAORecordset = tempRS
+
+    ' Clean up
+    Set tempRS = Nothing
+    Set db = Nothing
+End Function
+
+Function GetDAOType(adoType As Long, size As Long) As String
+    Select Case adoType
+        Case adVarWChar, adWChar
+            GetDAOType = "TEXT(" & size & ")"
+        Case adInteger
+            GetDAOType = "LONG"
+        Case adBoolean
+            GetDAOType = "YESNO"
+        Case adDate
+            GetDAOType = "DATETIME"
+        Case adDouble
+            GetDAOType = "DOUBLE"
+        Case Else
+            GetDAOType = "TEXT(255)" ' Default to TEXT
+    End Select
+End Function
