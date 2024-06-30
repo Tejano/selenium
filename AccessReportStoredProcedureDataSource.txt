@@ -1,0 +1,88 @@
+Steps to Set the Report's RecordSource Property
+Create the Generic Pass-Through Query:
+
+Create a new pass-through query in Access.
+Set the query type to Pass-Through.
+Save the query as qryGenericPassThrough.
+Set Up the Report:
+
+Open the report in Design View.
+Set the RecordSource property of the report to qryGenericPassThrough.
+Use VBA to Execute the Stored Procedure:
+
+In the report's On Open event, call the ExecuteStoredProc function to set up and execute the stored procedure.
+Here’s an example of how to put this together:
+
+VBA Function for Executing the Stored Procedure
+
+Function ExecuteStoredProc(procName As String, ParamArray params() As Variant) As Boolean
+    On Error GoTo ErrorHandler
+    Dim qdf As DAO.QueryDef
+    Dim strSQL As String
+    Dim i As Integer
+    Dim param As Variant
+    
+    ' Start constructing the SQL for the stored procedure
+    strSQL = "EXEC " & procName
+    
+    ' Append parameters to the SQL statement
+    If UBound(params) >= 0 Then
+        strSQL = strSQL & " "
+        For i = LBound(params) To UBound(params)
+            param = params(i)
+            ' If the parameter is a string, add single quotes around it
+            If VarType(param) = vbString Then
+                strSQL = strSQL & "'" & param & "'"
+            Else
+                strSQL = strSQL & param
+            End If
+            ' Add comma if not the last parameter
+            If i < UBound(params) Then
+                strSQL = strSQL & ", "
+            End If
+        Next i
+    End If
+    
+    ' Get the generic pass-through query
+    Set qdf = CurrentDb.QueryDefs("qryGenericPassThrough")
+    
+    ' Set the DSN-less connection string
+    qdf.Connect = "ODBC;Driver={ODBC Driver 17 for SQL Server};Server=myServerAddress;Database=myDataBase;Trusted_Connection=yes;"
+    
+    ' Set the SQL property of the query
+    qdf.SQL = strSQL
+    
+    ' Execute the query
+    qdf.Execute dbSeeChanges
+    
+    ' Check for errors
+    If qdf.RecordsAffected > 0 Then
+        ExecuteStoredProc = True
+    Else
+        ExecuteStoredProc = False
+    End If
+
+    Exit Function
+
+ErrorHandler:
+    MsgBox "Error executing stored procedure: " & Err.Description, vbCritical
+    ExecuteStoredProc = False
+End Function
+
+Report's On Open Event:
+
+Private Sub Report_Open(Cancel As Integer)
+    ' Example for a report that needs to call StoredProcedure1 with parameters
+    If Not ExecuteStoredProc("StoredProcedure1", "param1Value", 123) Then
+        MsgBox "Failed to retrieve data for the report.", vbCritical
+        Cancel = True
+    End If
+End Sub
+
+Setting the RecordSource Property:
+Open your report in Design View.
+In the Property Sheet, find the RecordSource property.
+Set the RecordSource property to qryGenericPassThrough.
+By following these steps, your report will dynamically execute the stored procedure 
+with the specified parameters each time it is opened, using the pass-through query to fetch the data from SQL Server. 
+This setup ensures that your report always gets the most up-to-date data based on the parameters provided at runtime.
