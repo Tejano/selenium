@@ -260,6 +260,7 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant, Optional form
     intDataY = 100
     For Each fld In rsDAO.Fields
         Set ctl = CreateControl(frm.Name, acTextBox, , , fld.Name, intDataX, intDataY)
+        ctl.Name = fld.Name
         ctl.ControlSource = fld.Name
         intDataY = intDataY + 350
     Next fld
