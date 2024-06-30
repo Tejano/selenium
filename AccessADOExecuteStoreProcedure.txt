@@ -275,10 +275,14 @@ Function ConvertToDAORecordset(adoRS As Object) As DAO.Recordset
 
     ' Create a temporary table
     Set db = CurrentDb()
+	
+    On Error Resume Next
+    db.Execute "DROP TABLE TempTable"
+    On Error GoTo 0
     db.Execute "CREATE TABLE TempTable (TempID COUNTER PRIMARY KEY)"
-
+	
     ' Append fields to the temporary table
-    For Each fld In adoRS.Fields
+	For Each fld In adoRS.Fields
         db.Execute "ALTER TABLE TempTable ADD COLUMN [" & fld.Name & "] " & GetDAOType(fld.Type, fld.DefinedSize)
     Next fld
 
