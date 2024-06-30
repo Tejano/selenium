@@ -204,3 +204,59 @@ ErrorHandler:
     Set conn = Nothing
     Set ExecuteStoredProcedureWithParams = Nothing
 End Function
+
+Sub OpenReadOnlyForm(spName As String, Optional params As Variant, Optional formName As String)
+    Dim rsADO As Object
+    Dim rsDAO As DAO.Recordset
+    Dim frm As Access.Form
+    Dim frmName As String
+
+    ' Execute the stored procedure and get the ADO recordset
+    Set rsADO = ExecuteStoredProcedureWithParams(spName, params)
+
+    ' Check if the recordset is valid
+    If rsADO Is Nothing Then
+        MsgBox "Failed to execute stored procedure. No recordset returned."
+        Exit Sub
+    End If
+
+    ' Check if the recordset has data
+    If rsADO.BOF And rsADO.EOF Then
+        MsgBox "The recordset is empty. No data to display."
+        rsADO.Close
+        Set rsADO = Nothing
+        Exit Sub
+    End If
+
+    ' Convert the ADO recordset to DAO recordset
+    Set rsDAO = ConvertToDAORecordset(rsADO)
+
+    ' Use provided form name or generate a user-friendly form name
+    If Len(formName) > 0 Then
+        frmName = formName
+    Else
+        frmName = "frm_" & spName & "_" & Format(Now(), "yyyymmdd_hhnnss")
+    End If
+
+    ' Create a new form in Design View
+    Set frm = CreateForm
+    frm.Name = frmName
+
+    ' Set the form properties to make it read-only
+    frm.AllowAdditions = False
+    frm.AllowDeletions = False
+    frm.AllowEdits = False
+
+    ' Save and close the new form
+    DoCmd.Save acForm, frmName
+    DoCmd.Close acForm, frmName
+
+    ' Reopen the form and set its Recordset
+    DoCmd.OpenForm frmName, acFormDS
+    Set Forms(frmName).Recordset = rsDAO
+
+    ' Clean up
+    rsADO.Close
+    Set rsADO = Nothing
+    Set rsDAO = Nothing
+End Sub
