@@ -214,6 +214,7 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant, Optional form
     Dim rsADO As Object
     Dim rsDAO As DAO.Recordset
     Dim frm As Access.Form
+    Dim tempFormName As String
     Dim frmName As String
 
     ' Execute the stored procedure and get the ADO recordset
@@ -245,15 +246,19 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant, Optional form
 
     ' Create a new form in Design View
     Set frm = CreateForm
+    tempFormName = frm.Name
 
     ' Set the form properties to make it read-only
     frm.AllowAdditions = False
     frm.AllowDeletions = False
     frm.AllowEdits = False
 
-    ' Save the new form with the desired name
-    DoCmd.Save acForm, frmName
-    DoCmd.Close acForm, frm.Name
+    ' Save and close the form with the temporary name
+    DoCmd.Save acForm, tempFormName
+    DoCmd.Close acForm, tempFormName
+
+    ' Rename the form
+    DoCmd.Rename frmName, acForm, tempFormName
 
     ' Reopen the form and set its Recordset
     DoCmd.OpenForm frmName, acFormDS
@@ -264,7 +269,6 @@ Sub OpenReadOnlyForm(spName As String, Optional params As Variant, Optional form
     Set rsADO = Nothing
     Set rsDAO = Nothing
 End Sub
-
 
 **********************************************************************
 **********************************************************************
