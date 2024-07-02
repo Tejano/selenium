@@ -388,3 +388,52 @@ Private Sub btnRunStoredProcedure_Click()
     ' Pass the parameters to OpenReadOnlyForm
     OpenReadOnlyForm spName, params, "MyCustomFormName"
 End Sub
+***************************************************************************************
+***************************************************************************************
+Private Sub btnRunStoredProcedure_Click()
+    Dim spName As String
+    Dim params As Variant
+    Dim paramValue1 As String
+    Dim paramValue2 As String
+    Dim paramType1 As Integer
+    Dim paramType2 As Integer
+    Dim paramDirection1 As Integer
+    Dim paramDirection2 As Integer
+
+    spName = "usp_YourStoredProcedureName" ' Your stored procedure name
+
+    ' Prompt the user for the YearMonth parameter
+    Do
+        paramValue1 = InputBox("Enter the YearMonth (e.g., 202301):", "YearMonth")
+        ' Validate that the input is a six-character numeric string
+        If Len(paramValue1) = 6 And IsNumeric(paramValue1) Then
+            Exit Do
+        Else
+            MsgBox "Invalid input. Please enter a six-character numeric string representing YearMonth (e.g., 202301).", vbExclamation
+        End If
+    Loop
+
+    ' Define the type and direction for YearMonth parameter
+    paramType1 = 200 ' adVarChar
+    paramDirection1 = 1 ' Input
+
+    ' Prompt the user for the second parameter, e.g., CustomerID
+    paramValue2 = InputBox("Enter the CustomerID:", "CustomerID")
+    
+    ' Define the type and direction for CustomerID parameter
+    paramType2 = 3 ' adInteger
+    paramDirection2 = 1 ' Input
+
+    ' Initialize the params array
+    ReDim params(1 To 6)
+    params(1) = paramValue1
+    params(2) = paramType1
+    params(3) = paramDirection1
+    params(4) = paramValue2
+    params(5) = paramType2
+    params(6) = paramDirection2
+
+    ' Pass the parameters to OpenReadOnlyForm
+    OpenReadOnlyForm spName, params, "MyCustomFormName"
+End Sub
+
