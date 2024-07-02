@@ -525,8 +525,8 @@ Function ExecuteStoredProcedureWithParams(spName As String, Optional params As V
     cmd.CommandType = 4 ' adCmdStoredProc
     cmd.CommandTimeout = 600 ' Set the command timeout to 10 minutes (600 seconds)
 
-    ' Check if parameters are provided
-    If Not IsMissing(params) Then
+    ' Check if parameters are provided and if the array is not empty
+    If Not IsMissing(params) And IsArray(params) And UBound(params) >= 0 Then
         ' Add parameters to the command
         For i = LBound(params) To UBound(params) Step 3
             cmd.Parameters.Append cmd.CreateParameter(, params(i + 1), params(i + 2), , params(i))
@@ -543,6 +543,9 @@ Function ExecuteStoredProcedureWithParams(spName As String, Optional params As V
 
     ' Get the return code
     returnCode = cmd.Parameters("ReturnCode").Value
+
+    ' Disconnect the recordset
+    Set rsADO.ActiveConnection = Nothing
 
     ' Clean up ADO command and connection
     Set cmd = Nothing
@@ -564,6 +567,7 @@ ErrorHandler:
     Set ExecuteStoredProcedureWithParams = Nothing
     returnCode = -1 ' Indicate an error occurred
 End Function
+
 
 Private Sub btnRunStoredProcedure_Click()
     Dim spName As String
