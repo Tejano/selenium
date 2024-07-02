@@ -348,3 +348,43 @@ Function GetDAOType(adoType As Long, size As Long) As String
             GetDAOType = "TEXT(255)" ' Default to TEXT
     End Select
 End Function
+
+*********************************************************************
+*********************************************************************
+
+Private Sub btnRunStoredProcedure_Click()
+    Dim spName As String
+    Dim params As Variant
+    Dim paramCount As Integer
+    Dim paramValue As Variant
+    Dim paramType As Integer
+    Dim paramDirection As Integer
+    Dim i As Integer
+    Dim args() As Variant
+
+    spName = "usp_YourStoredProcedureName" ' Your stored procedure name
+
+    ' Prompt the user to enter the number of parameters
+    paramCount = InputBox("Enter the number of parameters:", "Parameter Count")
+
+    ' Initialize the params array
+    ReDim params(1 To paramCount * 3)
+
+    ' Loop through and collect each parameter
+    For i = 1 To paramCount
+        ' Prompt the user for each parameter value
+        paramValue = InputBox("Enter the value for parameter " & i & ":", "Parameter Value")
+        ' Prompt the user for the parameter type
+        paramType = InputBox("Enter the type for parameter " & i & " (e.g., 200 for adVarChar, 3 for adInteger):", "Parameter Type")
+        ' Prompt the user for the parameter direction (1 = Input, 2 = Output, 3 = Input/Output, 4 = Return Value)
+        paramDirection = InputBox("Enter the direction for parameter " & i & " (1 = Input, 2 = Output, 3 = Input/Output, 4 = Return Value):", "Parameter Direction")
+
+        ' Store the parameter details in the params array
+        params((i - 1) * 3 + 1) = paramValue
+        params((i - 1) * 3 + 2) = paramType
+        params((i - 1) * 3 + 3) = paramDirection
+    Next i
+
+    ' Pass the parameters to OpenReadOnlyForm
+    OpenReadOnlyForm spName, params, "MyCustomFormName"
+End Sub
