@@ -497,3 +497,109 @@ Private Sub btnRunStoredProcedure_Click()
     ' Pass the parameters to OpenReadOnlyForm
     OpenReadOnlyForm spName, params, "MyCustomFormName"
 End Sub
+-----------------------------------------------------------------------
+Function that handles sps that return and don't return values. 
+-----------------------------------------------------------------------
+Function ExecuteStoredProcedureWithParams(spName As String, Optional params As Variant, Optional ByRef returnCode As Long) As Object
+    Dim conn As Object
+    Dim cmd As Object
+    Dim rsADO As Object
+    Dim i As Integer
+
+    On Error GoTo ErrorHandler
+
+    ' Create a new ADO connection object
+    Set conn = CreateObject("ADODB.Connection")
+    Set cmd = CreateObject("ADODB.Command")
+
+    ' Set the cursor location to client-side to allow disconnection
+    conn.CursorLocation = 3 ' adUseClient
+
+    ' Open the connection to the SQL Server
+    conn.ConnectionString = "Provider=SQLOLEDB;Data Source=YourServerName;Initial Catalog=YourDatabaseName;Integrated Security=SSPI;"
+    conn.Open
+
+    ' Set up the command object
+    Set cmd.ActiveConnection = conn
+    cmd.CommandText = spName
+    cmd.CommandType = 4 ' adCmdStoredProc
+    cmd.CommandTimeout = 600 ' Set the command timeout to 10 minutes (600 seconds)
+
+    ' Check if parameters are provided
+    If Not IsMissing(params) Then
+        ' Add parameters to the command
+        For i = LBound(params) To UBound(params) Step 3
+            cmd.Parameters.Append cmd.CreateParameter(, params(i + 1), params(i + 2), , params(i))
+        Next i
+    End If
+
+    ' Add a return code parameter
+    cmd.Parameters.Append cmd.CreateParameter("ReturnCode", 3, 4) ' adInteger, adParamReturnValue
+
+    ' Execute the stored procedure and get the ADO recordset
+    Set rsADO = CreateObject("ADODB.Recordset")
+    rsADO.CursorLocation = 3 ' adUseClient
+    rsADO.Open cmd, , 3, 1 ' adOpenStatic, adLockReadOnly
+
+    ' Get the return code
+    returnCode = cmd.Parameters("ReturnCode").Value
+
+    ' Clean up ADO command and connection
+    Set cmd = Nothing
+    conn.Close
+    Set conn = Nothing
+
+    ' Return the ADO recordset, even if it is empty
+    Set ExecuteStoredProcedureWithParams = rsADO
+
+    Exit Function
+
+ErrorHandler:
+    MsgBox "Error " & Err.Number & ": " & Err.Description
+    If Not conn Is Nothing Then
+        If conn.State = 1 Then conn.Close
+    End If
+    Set cmd = Nothing
+    Set conn = Nothing
+    Set ExecuteStoredProcedureWithParams = Nothing
+    returnCode = -1 ' Indicate an error occurred
+End Function
+
+Private Sub btnRunStoredProcedure_Click()
+    Dim spName As String
+    Dim params As Variant
+    Dim returnCode As Long
+    Dim rsADO As Object
+
+    spName = "usp_YourStoredProcedureName" ' Your stored procedure name
+
+    ' Initialize the params array if there are any parameters
+    ' For this example, let's assume there are no parameters
+    ReDim params(0)
+
+    ' Execute the stored procedure and get the return code
+    Set rsADO = ExecuteStoredProcedureWithParams(spName, params, returnCode)
+
+    ' Check the return code
+    If returnCode = 0 Then
+        MsgBox "Stored procedure executed successfully.", vbInformation
+    Else
+        MsgBox "Stored procedure execution failed. Return code: " & returnCode, vbExclamation
+    End If
+
+    ' If the stored procedure returned a recordset, process it
+    If Not rsADO Is Nothing Then
+        If Not (rsADO.BOF And rsADO.EOF) Then
+            ' Process the recordset (if necessary)
+            ' Example: Display the data in a message box
+            rsADO.MoveFirst
+            Do While Not rsADO.EOF
+                MsgBox "Data: " & rsADO.Fields(0).Value
+                rsADO.MoveNext
+            Loop
+        End If
+        rsADO.Close
+        Set rsADO = Nothing
+    End If
+End Sub
+
