@@ -526,11 +526,13 @@ Function ExecuteStoredProcedureWithParams(spName As String, Optional params As V
     cmd.CommandTimeout = 600 ' Set the command timeout to 10 minutes (600 seconds)
 
     ' Check if parameters are provided and if the array is not empty
-    If Not IsMissing(params) And IsArray(params) And UBound(params) >= 0 Then
-        ' Add parameters to the command
-        For i = LBound(params) To UBound(params) Step 3
-            cmd.Parameters.Append cmd.CreateParameter(, params(i + 1), params(i + 2), , params(i))
-        Next i
+    If Not IsMissing(params) Then
+        If IsArray(params) And (UBound(params) >= 0) Then
+            ' Add parameters to the command
+            For i = LBound(params) To UBound(params) Step 3
+                cmd.Parameters.Append cmd.CreateParameter(, params(i + 1), params(i + 2), , params(i))
+            Next i
+        End If
     End If
 
     ' Add a return code parameter
