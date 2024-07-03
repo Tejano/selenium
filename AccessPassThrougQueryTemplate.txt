@@ -1,0 +1,47 @@
+Public Sub UpdatePassThroughQuery(spName As String, params As Object)
+    Dim db As DAO.Database
+    Dim qdf As DAO.QueryDef
+    Dim sql As String
+    Dim param As Variant
+    
+    Set db = CurrentDb
+    Set qdf = db.QueryDefs("qryPassThroughTemplate")
+    
+    ' Start building the SQL string with the stored procedure name
+    sql = "EXEC " & spName
+    
+    ' Loop through the parameters dictionary and append each parameter to the SQL string
+    For Each param In params.Keys
+        sql = sql & " @" & param & " = '" & params(param) & "',"
+    Next param
+    
+    ' Remove the trailing comma
+    sql = Left(sql, Len(sql) - 1) & ";"
+    
+    ' Update the SQL of the pass-through query
+    qdf.SQL = sql
+    
+    Set qdf = Nothing
+    Set db = Nothing
+End Sub
+
+Public Sub OpenMyReportDynamic(spName As String, params As Object)
+    ' Update the pass-through query with the provided parameters
+    UpdatePassThroughQuery spName, params
+    
+    ' Open the report
+    DoCmd.OpenReport "MyReport", acViewPreview
+End Sub
+
+Public Sub TestOpenReport()
+    Dim params As Object
+    Set params = CreateObject("Scripting.Dictionary")
+    
+    ' Add parameters to the dictionary
+    params.Add "Param1", "Value1"
+    params.Add "Param2", "Value2"
+    params.Add "Param3", "Value3"
+    
+    ' Open the report with dynamic parameters
+    OpenMyReportDynamic "usp_MyStoredProcedure", params
+End Sub
