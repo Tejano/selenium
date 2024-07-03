@@ -800,3 +800,165 @@ ErrorHandler:
     Set ExecuteStoredProcedureWithParams = Nothing
     returnCode = -1 ' Indicate an error occurred
 End Function
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+Function ExecuteStoredProcedureWithParams(spName As String, Optional params As Variant, Optional ByRef returnCode As Long, Optional includeReturnCode As Boolean = True) As Object
+    Dim conn As Object
+    Dim cmd As Object
+    Dim rsADO As Object
+    Dim param As Object
+    Dim i As Integer
+    Dim debugMsg As String
+
+    On Error GoTo ErrorHandler
+
+    ' Create a new ADO connection object
+    Set conn = CreateObject("ADODB.Connection")
+    Set cmd = CreateObject("ADODB.Command")
+
+    ' Open the connection to the SQL Server
+    conn.ConnectionString = "Provider=SQLOLEDB;Data Source=YourServerName;Initial Catalog=YourDatabaseName;Integrated Security=SSPI;"
+    conn.Open
+
+    ' Set up the command object
+    Set cmd.ActiveConnection = conn
+    cmd.CommandText = spName
+    cmd.CommandType = 4 ' adCmdStoredProc
+    cmd.CommandTimeout = 600 ' Set the command timeout to 10 minutes (600 seconds)
+
+    ' Initialize debug message
+    debugMsg = "Executing SP: " & spName & vbCrLf & "Parameters:" & vbCrLf
+
+    ' Check if parameters are provided and if the array is not empty
+    If Not IsMissing(params) Then
+        If IsArray(params) And (UBound(params) >= 2) Then
+            ' Add parameters to the command
+            For i = LBound(params) To UBound(params) Step 3
+                Set param = cmd.CreateParameter(, params(i + 1), params(i + 2), , params(i))
+                cmd.Parameters.Append param
+                debugMsg = debugMsg & "Value: " & params(i) & ", Type: " & params(i + 1) & ", Direction: " & params(i + 2) & vbCrLf
+            Next i
+        End If
+    End If
+
+    ' Optionally add a return code parameter
+    If includeReturnCode Then
+        Set param = cmd.CreateParameter("ReturnCode", adInteger, adParamReturnValue)
+        cmd.Parameters.Append param
+        debugMsg = debugMsg & "Return Code Parameter Added" & vbCrLf
+    End If
+
+    ' Output debug message
+    Debug.Print debugMsg
+
+    ' Execute the stored procedure and get the ADO recordset
+    Set rsADO = CreateObject("ADODB.Recordset")
+    rsADO.CursorLocation = 3 ' adUseClient
+    rsADO.Open cmd, , 3, 1 ' adOpenStatic, adLockReadOnly
+
+    ' Get the return code if included
+    If includeReturnCode Then
+        returnCode = cmd.Parameters("ReturnCode").Value
+    Else
+        returnCode = 0 ' Default return code for SPs that don't use return code
+    End If
+
+    ' Clean up ADO command
+    Set cmd = Nothing
+
+    ' Return the ADO recordset
+    Set ExecuteStoredProcedureWithParams = rsADO
+
+    Exit Function
+
+ErrorHandler:
+    MsgBox "Error " & Err.Number & ": " & Err.Description
+    If Not conn Is Nothing Then
+        If conn.State = 1 Then conn.Close
+    End If
+    Set cmd = Nothing
+    Set conn = Nothing
+    Set ExecuteStoredProcedureWithParams = Nothing
+    returnCode = -1 ' Indicate an error occurred
+End Function
+
+Private Sub btnRunStoredProcedureWithReturnCode_Click()
+    Dim spName As String
+    Dim params() As Variant
+    Dim returnCode As Long
+    Dim rsADO As Object
+
+    spName = "sp_WithReturnCode" ' Your stored procedure name with return code
+
+    ' Initialize the params array with required parameters
+    ReDim params(2)
+    params(0) = 404 ' Integer value for the input parameter
+    params(1) = 3 ' adInteger
+    params(2) = 1 ' adParamInput
+
+    ' Execute the stored procedure and include the return code parameter
+    Set rsADO = ExecuteStoredProcedureWithParams(spName, params, returnCode, True)
+
+    ' Check the return code
+    If returnCode = 0 Then
+        MsgBox "Stored procedure executed successfully.", vbInformation
+    Else
+        MsgBox "Stored procedure execution failed. Return code: " & returnCode, vbExclamation
+    End If
+
+    ' If the stored procedure returned a recordset, process it
+    If Not rsADO Is Nothing Then
+        If Not (rsADO.BOF And rsADO.EOF) Then
+            ' Process the recordset (if necessary)
+            ' Example: Display the data in a message box
+            rsADO.MoveFirst
+            Do While Not rsADO.EOF
+                MsgBox "Data: " & rsADO.Fields(0).Value
+                rsADO.MoveNext
+            Loop
+        End If
+        rsADO.Close
+        Set rsADO = Nothing
+    End If
+End Sub
+
+Private Sub btnRunStoredProcedureWithoutReturnCode_Click()
+    Dim spName As String
+    Dim params() As Variant
+    Dim returnCode As Long
+    Dim rsADO As Object
+
+    spName = "sp_WithoutReturnCode" ' Your stored procedure name without return code
+
+    ' Initialize the params array with required parameters
+    ReDim params(2)
+    params(0) = 404 ' Integer value for the input parameter
+    params(1) = 3 ' adInteger
+    params(2) = 1 ' adParamInput
+
+    ' Execute the stored procedure without including the return code parameter
+    Set rsADO = ExecuteStoredProcedureWithParams(spName, params, returnCode, False)
+
+    ' The return code will be defaulted to 0 for SPs without return code
+    If returnCode = 0 Then
+        MsgBox "Stored procedure executed successfully.", vbInformation
+    Else
+        MsgBox "Stored procedure execution failed. Return code: " & returnCode, vbExclamation
+    End If
+
+    ' If the stored procedure returned a recordset, process it
+    If Not rsADO Is Nothing Then
+        If Not (rsADO.BOF And rsADO.EOF) Then
+            ' Process the recordset (if necessary)
+            ' Example: Display the data in a message box
+            rsADO.MoveFirst
+            Do While Not rsADO.EOF
+                MsgBox "Data: " & rsADO.Fields(0).Value
+                rsADO.MoveNext
+            Loop
+        End If
+        rsADO.Close
+        Set rsADO = Nothing
+    End If
+End Sub
+
