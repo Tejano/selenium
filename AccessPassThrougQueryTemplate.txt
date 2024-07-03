@@ -45,3 +45,85 @@ Public Sub TestOpenReport()
     ' Open the report with dynamic parameters
     OpenMyReportDynamic "usp_MyStoredProcedure", params
 End Sub
+
+Implementation:
+Create a Temporary Pass-Through Query:
+
+Public Function CreateTempPassThroughQuery(spName As String, params As Object) As String
+    Dim db As DAO.Database
+    Dim qdf As DAO.QueryDef
+    Dim sql As String
+    Dim param As Variant
+    Dim tempQueryName As String
+    
+    Set db = CurrentDb
+    
+    ' Generate a unique query name
+    tempQueryName = "qryPassThroughTemp_" & Environ("USERNAME") & "_" & Format(Now, "yyyymmddhhnnss")
+    
+    ' Start building the SQL string with the stored procedure name
+    sql = "EXEC " & spName
+    
+    ' Loop through the parameters dictionary and append each parameter to the SQL string
+    For Each param In params.Keys
+        sql = sql & " @" & param & " = '" & params(param) & "',"
+    Next param
+    
+    ' Remove the trailing comma
+    sql = Left(sql, Len(sql) - 1) & ";"
+    
+    ' Create a new pass-through query
+    Set qdf = db.CreateQueryDef(tempQueryName)
+    qdf.Connect = "ODBC;DSN=YourDSNName;UID=YourUsername;PWD=YourPassword;" ' Replace with your actual connection string
+    qdf.SQL = sql
+    qdf.ReturnsRecords = True
+    
+    Set qdf = Nothing
+    Set db = Nothing
+    
+    ' Return the name of the temporary query
+    CreateTempPassThroughQuery = tempQueryName
+End Function
+Context in Access:
+Unique Naming: By using Environ("USERNAME") and a timestamp, each user/session gets a unique query name, preventing conflicts.
+Environment Variables: The Environ function leverages the Windows 
+environment variables, which can be useful for retrieving system-level
+ information such as the current user's name, computer name, etc.
+Considerations:
+Security: Ensure that the use of environment variables does not expose 
+sensitive information.
+Cleanup: Implement cleanup logic to remove temporary queries after use 
+to maintain database hygiene.
+This approach allows you to handle multiple users running the same reports 
+in Access 2016 by ensuring that each user has their own unique version of the pass-through query.
+
+
+Public Sub OpenMyReportDynamic(spName As String, params As Object)
+    Dim tempQueryName As String
+    
+    ' Create a temporary pass-through query with the provided parameters
+    tempQueryName = CreateTempPassThroughQuery(spName, params)
+    
+    ' Set the RecordSource of the report to the temporary query
+    Reports("MyReport").RecordSource = tempQueryName
+    
+    ' Open the report
+    DoCmd.OpenReport "MyReport", acViewPreview
+    
+    ' Optionally, you can delete the temporary query after the report is closed to clean up
+    ' DoCmd.DeleteObject acQuery, tempQueryName
+End Sub
+
+Public Sub TestOpenReport()
+    Dim params As Object
+    Set params = CreateObject("Scripting.Dictionary")
+    
+    ' Add parameters to the dictionary
+    params.Add "Param1", "Value1"
+    params.Add "Param2", "Value2"
+    params.Add "Param3", "Value3"
+    
+    ' Open the report with dynamic parameters
+    OpenMyReportDynamic "usp_MyStoredProcedure", params
+End Sub
+
