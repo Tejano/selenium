@@ -23,11 +23,19 @@ Public Function CreatePassThroughQuery(queryType As String, queryName As String,
     If queryType = "SP" Then
         sql = "EXEC " & queryName
     ElseIf queryType = "View" Then
-        sql = "SELECT * FROM " & queryName & " WHERE "
+        sql = "SELECT * FROM " & queryName
     Else
         Err.Raise vbObjectError + 1, "CreatePassThroughQuery", "Invalid query type specified."
     End If
     
+	    ' Check if there are any parameters
+    hasParams = params.Count > 0
+    
+    ' If there are parameters and it's a view, add the WHERE clause
+    If queryType = "View" And hasParams Then
+        sql = sql & " WHERE "
+    End If
+	
     ' Loop through the parameters dictionary and append each parameter to the SQL string
     For Each param In params.Keys
         If queryType = "SP" Then
