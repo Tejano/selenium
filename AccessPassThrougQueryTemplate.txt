@@ -127,3 +127,17 @@ Public Sub TestOpenReport()
     OpenMyReportDynamic "usp_MyStoredProcedure", params
 End Sub
 
+To clean up the temporary queries after the report is closed, you can use the Report_Close event in the report:
+
+Private Sub Report_Close()
+    Dim tempQueryName As String
+    tempQueryName = Me.RecordSource
+    
+    ' Delete the temporary query
+    On Error Resume Next
+    CurrentDb.QueryDefs.Delete tempQueryName
+    On Error GoTo 0
+End Sub
+
+This approach ensures that each temporary pass-through query is
+ deleted once the report is closed, maintaining a clean and efficient database environment
