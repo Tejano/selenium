@@ -151,3 +151,37 @@ Create Pass-Through Query: Use the parsed parameters to dynamically build the SQ
 Set RecordSource: Update the report's RecordSource to use the dynamically created pass-through query.
 By following these steps, you can convert the old Exec storedprocedure & 
 Me.OpenArgs approach to a more robust and flexible method using pass-through queries in Access 2016.
+
+
+Example of Using the Connection String with DAO for Pass-Through Queries
+Given that pass-through queries in Access use DAO, here’s how you can effectively use your ADO-style connection string with DAO:
+
+Retrieve the Connection String:
+Ensure you have a function that retrieves the connection string correctly.
+
+Public Function GetConnectionStringFromLinkedTable(tableName As String) As String
+    Dim db As DAO.Database
+    Dim tbl As DAO.TableDef
+    Dim connString As String
+    
+    On Error GoTo ErrorHandler
+    
+    Set db = CurrentDb
+    Set tbl = db.TableDefs(tableName)
+    
+    ' Get the connection string from the linked table
+    connString = tbl.Connect
+    
+    ' Remove the "ODBC;" prefix if it exists
+    If Left(connString, 5) = "ODBC;" Then
+        connString = Mid(connString, 6)
+    End If
+    
+    GetConnectionStringFromLinkedTable = connString
+    Exit Function
+    
+ErrorHandler:
+    MsgBox "Error " & Err.Number & " (" & Err.Description & ") in GetConnectionStringFromLinkedTable"
+    GetConnectionStringFromLinkedTable = ""
+End Function
+
