@@ -185,3 +185,56 @@ ErrorHandler:
     GetConnectionStringFromLinkedTable = ""
 End Function
 
+
+
+If Me.OpenArgs is always null even though DoCmd.OpenReport is passing an argument, it could be due to how the arguments are being passed or retrieved. Let’s make sure that the arguments are passed correctly and retrieved properly in the report's Open event.
+
+Here’s a step-by-step guide to ensure the arguments are passed and retrieved correctly:
+
+Step-by-Step Guide
+Step 1: Ensure Correct Argument Passing with DoCmd.OpenReport
+Ensure that you are passing the arguments correctly when you open the report.
+The OpenArgs parameter in DoCmd.OpenReport should be properly set.
+
+
+Sub OpenMyReport()
+    Dim reportArgs As String
+    reportArgs = "param1=value1;param2=value2" ' Example arguments
+    DoCmd.OpenReport "MyReport", acViewPreview, , , , reportArgs
+End Sub
+
+Step 2: Parse and Use Me.OpenArgs in the Report
+In the report’s Open event, parse Me.OpenArgs and create a pass-through query.
+Private Sub Report_Open(Cancel As Integer)
+    On Error GoTo ErrorHandler
+    
+    Dim params As Object
+    Dim tempQueryName As String
+    
+    ' Ensure OpenArgs is not null
+    If Not IsNull(Me.OpenArgs) Then
+        ' Parse the OpenArgs into parameters
+        Set params = ParseOpenArgs(Me.OpenArgs)
+        
+        ' Create the pass-through query with the provided parameters
+        tempQueryName = CreatePassThroughQuery("SP", "usp_MyStoredProcedure", params)
+        
+        ' Check if the query creation was successful
+        If tempQueryName <> "" Then
+            ' Set the RecordSource of the report to the pass-through query
+            Me.RecordSource = tempQueryName
+        Else
+            MsgBox "Failed to create the pass-through query.", vbCritical
+            Cancel = True
+        End If
+    Else
+        MsgBox "No parameters were passed.", vbCritical
+        Cancel = True
+    End If
+    
+    Exit Sub
+    
+ErrorHandler:
+    MsgBox "Error " & Err.Number & " (" & Err.Description & ") in Report_Open"
+    Cancel = True
+End Sub
