@@ -1,0 +1,153 @@
+
+To convert Me.OpenArgs to parameters for a pass-through query in Access 2016,
+ you can split Me.OpenArgs into individual parameters and use them in your pass-through query creation. Here's a step-by-step approach to achieve this:
+
+Step-by-Step Conversion
+Step 1: Extract Parameters from Me.OpenArgs
+Assume Me.OpenArgs contains parameters in a delimited string format
+ (e.g., "param1=value1;param2=value2"). You can split this string and use it to build your pass-through query.
+
+Step 2: Create a Function to Parse Me.OpenArgs
+First, create a function to parse Me.OpenArgs into a dictionary of parameters.
+
+Public Function ParseOpenArgs(openArgs As String) As Object
+    Dim params As Object
+    Set params = CreateObject("Scripting.Dictionary")
+    
+    Dim pairs() As String
+    Dim pair As Variant
+    Dim keyValue() As String
+    
+    ' Split the openArgs string by semicolon
+    pairs = Split(openArgs, ";")
+    
+    ' Loop through each pair and split into key and value
+    For Each pair In pairs
+        If InStr(pair, "=") > 0 Then
+            keyValue = Split(pair, "=")
+            params.Add keyValue(0), keyValue(1)
+        End If
+    Next pair
+    
+    Set ParseOpenArgs = params
+End Function
+
+Step 3: Modify the Pass-Through Query Function
+Modify the existing CreatePassThroughQuery function to use the parsed parameters.
+
+Public Function CreatePassThroughQuery(queryType As String, queryName As String, params As Object) As String
+    On Error GoTo ErrorHandler
+    
+    Dim db As DAO.Database
+    Dim qdf As DAO.QueryDef
+    Dim sql As String
+    Dim param As Variant
+    Dim tempQueryName As String
+    Dim connString As String
+    Dim hasParams As Boolean
+    
+    ' Retrieve the connection string from a DSN-less linked table
+    connString = GetConnectionStringFromLinkedTable("YourLinkedTableName") ' Replace with the name of your linked table
+    
+    If connString = "" Then
+        Err.Raise vbObjectError + 2, "CreatePassThroughQuery", "Failed to retrieve connection string."
+    End If
+    
+    Set db = CurrentDb
+    
+    ' Generate a unique query name
+    tempQueryName = "qryPassThroughTemp_" & Environ("USERNAME") & "_" & Format(Now, "yyyymmddhhnnss")
+    
+    ' Determine the base SQL statement based on the query type
+    If queryType = "SP" Then
+        sql = "EXEC " & queryName
+    ElseIf queryType = "View" Then
+        sql = "SELECT * FROM " & queryName
+    Else
+        Err.Raise vbObjectError + 1, "CreatePassThroughQuery", "Invalid query type specified."
+    End If
+    
+    ' Check if there are any parameters
+    hasParams = params.Count > 0
+    
+    ' If there are parameters and it's a view, add the WHERE clause
+    If queryType = "View" And hasParams Then
+        sql = sql & " WHERE "
+    End If
+    
+    ' Loop through the parameters dictionary and append each parameter to the SQL string
+    For Each param In params.Keys
+        If queryType = "SP" Then
+            sql = sql & " @" & param & " = '" & params(param) & "',"
+        ElseIf queryType = "View" Then
+            sql = sql & param & " = '" & params(param) & "' AND "
+        End If
+    Next param
+    
+    ' Remove the trailing comma for SP or AND for View
+    If queryType = "SP" Then
+        If Right(sql, 1) = "," Then
+            sql = Left(sql, Len(sql) - 1)
+        End If
+    ElseIf queryType = "View" Then
+        If hasParams And Right(sql, 5) = " AND " Then
+            sql = Left(sql, Len(sql) - 5)
+        End If
+        sql = sql & ";"
+    End If
+    
+    ' Create a new pass-through query
+    Set qdf = db.CreateQueryDef(tempQueryName)
+    qdf.Connect = "ODBC;" & connString
+    qdf.SQL = sql
+    qdf.ReturnsRecords = True
+    
+    ' Clean up and return the name of the temporary query
+    Set qdf = Nothing
+    Set db = Nothing
+    
+    CreatePassThroughQuery = tempQueryName
+    Exit Function
+    
+ErrorHandler:
+    MsgBox "Error " & Err.Number & " (" & Err.Description & ") in procedure CreatePassThroughQuery"
+    CreatePassThroughQuery = ""
+End Function
+
+Step 4: Update the Report's RecordSource
+Finally, update the report's RecordSource using the pass-through query created from the parsed Me.OpenArgs.
+
+Private Sub Report_Open(Cancel As Integer)
+    On Error GoTo ErrorHandler
+    
+    Dim params As Object
+    Dim tempQueryName As String
+    
+    ' Parse the OpenArgs into parameters
+    Set params = ParseOpenArgs(Me.OpenArgs)
+    
+    ' Create the pass-through query with the provided parameters
+    tempQueryName = CreatePassThroughQuery("SP", "usp_MyStoredProcedure", params)
+    
+    ' Check if the query creation was successful
+    If tempQueryName <> "" Then
+        ' Set the RecordSource of the report to the pass-through query
+        Me.RecordSource = tempQueryName
+    Else
+        MsgBox "Failed to create the pass-through query.", vbCritical
+        Cancel = True
+    End If
+    
+    Exit Sub
+    
+ErrorHandler:
+    MsgBox "Error " & Err.Number & " (" & Err.Description & ") in Report_Open"
+    Cancel = True
+End Sub
+
+Summary:
+Parse Me.OpenArgs: Create a function to parse Me.OpenArgs into key-value pairs.
+Create Pass-Through Query: Use the parsed parameters to dynamically build the SQL for a pass-through query.
+Set RecordSource: Update the report's RecordSource to use the dynamically created pass-through query.
+By following these steps, you can convert the old Exec storedprocedure & 
+Me.OpenArgs approach to a more robust and flexible method using pass-through queries in Access 2016.
