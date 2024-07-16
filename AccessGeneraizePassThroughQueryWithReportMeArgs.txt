@@ -254,7 +254,9 @@ Standard Module Code:
 ' In a standard module
 Public spParamDict As Object
 
-Public Sub EnsureSPParamDictInitialized()
+Public Function EnsureSPParamDictInitialized() As Boolean
+    On Error GoTo ErrorHandler
+
     ' Check if the dictionary is already created
     If spParamDict Is Nothing Then
         ' Create the dictionary object
@@ -265,7 +267,15 @@ Public Sub EnsureSPParamDictInitialized()
         spParamDict.Add "usp_StoredProcedure2", Array("paramA", "paramB", "paramC", "paramD")
         ' Add more stored procedures as needed
     End If
-End Sub
+    
+    ' Indicate success
+    EnsureSPParamDictInitialized = True
+    Exit Function
+
+ErrorHandler:
+    MsgBox "Error " & Err.Number & " (" & Err.Description & ") in EnsureSPParamDictInitialized"
+    EnsureSPParamDictInitialized = False
+End Function
 
 Step 2: Use Pass-Through Queries
 Parse OpenArgs Function:
