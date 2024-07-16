@@ -238,3 +238,184 @@ ErrorHandler:
     MsgBox "Error " & Err.Number & " (" & Err.Description & ") in Report_Open"
     Cancel = True
 End Sub
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+Step 1: Initialize Dictionary on Startup
+AutoExec Macro:
+
+Create a New Macro:
+Go to "Create" > "Macro".
+Add a "RunCode" action.
+In the "Function Name" box, type EnsureSPParamDictInitialized().
+Save the macro as AutoExec.
+Standard Module Code:
+
+
+' In a standard module
+Public spParamDict As Object
+
+Public Sub EnsureSPParamDictInitialized()
+    ' Check if the dictionary is already created
+    If spParamDict Is Nothing Then
+        ' Create the dictionary object
+        Set spParamDict = CreateObject("Scripting.Dictionary")
+        
+        ' Add entries to the dictionary for each stored procedure
+        spParamDict.Add "usp_StoredProcedure1", Array("param1", "param2", "param3")
+        spParamDict.Add "usp_StoredProcedure2", Array("paramA", "paramB", "paramC", "paramD")
+        ' Add more stored procedures as needed
+    End If
+End Sub
+
+Step 2: Use Pass-Through Queries
+Parse OpenArgs Function:
+
+Public Function ParseOpenArgs(openArgs As String) As Collection
+    Dim params As New Collection
+    Dim args() As String
+    Dim i As Integer
+    
+    ' Remove leading and trailing single quotes if present
+    If Left(openArgs, 1) = "'" And Right(openArgs, 1) = "'" Then
+        openArgs = Mid(openArgs, 2, Len(openArgs) - 2)
+    End If
+    
+    ' Split the openArgs string by comma
+    args = Split(openArgs, "','")
+    
+    ' Loop through each argument and add to the collection
+    For i = 0 To UBound(args)
+        params.Add Trim(args(i))
+    Next i
+    
+    Set ParseOpenArgs = params
+End Function
+
+Create Pass-Through Query Function:
+
+Public Function CreatePassThroughQuery(queryName As String, params As Collection) As String
+    On Error GoTo ErrorHandler
+    
+    Dim db As DAO.Database
+    Dim qdf As DAO.QueryDef
+    Dim sql As String
+    Dim i As Integer
+    Dim paramName As String
+    Dim tempQueryName As String
+    Dim connString As String
+    Dim paramNames As Variant
+    
+    ' Retrieve the parameter names for the stored procedure
+    If spParamDict.Exists(queryName) Then
+        paramNames = spParamDict(queryName)
+    Else
+        Err.Raise vbObjectError + 1, "CreatePassThroughQuery", "Stored procedure not found in parameter dictionary."
+    End If
+    
+    ' Retrieve the connection string from a DSN-less linked table
+    connString = GetConnectionStringFromLinkedTable("YourLinkedTableName") ' Replace with the name of your linked table
+    
+    If connString = "" Then
+        Err.Raise vbObjectError + 2, "CreatePassThroughQuery", "Failed to retrieve connection string."
+    End If
+    
+    Set db = CurrentDb
+    
+    ' Generate a unique query name
+    tempQueryName = "qryPassThroughTemp_" & Environ("USERNAME") & "_" & Format(Now, "yyyymmddhhnnss")
+    
+    ' Start building the SQL string for the stored procedure
+    sql = "EXEC " & queryName
+    
+    ' Map the values to the predefined parameter names
+    For i = 1 To params.Count
+        If i <= UBound(paramNames) + 1 Then
+            paramName = paramNames(i - 1)
+            sql = sql & " @" & paramName & " = '" & params(i) & "',"
+        End If
+    Next i
+    
+    ' Remove the trailing comma
+    If Right(sql, 1) = "," Then
+        sql = Left(sql, Len(sql) - 1)
+    End If
+    
+    ' Create a new pass-through query
+    Set qdf = db.CreateQueryDef(tempQueryName)
+    qdf.Connect = "ODBC;" & connString
+    qdf.SQL = sql
+    qdf.ReturnsRecords = True
+    
+    ' Clean up and return the name of the temporary query
+    Set qdf = Nothing
+    Set db = Nothing
+    
+    CreatePassThroughQuery = tempQueryName
+    Exit Function
+    
+ErrorHandler:
+    MsgBox "Error " & Err.Number & " (" & Err.Description & ") in procedure CreatePassThroughQuery"
+    CreatePassThroughQuery = ""
+End Function
+
+Step 3: Ensure Linked Tables and Views
+Linking SQL Server Tables and Views:
+
+Link SQL Server Tables:
+Use the "External Data" tab in Access.
+Select "ODBC Database".
+Choose "Link to the data source by creating a linked table".
+Select your SQL Server and the tables/views to link.
+
+Report Code:
+Private Sub Report_Open(Cancel As Integer)
+    On Error GoTo ErrorHandler
+    
+    Dim params As Collection
+    Dim tempQueryName As String
+    Dim spName As String
+    
+    ' Ensure the stored procedure parameter dictionary is initialized
+    EnsureSPParamDictInitialized
+    
+    ' Check if OpenArgs is null
+    If IsNull(Me.OpenArgs) Then
+        MsgBox "Me.OpenArgs is null", vbCritical
+        Cancel = True
+        Exit Sub
+    Else
+        MsgBox "Me.OpenArgs: " & Me.OpenArgs, vbInformation
+    End If
+    
+    ' Parse the OpenArgs into a collection of values
+    Set params = ParseOpenArgs(Me.OpenArgs)
+    
+    ' Determine the stored procedure name
+    spName = "usp_MyStoredProcedure" ' Adjust this as needed or pass it through OpenArgs if dynamic
+    
+    ' Create the pass-through query with the provided values
+    tempQueryName = CreatePassThroughQuery(spName, params)
+    
+    ' Check if the query creation was successful
+    If tempQueryName <> "" Then
+        ' Set the RecordSource of the report to the pass-through query
+        Me.RecordSource = tempQueryName
+    Else
+        MsgBox "Failed to create the pass-through query.", vbCritical
+        Cancel = True
+    End If
+    
+    Exit Sub
+    
+ErrorHandler:
+    MsgBox "Error " & Err.Number & " (" & Err.Description & ") in Report_Open"
+    Cancel = True
+End Sub
+
+Summary
+Initialization: Initialize the dictionary in the AutoExec macro to ensure it is available as soon as the database is opened.
+Pass-Through Queries: Use pass-through queries to interact with SQL Server stored procedures.
+Linked Tables and Views: Ensure SQL Server tables and views are properly linked in the Access front-end.
+
+By following these steps, you can effectively migrate your Access 2010 ADP database to Access 2016, 
+leveraging SQL Server for data storage and processing while ensuring multi-user compatibility.
