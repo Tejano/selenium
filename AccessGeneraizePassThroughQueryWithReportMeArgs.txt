@@ -284,18 +284,31 @@ Public Function ParseOpenArgs(openArgs As String) As Collection
     Dim params As New Collection
     Dim args() As String
     Dim i As Integer
+    Dim cleanedArgs As String
+    
+    ' Clean up the input string
+    cleanedArgs = openArgs
     
     ' Remove leading and trailing single quotes if present
-    If Left(openArgs, 1) = "'" And Right(openArgs, 1) = "'" Then
-        openArgs = Mid(openArgs, 2, Len(openArgs) - 2)
+    If Left(cleanedArgs, 1) = "'" And Right(cleanedArgs, 1) = "'" Then
+        cleanedArgs = Mid(cleanedArgs, 2, Len(cleanedArgs) - 2)
     End If
     
-    ' Split the openArgs string by comma
-    args = Split(openArgs, "','")
+    ' Split the cleanedArgs string by comma and handle spaces
+    args = Split(cleanedArgs, ",")
     
-    ' Loop through each argument and add to the collection
+    ' Loop through each argument, trim, and add to the collection
     For i = 0 To UBound(args)
-        params.Add Trim(args(i))
+        Dim currentArg As String
+        currentArg = Trim(args(i))
+        
+        ' Remove leading and trailing single quotes for string values
+        If Left(currentArg, 1) = "'" And Right(currentArg, 1) = "'" Then
+            currentArg = Mid(currentArg, 2, Len(currentArg) - 2)
+        End If
+        
+        ' Add the cleaned argument to the collection
+        params.Add currentArg
     Next i
     
     Set ParseOpenArgs = params
