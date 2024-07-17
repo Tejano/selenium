@@ -294,8 +294,11 @@ Public Function ParseOpenArgs(openArgs As String) As Collection
         cleanedArgs = Mid(cleanedArgs, 2, Len(cleanedArgs) - 2)
     End If
     
-    ' Split the cleanedArgs string by comma and handle spaces
-    args = Split(cleanedArgs, ",")
+    ' Replace the delimiter for easier splitting while maintaining the correct data types
+    cleanedArgs = Replace(cleanedArgs, "', '", "|")
+    
+    ' Split the cleanedArgs string by the custom delimiter
+    args = Split(cleanedArgs, "|")
     
     ' Loop through each argument, trim, and add to the collection
     For i = 0 To UBound(args)
@@ -303,7 +306,9 @@ Public Function ParseOpenArgs(openArgs As String) As Collection
         currentArg = Trim(args(i))
         
         ' Remove leading and trailing single quotes for string values
-        If Left(currentArg, 1) = "'" And Right(currentArg, 1) = "'" Then
+        If currentArg = "''" Then
+            currentArg = "" ' Treat '' as an empty string
+        ElseIf Left(currentArg, 1) = "'" And Right(currentArg, 1) = "'" Then
             currentArg = Mid(currentArg, 2, Len(currentArg) - 2)
         End If
         
