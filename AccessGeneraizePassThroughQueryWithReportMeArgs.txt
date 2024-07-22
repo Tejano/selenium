@@ -471,3 +471,21 @@ Linked Tables and Views: Ensure SQL Server tables and views are properly linked 
 
 By following these steps, you can effectively migrate your Access 2010 ADP database to Access 2016, 
 leveraging SQL Server for data storage and processing while ensuring multi-user compatibility.
+
+
+Example Implementation
+Step 1: Add a Form-Level Variable
+In the report's code module, add a variable to store the temporary query name.
+Private tempQueryName As String
+
+
+Delete temp query:
+
+Private Sub Report_Close()
+    On Error Resume Next
+    ' Delete the temporary pass-through query
+    If tempQueryName <> "" Then
+        CurrentDb.QueryDefs.Delete tempQueryName
+        tempQueryName = ""
+    End If
+End Sub
