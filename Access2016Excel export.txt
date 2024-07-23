@@ -1,0 +1,34 @@
+Sub ExecuteStoredProcedure()
+    ' Declare ADO objects
+    Dim conn As ADODB.Connection
+    Dim cmd As ADODB.Command
+    Dim param As ADODB.Parameter
+    Dim connStr As String
+    
+    ' Set up the connection string (modify as per your SQL Server details)
+    connStr = "Provider=SQLOLEDB;Data Source=YOUR_SQL_SERVER;Initial Catalog=YOUR_DATABASE;Integrated Security=SSPI;"
+    
+    ' Create and open the connection
+    Set conn = New ADODB.Connection
+    conn.Open connStr
+    
+    ' Create the command object
+    Set cmd = New ADODB.Command
+    With cmd
+        .ActiveConnection = conn
+        .CommandText = "YourStoredProcedureName" ' Replace with your stored procedure name
+        .CommandType = adCmdStoredProc
+        
+        ' Example of adding parameters
+        ' Set param = .CreateParameter("@YourParameterName", adInteger, adParamInput, , YourParameterValue)
+        ' .Parameters.Append param
+        
+        ' Execute the stored procedure
+        .Execute
+    End With
+    
+    ' Clean up
+    conn.Close
+    Set cmd = Nothing
+    Set conn = Nothing
+End Sub
