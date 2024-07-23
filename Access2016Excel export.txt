@@ -1,34 +1,72 @@
-Sub ExecuteStoredProcedure()
-    ' Declare ADO objects
-    Dim conn As ADODB.Connection
-    Dim cmd As ADODB.Command
-    Dim param As ADODB.Parameter
-    Dim connStr As String
+Sub GenerateExcelReport()
+    ' Declare Excel objects
+    Dim xlApp As Object
+    Dim xlWb As Object
+    Dim xlWs As Object
+    Dim rng As Object
+
+    ' Create a new instance of Excel
+    On Error Resume Next
+    Set xlApp = CreateObject("Excel.Application")
+    On Error GoTo 0
     
-    ' Set up the connection string (modify as per your SQL Server details)
-    connStr = "Provider=SQLOLEDB;Data Source=YOUR_SQL_SERVER;Initial Catalog=YOUR_DATABASE;Integrated Security=SSPI;"
-    
-    ' Create and open the connection
-    Set conn = New ADODB.Connection
-    conn.Open connStr
-    
-    ' Create the command object
-    Set cmd = New ADODB.Command
-    With cmd
-        .ActiveConnection = conn
-        .CommandText = "YourStoredProcedureName" ' Replace with your stored procedure name
-        .CommandType = adCmdStoredProc
-        
-        ' Example of adding parameters
-        ' Set param = .CreateParameter("@YourParameterName", adInteger, adParamInput, , YourParameterValue)
-        ' .Parameters.Append param
-        
-        ' Execute the stored procedure
-        .Execute
-    End With
-    
+    If xlApp Is Nothing Then
+        MsgBox "Excel is not installed on this computer."
+        Exit Sub
+    End If
+
+    ' Make Excel visible (optional)
+    xlApp.Visible = True
+
+    ' Add a new workbook
+    Set xlWb = xlApp.Workbooks.Add
+
+    ' Use the first worksheet
+    Set xlWs = xlWb.Worksheets(1)
+
+    ' Define a range and perform an action
+    Set rng = xlWs.Range("A1:A10")
+    rng.Value = "Hello, World!"
+
     ' Clean up
-    conn.Close
-    Set cmd = Nothing
-    Set conn = Nothing
+    Set rng = Nothing
+    Set xlWs = Nothing
+    Set xlWb = Nothing
+    xlApp.Quit
+    Set xlApp = Nothing
 End Sub
+
+
+Example with Early Binding:
+
+Sub GenerateExcelReportEarlyBinding()
+    ' Declare Excel objects
+    Dim xlApp As Excel.Application
+    Dim xlWb As Excel.Workbook
+    Dim xlWs As Excel.Worksheet
+    Dim rng As Excel.Range
+
+    ' Create a new instance of Excel
+    Set xlApp = New Excel.Application
+
+    ' Make Excel visible (optional)
+    xlApp.Visible = True
+
+    ' Add a new workbook
+    Set xlWb = xlApp.Workbooks.Add
+
+    ' Use the first worksheet
+    Set xlWs = xlWb.Worksheets(1)
+
+    ' Define a range and perform an action
+    Set rng = xlWs.Range("A1:A10")
+    rng.Value = "Hello, World!"
+
+    ' Clean up
+    Set rng = Nothing
+    Set xlWs = Nothing
+    Set xlWb = Nothing
+    xlApp.Quit
+    Set xlApp = Nothing
+End Sub
+
