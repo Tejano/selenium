@@ -163,3 +163,49 @@ Switching Logic: Update the current environment and the IsCurrent field in the t
 Initialization: Initialize the environment on database open.
 Display Current Environment: Ensure users can see the current environment via a form or main form label.
 This approach ensures that the environment setting is globally accessible and modifiable by authorized users, while all users can see the current environment.
+
+Sub CreateAndPopulateEnvironmentTable()
+    Dim db As DAO.Database
+    Dim tblDef As DAO.TableDef
+    Dim sql As String
+    Dim userResponse As Integer
+    
+    Set db = CurrentDb
+    
+    ' Check if the table already exists
+    For Each tblDef In db.TableDefs
+        If tblDef.Name = "tblEnvironments" Then
+            ' Table exists, prompt the user
+            userResponse = MsgBox("The table 'tblEnvironments' already exists. Do you want to recreate it?", vbYesNo + vbQuestion, "Table Exists")
+            
+            If userResponse = vbNo Then
+                ' User chose not to recreate the table
+                MsgBox "Operation cancelled by the user.", vbInformation
+                Exit Sub
+            Else
+                ' User chose to recreate the table, so delete the existing one
+                db.Execute "DROP TABLE tblEnvironments"
+                Exit For
+            End If
+        End If
+    Next tblDef
+    
+    ' SQL to create the tblEnvironments table
+    sql = "CREATE TABLE tblEnvironments (" & _
+          "EnvironmentName VARCHAR(50) PRIMARY KEY, " & _
+          "ConnectionString VARCHAR(255), " & _
+          "IsCurrent YESNO);"
+    
+    ' Execute the SQL statement
+    db.Execute sql
+    
+    ' Insert sample data
+    db.Execute "INSERT INTO tblEnvironments (EnvironmentName, ConnectionString, IsCurrent) VALUES ('DEV', 'Your_DEV_Connection_String', True);"
+    db.Execute "INSERT INTO tblEnvironments (EnvironmentName, ConnectionString, IsCurrent) VALUES ('QA', 'Your_QA_Connection_String', False);"
+    db.Execute "INSERT INTO tblEnvironments (EnvironmentName, ConnectionString, IsCurrent) VALUES ('UAT', 'Your_UAT_Connection_String', False);"
+    db.Execute "INSERT INTO tblEnvironments (EnvironmentName, ConnectionString, IsCurrent) VALUES ('PROD', 'Your_PROD_Connection_String', False);"
+    
+    Set db = Nothing
+    
+    MsgBox "Table 'tblEnvironments' created and sample data inserted successfully.", vbInformation
+End Sub
