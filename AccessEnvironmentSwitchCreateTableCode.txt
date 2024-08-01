@@ -1,0 +1,165 @@
+To handle the environment switching by developers and administrators while ensuring that users can see the current environment,
+ you can enhance the implementation with the following steps:
+
+Environment Configuration: Store connection strings and set the current environment.
+Environment Switching Logic: Allow developers and administrators to switch environments.
+Display Current Environment: Ensure users can see the current environment.
+Step-by-Step Implementation
+
+Step 1: Environment Configuration
+Store the connection strings in a table tblEnvironments and include a field for the current environment.
+
+CREATE TABLE tblEnvironments (
+    EnvironmentName VARCHAR(50) PRIMARY KEY,
+    ConnectionString VARCHAR(255),
+	tblEnvironments ADD COLUMN IsCurrent BOOLEAN;
+);
+
+INSERT INTO tblEnvironments (EnvironmentName, ConnectionString) VALUES ('DEV', 'Your_DEV_Connection_String','FALSE');
+INSERT INTO tblEnvironments (EnvironmentName, ConnectionString) VALUES ('QA', 'Your_QA_Connection_String','FALSE');
+INSERT INTO tblEnvironments (EnvironmentName, ConnectionString) VALUES ('UAT', 'Your_UAT_Connection_String','TRUE');
+INSERT INTO tblEnvironments (EnvironmentName, ConnectionString) VALUES ('PROD', 'Your_PROD_Connection_String','FALSE');
+
+Step 2: Update Initialization and Switching Logic
+Update the code to use the IsCurrent field to determine and set the current environment.
+
+Initialization Function:
+' In a standard module
+Public gstrCurrentEnvironment As String
+
+Public Sub InitializeEnvironment()
+    Dim db As DAO.Database
+    Dim rs As DAO.Recordset
+    
+    Set db = CurrentDb
+    Set rs = db.OpenRecordset("SELECT EnvironmentName FROM tblEnvironments WHERE IsCurrent = TRUE", dbOpenSnapshot)
+    
+    If rs.EOF Then
+        MsgBox "No current environment set!", vbCritical
+        gstrCurrentEnvironment = "DEV"  ' Default to DEV if not set
+    Else
+        gstrCurrentEnvironment = rs!EnvironmentName
+    End If
+    
+    rs.Close
+    Set rs = Nothing
+    Set db = Nothing
+End Sub
+
+Switch Environment Function:
+Public Sub SwitchEnvironment(newEnvironment As String)
+    On Error GoTo ErrorHandler
+    
+    Dim db As DAO.Database
+    Dim rs As DAO.Recordset
+    Dim connString As String
+    Dim qdf As DAO.QueryDef
+    Dim tdf As DAO.TableDef
+    
+    ' Get the new connection string
+    Set db = CurrentDb
+    Set rs = db.OpenRecordset("SELECT ConnectionString FROM tblEnvironments WHERE EnvironmentName = '" & newEnvironment & "'", dbOpenSnapshot)
+    
+    If rs.EOF Then
+        MsgBox "Environment not found!", vbCritical
+        Exit Sub
+    Else
+        connString = rs!ConnectionString
+    End If
+    
+    ' Loop through all linked tables and update the connection string
+    For Each tdf In db.TableDefs
+        If Len(tdf.Connect) > 0 Then
+            If Left(tdf.Connect, 4) = "ODBC" Then
+                tdf.Connect = "ODBC;" & connString
+                tdf.RefreshLink
+            End If
+        End If
+    Next tdf
+    
+    ' Update pass-through queries connection string
+    For Each qdf In db.QueryDefs
+        If qdf.Type = dbQSQLPassThrough Then
+            qdf.Connect = "ODBC;" & connString
+        End If
+    Next qdf
+    
+    ' Update the IsCurrent field in the table
+    db.Execute "UPDATE tblEnvironments SET IsCurrent = FALSE"
+    db.Execute "UPDATE tblEnvironments SET IsCurrent = TRUE WHERE EnvironmentName = '" & newEnvironment & "'"
+    
+    ' Set the global variable for the current environment
+    gstrCurrentEnvironment = newEnvironment
+    
+    MsgBox "Switched to " & newEnvironment & " environment.", vbInformation
+    Exit Sub
+    
+ErrorHandler:
+    MsgBox "Error " & Err.Number & " (" & Err.Description & ") in procedure SwitchEnvironment"
+End Sub
+
+Public Function GetCurrentEnvironment() As String
+    GetCurrentEnvironment = gstrCurrentEnvironment
+End Function
+
+Step 3: Create the Environment Switcher Form
+Create a form frmEnvironmentSwitcher with a combo box (cboEnvironment) and a button (btnSwitch).
+
+Form Design:
+
+ComboBox (cboEnvironment): Row Source set to SELECT EnvironmentName FROM tblEnvironments
+Button (btnSwitch): On Click event calls the SwitchEnvironment function.
+Form Code:
+Private Sub btnSwitch_Click()
+    If Not IsNull(Me.cboEnvironment) Then
+        Call SwitchEnvironment(Me.cboEnvironment)
+        Me.lblCurrentEnvironment.Caption = "Current Environment: " & GetCurrentEnvironment()
+    Else
+        MsgBox "Please select an environment.", vbExclamation
+    End If
+End Sub
+
+Private Sub Form_Load()
+    Me.lblCurrentEnvironment.Caption = "Current Environment: " & GetCurrentEnvironment()
+End Sub
+
+Step 4: AutoExec Macro for Initialization
+Create an AutoExec macro to open the environment switcher form and initialize the environment.
+
+AutoExec Macro:
+
+Add an action to run code: InitializeEnvironment
+Add an action to open frmEnvironmentSwitcher.
+Step 5: Display Current Environment to Users
+Create a form to display the current environment to users.
+
+Form Design:
+
+Create a new form frmShowEnvironment.
+Add a label lblCurrentEnvironment to display the current environment.
+
+Form Code:
+
+Private Sub Form_Load()
+    Me.lblCurrentEnvironment.Caption = "Current Environment: " & GetCurrentEnvironment()
+End Sub
+
+Add to Startup Form:
+
+If you have a main navigation form, include the frmShowEnvironment as a subform or display the current environment on the main form.
+Example of Displaying Current Environment in Main Form
+Main Form Code:
+Private Sub Form_Load()
+    ' Initialize environment
+    Call InitializeEnvironment
+    
+    ' Display current environment
+    Me.lblCurrentEnvironment.Caption = "Current Environment: " & GetCurrentEnvironment()
+End Sub
+
+Summary
+Environment Configuration: Add a boolean IsCurrent field to indicate the current environment.
+Switching Logic: Update the current environment and the IsCurrent field in the table.
+Initialization: Initialize the environment on database open.
+Display Current Environment: Ensure users can see the current environment via a form or main form label.
+This approach ensures that the environment setting is globally accessible and modifiable by authorized users, while all users can see the current environment.
