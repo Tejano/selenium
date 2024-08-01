@@ -209,3 +209,47 @@ Sub CreateAndPopulateEnvironmentTable()
     
     MsgBox "Table 'tblEnvironments' created and sample data inserted successfully.", vbInformation
 End Sub
+
+Sub AddSortOrderField()
+    Dim db As DAO.Database
+    Set db = CurrentDb
+    
+    ' Add the SortOrder field to the tblEnvironments table
+    db.Execute "ALTER TABLE tblEnvironments ADD COLUMN SortOrder INTEGER;"
+    
+    ' Update the SortOrder values
+    db.Execute "UPDATE tblEnvironments SET SortOrder = 1 WHERE EnvironmentName = 'Broker_DEV';"
+    db.Execute "UPDATE tblEnvironments SET SortOrder = 2 WHERE EnvironmentName = 'Broker_QA';"
+    db.Execute "UPDATE tblEnvironments SET SortOrder = 3 WHERE EnvironmentName = 'Broker_UAT';"
+    db.Execute "UPDATE tblEnvironments SET SortOrder = 4 WHERE EnvironmentName = 'Broker_PROD';"
+    
+    Set db = Nothing
+    
+    MsgBox "SortOrder field added and values updated successfully."
+End Sub
+
+Sub CreateAndPopulateEnvironmentTable()
+    Dim db As DAO.Database
+    Set db = CurrentDb
+    
+    ' SQL to create the tblEnvironments table
+    Dim sql As String
+    sql = "CREATE TABLE tblEnvironments (" & _
+          "EnvironmentName VARCHAR(50) PRIMARY KEY, " & _
+          "ConnectionString VARCHAR(255), " & _
+          "IsCurrent YESNO, " & _
+          "SortOrder INTEGER);"
+    
+    ' Execute the SQL statement
+    db.Execute sql
+    
+    ' Insert sample data with SortOrder
+    db.Execute "INSERT INTO tblEnvironments (EnvironmentName, ConnectionString, IsCurrent, SortOrder) VALUES ('Broker_DEV', 'Your_DEV_Connection_String', True, 1);"
+    db.Execute "INSERT INTO tblEnvironments (EnvironmentName, ConnectionString, IsCurrent, SortOrder) VALUES ('Broker_QA', 'Your_QA_Connection_String', False, 2);"
+    db.Execute "INSERT INTO tblEnvironments (EnvironmentName, ConnectionString, IsCurrent, SortOrder) VALUES ('Broker_UAT', 'Your_UAT_Connection_String', False, 3);"
+    db.Execute "INSERT INTO tblEnvironments (EnvironmentName, ConnectionString, IsCurrent, SortOrder) VALUES ('Broker_PROD', 'Your_PROD_Connection_String', False, 4);"
+    
+    Set db = Nothing
+    
+    MsgBox "Table 'tblEnvironments' created and sample data inserted successfully."
+End Sub
