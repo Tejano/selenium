@@ -1,0 +1,74 @@
+To update the SQL of an existing pass-through query in Microsoft Access using VBA, you can use the QueryDef object to modify the SQL property of the query. Below is an example of how you can achieve this:
+
+Updating the SQL in a Pass-Through Query
+Step-by-Step Implementation
+Open the Database: Ensure you have a reference to the DAO library in your Access VBA project.
+Locate the Pass-Through Query: Find the specific query you want to update.
+Modify the SQL Property: Change the SQL property to the new SQL string.
+VBA Code Example
+Here is a complete example demonstrating how to update the SQL of an existing pass-through query:
+
+Sub UpdatePassThroughQuery(queryName As String, newSQL As String)
+    On Error GoTo ErrorHandler
+    
+    Dim db As DAO.Database
+    Dim qdf As DAO.QueryDef
+    
+    ' Open the current database
+    Set db = CurrentDb
+    
+    ' Locate the pass-through query by name
+    Set qdf = db.QueryDefs(queryName)
+    
+    ' Check if the query is a pass-through query
+    If qdf.Type = dbQSQLPassThrough Then
+        ' Update the SQL property with the new SQL string
+        qdf.SQL = newSQL
+        ' Optional: Set the ReturnsRecords property if needed
+        qdf.ReturnsRecords = True
+        
+        ' Save the changes
+        qdf.Close
+        Set qdf = Nothing
+        Set db = Nothing
+        
+        MsgBox "Query '" & queryName & "' updated successfully.", vbInformation
+    Else
+        MsgBox "The specified query is not a pass-through query.", vbExclamation
+    End If
+    
+    Exit Sub
+    
+ErrorHandler:
+    MsgBox "Error " & Err.Number & " (" & Err.Description & ") in procedure UpdatePassThroughQuery"
+    Set qdf = Nothing
+    Set db = Nothing
+End Sub
+
+Usage Instructions
+Open your Access database.
+Press Alt + F11 to open the VBA editor.
+Insert a new module (Insert > Module).
+Copy and paste the UpdatePassThroughQuery code into the module.
+Call the UpdatePassThroughQuery subroutine from the Immediate window (Ctrl + G) or another procedure, providing the query name and the new SQL string as parameters.
+
+Example Call
+Sub TestUpdatePassThroughQuery()
+    Dim newSQL As String
+    newSQL = "SELECT * FROM SomeTable WHERE SomeColumn = 'SomeValue'"
+    
+    Call UpdatePassThroughQuery("MyPassThroughQuery", newSQL)
+End Sub
+Explanation
+Open the Current Database: Use CurrentDb to get a reference to the current database.
+Locate the Query: Use db.QueryDefs(queryName) to get the specific query definition.
+Check Query Type: Ensure the query is a pass-through query by checking if qdf.Type = dbQSQLPassThrough.
+Update the SQL Property: Set the SQL property to the new SQL string.
+Handle Errors: Use error handling to catch and display any issues that occur during the process.
+This approach ensures that you can dynamically update the SQL of your pass-through queries in Access, providing flexibility for various use cases.
+
+
+
+
+
+
