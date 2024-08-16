@@ -1,0 +1,78 @@
+Step 1: Create the Temporary Form
+This code snippet dynamically creates a temporary form and assigns a passthrough query as its record source:
+
+Sub CreateTempFormWithUnloadEvent()
+    Dim db As DAO.Database
+    Dim qdf As DAO.QueryDef
+    Dim frm As Access.Form
+    Dim mdl As Module
+    Dim tempQueryName As String
+    Dim tempFormName As String
+
+    Set db = CurrentDb
+
+    ' Create a unique name for the passthrough query and temp form
+    tempQueryName = "ptqTempQuery_" & Format(Now(), "yyyymmdd_hhnnss")
+    tempFormName = "frmTemp_" & Format(Now(), "yyyymmdd_hhnnss")
+
+    ' Create the passthrough query
+    Set qdf = db.CreateQueryDef(tempQueryName)
+    qdf.Connect = "ODBC;DSN=YourDSNName;" ' Adjust your connection string as needed
+    qdf.SQL = "EXEC YourStoredProcedureName" ' Adjust to your stored procedure
+    qdf.ReturnsRecords = True
+    qdf.Close
+
+    ' Create the temporary form
+    Set frm = CreateForm
+    frm.RecordSource = tempQueryName
+
+    ' Set form properties
+    frm.Caption = "Temporary Form"
+    frm.Name = tempFormName
+
+    ' Save the form so it can be referenced later
+    DoCmd.Save acForm, frm.Name
+
+    ' Open the form in Form View
+    DoCmd.OpenForm frm.Name, acFormDS
+
+    ' Get the module of the form
+    Set mdl = Forms(tempFormName).Module
+
+    ' Insert the Form_Unload event handler into the form's module
+    With mdl
+        .InsertLines .CountOfLines + 1, "Private Sub Form_Unload(Cancel As Integer)"
+        .InsertLines .CountOfLines + 1, "    Dim db As DAO.Database"
+        .InsertLines .CountOfLines + 1, "    On Error Resume Next"
+        .InsertLines .CountOfLines + 1, "    Set db = CurrentDb"
+        .InsertLines .CountOfLines + 1, "    ' Delete the temporary query"
+        .InsertLines .CountOfLines + 1, "    db.QueryDefs.Delete Me.RecordSource"
+        .InsertLines .CountOfLines + 1, "    ' Delete the temporary form"
+        .InsertLines .CountOfLines + 1, "    DoCmd.DeleteObject acForm, Me.Name"
+        .InsertLines .CountOfLines + 1, "    ' Cleanup"
+        .InsertLines .CountOfLines + 1, "    Set db = Nothing"
+        .InsertLines .CountOfLines + 1, "End Sub"
+    End With
+
+    ' Cleanup
+    Set frm = Nothing
+    Set qdf = Nothing
+    Set db = Nothing
+    Set mdl = Nothing
+End Sub
+
+Explanation:
+Create the Passthrough Query: A unique name is generated for the passthrough query,
+ which is then created with the necessary connection string and SQL command.
+
+Create the Temporary Form: The form is created with a unique name and the passthrough 
+query is set as its record source.
+
+Insert the Form_Unload Code: The code dynamically inserts the Form_Unload event handler
+ into the temporary form’s module. This handler deletes the passthrough query and the temporary form when the form is closed.
+
+Cleanup: After the form is created and the event handler is inserted, the code cleans
+ up by setting all the objects to Nothing.
+
+This code allows you to create a temporary form that cleans up after itself by
+ deleting the associated passthrough query and the form itself when it is closed.
