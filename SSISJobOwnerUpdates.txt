@@ -1,0 +1,77 @@
+You can create a SQL Server script that identifies and cleans up SSIS jobs where the owner no longer exists as a valid SQL Server login. Below is a T-SQL script that can be used to identify such jobs and update their owners to a valid login (e.g., sa).
+
+This script assumes you want to set the job owner to sa for jobs where the owner no longer exists.
+
+-- Step 1: Identify jobs with invalid owners
+SELECT 
+    j.job_id,
+    j.name AS JobName,
+    j.owner_sid,
+    l.name AS CurrentOwner
+FROM 
+    msdb.dbo.sysjobs j
+LEFT JOIN 
+    sys.server_principals l
+ON 
+    j.owner_sid = l.sid
+WHERE 
+    l.name IS NULL;  -- This indicates the owner is no longer a valid SQL Server login
+
+-- Step 2: Update the job owner to 'sa' where the owner no longer exists
+-- You can use a loop or an update query to change the owner of each job
+DECLARE @job_id UNIQUEIDENTIFIER;
+
+DECLARE job_cursor CURSOR FOR 
+SELECT j.job_id
+FROM 
+    msdb.dbo.sysjobs j
+LEFT JOIN 
+    sys.server_principals l
+ON 
+    j.owner_sid = l.sid
+WHERE 
+    l.name IS NULL;
+
+OPEN job_cursor;
+
+FETCH NEXT FROM job_cursor INTO @job_id;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    -- Update the job owner to 'sa'
+    EXEC msdb.dbo.sp_update_job @job_id = @job_id, @owner_login_name = 'sa';
+    
+    FETCH NEXT FROM job_cursor INTO @job_id;
+END;
+
+CLOSE job_cursor;
+DEALLOCATE job_cursor;
+
+-- Step 3: Verify the jobs have been updated
+SELECT 
+    j.job_id,
+    j.name AS JobName,
+    l.name AS NewOwner
+FROM 
+    msdb.dbo.sysjobs j
+JOIN 
+    sys.server_principals l
+ON 
+    j.owner_sid = l.sid
+WHERE 
+    l.name = 'sa';
+
+Script Explanation:
+Step 1: Identify Jobs with Invalid Owners
+
+This query finds jobs where the owner SID (owner_sid) does not match any existing logins in sys.server_principals. 
+If a job owner does not exist, the name column from sys.server_principals will be NULL.
+Step 2: Update Job Owner
+
+A cursor is used to loop through each job with an invalid owner and update its owner to sa. 
+The sp_update_job stored procedure is used to update the job owner.
+Step 3: Verification
+
+This step checks that the jobs have been successfully updated to the new owner (sa).
+Before running this script, ensure you have proper permissions to modify SQL Server jobs, 
+and review the jobs to ensure that changing their owners won't cause any issues.
