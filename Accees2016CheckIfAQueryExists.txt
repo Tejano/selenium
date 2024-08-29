@@ -1,0 +1,75 @@
+To check if a pass-through query exists in an Access 2016 database, and if it does, update it with a new SQL query (or create it if it doesn't exist), you can use the following VBA approach:
+
+Step-by-Step Solution:
+Check if the Query Exists:
+
+You can check if the pass-through query exists by attempting to reference it in the QueryDefs collection.
+Update the Query:
+
+If the query exists, you update its SQL statement.
+Create the Query:
+
+If the query does not exist, you create a new pass-through query and set its SQL statement
+
+Sub CreateOrUpdatePassThroughQuery(queryName As String, sqlQuery As String, odbcConnectionString As String)
+    Dim db As DAO.Database
+    Dim qdf As DAO.QueryDef
+
+    Set db = CurrentDb
+
+    ' Check if the pass-through query exists
+    On Error Resume Next
+    Set qdf = db.QueryDefs(queryName)
+    On Error GoTo 0
+
+    If Not qdf Is Nothing Then
+        ' The query exists, update it
+        qdf.SQL = sqlQuery
+        qdf.Connect = odbcConnectionString
+        qdf.ReturnsRecords = True  ' Adjust this as needed based on whether the query returns records
+        qdf.Close
+        MsgBox "Pass-through query '" & queryName & "' has been updated.", vbInformation
+    Else
+        ' The query does not exist, create it
+        Set qdf = db.CreateQueryDef(queryName)
+        qdf.SQL = sqlQuery
+        qdf.Connect = odbcConnectionString
+        qdf.ReturnsRecords = True  ' Adjust this as needed
+        MsgBox "Pass-through query '" & queryName & "' has been created.", vbInformation
+    End If
+
+    ' Clean up
+    Set qdf = Nothing
+    Set db = Nothing
+End Sub
+
+
+How to Use This Code:
+Parameters:
+
+queryName: The name of the pass-through query you want to check, update, or create.
+sqlQuery: The SQL string that you want to set as the query's SQL statement.
+odbcConnectionString: The connection string used to connect to the SQL Server.
+Execution:
+
+Call the CreateOrUpdatePassThroughQuery subroutine with the appropriate parameters to check if the query exists and either update it or create it.
+Example Call:
+
+Sub TestCreateOrUpdate()
+    Dim queryName As String
+    Dim sqlQuery As String
+    Dim odbcConnectionString As String
+
+    queryName = "MyPassThroughQuery"
+    sqlQuery = "SELECT * FROM MyTable WHERE SomeCondition = 'Value'"
+    odbcConnectionString = "ODBC;DSN=MyDSN;UID=myUsername;PWD=myPassword;"
+
+    Call CreateOrUpdatePassThroughQuery(queryName, sqlQuery, odbcConnectionString)
+End Sub
+Explanation:
+Check for Existence: The code uses On Error Resume Next to avoid an error if the query doesn’t exist and then attempts to set the qdf object to the query definition. If the query does not exist, qdf will be Nothing.
+Update Existing Query: If the query exists, the code updates its SQL property and connection string.
+Create New Query: If the query does not exist, the code creates a new pass-through query using CreateQueryDef.
+Summary:
+This approach allows you to efficiently manage pass-through queries in Access 2016 by checking for their existence, updating them if they already exist, or creating them 
+if they don't. This ensures that your database remains organized and that queries are always up-to-date with the latest SQL statements

@@ -1,0 +1,58 @@
+Steps to Maintain Position on the Same Record:
+Store the Record Identifier:
+
+Before closing the edit form, store the primary key (or unique identifier) of the record that was being edited.
+Requery the Parent Form:
+
+Requery the parent form to refresh the data.
+Find the Record in the Parent Form:
+
+After requerying, use the FindFirst method of the form’s recordset to navigate back to the record that matches the stored identifier.
+Example Code:
+Here’s how you can modify the Unload event of the edit form to requery the parent form and reposition it on the original record:
+
+Private Sub Form_Unload(Cancel As Integer)
+    Dim parentForm As Form
+    Dim recordID As Variant
+
+    ' Check if the parent form is open
+    If CurrentProject.AllForms("ParentFormName").IsLoaded Then
+        ' Get a reference to the parent form
+        Set parentForm = Forms("ParentFormName")
+
+        ' Store the ID of the current record
+        recordID = Me!YourPrimaryKeyFieldName ' Replace with your primary key field name
+
+        ' Requery the parent form
+        parentForm.Requery
+
+        ' Find the record that was being edited
+        With parentForm.RecordsetClone
+            .FindFirst "[YourPrimaryKeyFieldName] = " & recordID
+            If Not .NoMatch Then
+                ' If the record is found, move to that record in the form
+                parentForm.Bookmark = .Bookmark
+            End If
+        End With
+    End If
+End Sub
+
+Explanation:
+Store the Record Identifier:
+
+recordID = Me!YourPrimaryKeyFieldName: This line stores the primary key of the record being edited in a variable. Replace YourPrimaryKeyFieldName with the name of the primary key field.
+Requery the Parent Form:
+
+parentForm.Requery: Requeries the parent form to refresh its data.
+Find the Original Record:
+
+The FindFirst method searches for the record that matches the stored primary key in the form’s recordset.
+parentForm.Bookmark = .Bookmark: If the record is found, the form’s Bookmark property is set to the bookmark of the found record, positioning the form on that record.
+Notes:
+Ensure that the primary key field is correctly referenced and that it uniquely identifies each record in the parent form's record source.
+
+If your primary key is a string, make sure to handle the quotes correctly:
+.FindFirst "[YourPrimaryKeyFieldName] = '" & recordID & "'"
+The example assumes the primary key is a numeric field. Adjust the syntax as needed if it’s a string or another type.
+
+This approach ensures that after the edit form is closed, the parent form is refreshed and positioned back on the original record, providing a seamless user experience.
