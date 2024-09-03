@@ -1,6 +1,6 @@
 When converting an ADP to an ACCDB, the way tables are linked to the SQL Server 
 will change significantly. In an ADP, tables are directly connected to SQL Server.
- In an ACCDB, you need to create linked tables that 
+In an ACCDB, you need to create linked tables that 
 connect to SQL Server via ODBC. Here's how to handle the transition:
 
 Steps to Update Linked Tables
@@ -14,6 +14,7 @@ Handle Linked Table Updates in Your VBA Script:
 
 Incorporate the creation of linked tables into your conversion script.
 Detailed Implementation
+
 1. Configuration Table
 Ensure you have a configuration table to store connection strings as described previously.
 

@@ -21,8 +21,8 @@ INSERT INTO tblConnectionConfig (EnvironmentName, ConnectionString) VALUES ('qa'
 INSERT INTO tblConnectionConfig (EnvironmentName, ConnectionString) VALUES ('uat', 'Provider=SQLOLEDB;Data Source=UATServer;Initial Catalog=UATDatabase;Integrated Security=SSPI;');
 INSERT INTO tblConnectionConfig (EnvironmentName, ConnectionString) VALUES ('prod', 'Provider=SQLOLEDB;Data Source=ProdServer;Initial Catalog=ProdDatabase;Integrated Security=SSPI;');
 
-Create a Function to Get the Connection String:
-Write a VBA function to retrieve the appropriate connection string based on the environment parameter
+3.  Create a Function to Get the Connection String:
+	Write a VBA function to retrieve the appropriate connection string based on the environment parameter
 
 Function GetConnectionString(env As String) As String
     Dim rs As DAO.Recordset
@@ -43,8 +43,8 @@ Function GetConnectionString(env As String) As String
     GetConnectionString = connString
 End Function
 
-Modify Your Scripts to Use the Dynamic Connection String:
-Update your scripts to use the connection string returned by the GetConnectionString function.
+4. Modify Your Scripts to Use the Dynamic Connection String:
+	Update your scripts to use the connection string returned by the GetConnectionString function.
 
 Sub UpdateConnectionStrings(env As String)
     Dim db As DAO.Database
@@ -70,8 +70,9 @@ Sub UpdateConnectionStrings(env As String)
     MsgBox "Connection strings updated!"
 End Sub
 
-Update Export to Excel Function:
-Use the environment parameter in your export function as well.
+5. Update Export to Excel Function:
+	Use the environment parameter in your export function as well.
+
 Sub ExportToExcel(env As String)
     Dim conn As ADODB.Connection
     Dim rs As ADODB.Recordset

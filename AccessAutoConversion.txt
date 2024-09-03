@@ -13,7 +13,9 @@ Sub ImportObjectsFromADP()
     Dim tdf As DAO.TableDef
     Dim qdf As DAO.QueryDef
     Dim doc As DAO.Document
-    Dim docType As DAO.AcObjectType
+    'Dim docType As DAO.AcObjectType
+	Dim docType As AcObjectType
+
 
     adpPath = "C:\Path\To\Your\ADPFile.adp"
     Set db = CurrentDb()
@@ -310,3 +312,5 @@ Running the Scripts
 By including and running these VBA scripts in your new Access database, you can automate the 
 process of importing objects, updating connection strings, and modifying SQL queries, making the conversion 
 from ADP to ACCDB more efficient and less error-prone.
+
+

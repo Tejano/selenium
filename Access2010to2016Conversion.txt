@@ -37,3 +37,74 @@ After completing the conversion, thoroughly test your new Access 2016 ACCDB data
 all functionality works as expected.
 By following these steps, you can successfully convert a 2010 ADP Access database to Access 2016, 
 allowing you to leverage the new features and capabilities of the updated Access version.
+
+
+In an Access Data Project (ADP), the VBA code often directly interacts with SQL Server 
+objects using the ADP's native connection to SQL Server. 
+When you convert to an ACCDB file format, the way you connect to
+SQL Server changes, which requires updating the VBA code to use
+the new connection method. Here’s what you need to know and what
+to look for in your VBA code:
+
+Common ADP Connection Objects in VBA
+CurrentProject.Connection:
+
+In ADP, CurrentProject.Connection is used to reference the connection to the SQL Server. This object is not available in ACCDB files.
+ADO (ActiveX Data Objects):
+
+ADP projects often use ADO for data access, making use of Connection, Command, and Recordset objects.
+Example of VBA Code in ADP
+Here’s an example of how VBA code might look in an ADP file:
+
+Dim rs As ADODB.Recordset
+Set rs = New ADODB.Recordset
+rs.Open "SELECT * FROM Employees", CurrentProject.Connection
+
+This code opens a recordset using the CurrentProject.Connection to execute a query directly against the SQL Server.
+
+Updating VBA Code for ACCDB
+In an ACCDB file, you no longer have CurrentProject.Connection. Instead, you’ll need to use ODBC connections to SQL Server. This means you’ll set up a connection string and use it in your ADO code.
+
+Steps to Update the Code
+Create an ODBC Connection String:
+
+Define a connection string to your SQL Server.
+Update ADO Connection References:
+
+Replace references to CurrentProject.Connection with a new ADO connection using your connection string.
+Example of Updated VBA Code for ACCDB
+Here’s how you can update the previous example:
+Dim conn As ADODB.Connection
+Dim rs As ADODB.Recordset
+Dim connString As String
+
+connString = "Provider=SQLOLEDB;Data Source=YourServerName;Initial Catalog=YourDatabaseName;Integrated Security=SSPI;"
+
+Set conn = New ADODB.Connection
+conn.Open connString
+
+Set rs = New ADODB.Recordset
+rs.Open "SELECT * FROM Employees", conn
+
+' Your code to work with the recordset goes here
+
+rs.Close
+conn.Close
+Set rs = Nothing
+Set conn = Nothing
+
+Key Points to Check in Your VBA Code
+Connection Initialization:
+
+Ensure all connections to SQL Server are properly initialized using an ODBC connection string.
+Error Handling:
+
+Add error handling to manage any potential issues that might arise from the new connection method.
+Compatibility:
+
+Ensure that all SQL commands and operations are compatible with the new connection method.
+Performance:
+
+Test for performance issues, as the transition from ADP to linked tables may affect how data operations are performed.
+By carefully reviewing and updating your VBA code to replace the old ADP connection objects with appropriate ODBC 
+connections, you ensure that your database functions correctly in the ACCDB format.
