@@ -1,0 +1,77 @@
+To include code in the Unload event of a temporary form that is created dynamically in VBA, 
+you need to programmatically assign the event handler after creating the form. 
+This can be done by setting the OnUnload property of the form to a VBA function or procedure that handles the Unload event.
+
+Steps to Implement:
+Create the Temporary Form:
+
+Dynamically create the form using the CreateForm method.
+Assign the Unload Event:
+
+Set the OnUnload property of the form to point to a VBA procedure that will handle the form’s unloading and deletion.
+Create the Event Handler:
+
+Define the event handler in a standard module so it can be referenced by the form.
+Example Code:
+Here's how you can create the form and assign an Unload event dynamically:
+
+Step 1: Create the Temporary Form and Assign the Unload Event
+
+Sub CreateTempFormWithUnloadEvent()
+    Dim frm As Form
+    Dim ctl As Control
+    Dim frmName As String
+    
+    ' Create the temporary form
+    Set frm = CreateForm
+    frmName = frm.Name
+
+    ' Set form properties
+    frm.Caption = "Temporary Form"
+    frm.RecordSource = "YourTableName" ' Set the record source if needed
+
+    ' Add a control, like a text box
+    Set ctl = CreateControl(frm.Name, acTextBox, , , "FieldName", 1000, 1000)
+
+    ' Save the form with the specified name
+    DoCmd.Save acForm, frm.Name
+
+    ' Assign the Unload event to the form
+    frm.OnUnload = "=DeleteTempForm('" & frmName & "')"
+
+    ' Optionally close the form in design view
+    DoCmd.Close acForm, frm.Name, acSaveYes
+End Sub
+
+Step 2: Create the Unload Event Handler in a Standard Module
+
+Function DeleteTempForm(frmName As String)
+    ' Automatically delete the form when it is closed
+    On Error Resume Next
+    
+    ' Close the form first to ensure it's not in use
+    DoCmd.Close acForm, frmName, acSaveNo
+
+    ' Delete the form
+    DoCmd.DeleteObject acForm, frmName
+End Function
+
+Explanation:
+Creating the Form:
+
+The form is created dynamically using CreateForm. The name of the form is captured in the variable frmName.
+Assigning the Unload Event:
+
+The OnUnload property of the form is set to point to a function DeleteTempForm. This function will be executed 
+when the form is unloaded (closed). The syntax =DeleteTempForm('frmName') is used to pass the form
+name as a parameter to the function.
+
+Deleting the Form:
+
+The DeleteTempForm function is defined in a standard module and deletes the form by using DoCmd.DeleteObject. 
+This function is triggered when the form is closed.
+
+Summary:
+By dynamically assigning the Unload event handler to the temporary form after it is created, you can ensure that
+the form is automatically deleted when it is closed. This approach keeps the form management self-contained
+and ensures that temporary forms do not persist in the database beyond their intended use.
