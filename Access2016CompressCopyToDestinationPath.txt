@@ -222,3 +222,26 @@ Public Sub CopyDatabaseFromTable(env As String)
     Set fso = Nothing
 End Sub
 
+Private Sub Form_Load()
+    Dim db As DAO.Database
+    Dim rs As DAO.Recordset
+    Dim currentEnvironment As String
+    
+    ' Initialize database
+    Set db = CurrentDb
+    
+    ' Query the environment table to get the current environment
+    Set rs = db.OpenRecordset("SELECT environment FROM EnvironmentTable WHERE isCurrent = True")
+    
+    If Not rs.EOF Then
+        ' Retrieve the current environment from the recordset
+        currentEnvironment = rs!environment
+        
+        ' Set the dropdown value to the current environment
+        Me.cboEnvironment.Value = currentEnvironment
+    End If
+    
+    ' Clean up
+    rs.Close
+    Set rs = Nothing
+End Sub
