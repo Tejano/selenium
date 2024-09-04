@@ -74,6 +74,87 @@ or copying process, especially if the database is being used actively.
 
 
 
+Private Sub btnCopyDatabase_Click()
+    Dim userResponse As VbMsgBoxResult
+    
+    ' Prompt the user to compact the database before copying
+    userResponse = MsgBox("It's recommended to manually compact the database before copying. " & vbCrLf & _
+                          "Would you like to stop now to manually compact?", vbYesNoCancel + vbExclamation, "Compact Database")
+    
+    ' Handle user response
+    Select Case userResponse
+        Case vbYes
+            ' User chose to compact manually, so exit the subroutine
+            MsgBox "Please compact the database manually using the menu option, then try copying again."
+            Exit Sub
+        
+        Case vbNo
+            ' User chose to continue without compacting, proceed with the copy
+            Call CopyDatabaseFromTable(globalVariableEnv)
+        
+        Case vbCancel
+            ' User cancelled the operation, so stop execution
+            MsgBox "Operation cancelled."
+            Exit Sub
+    End Select
+End Sub
 
+
+
+
+Public Sub CopyDatabaseFromTable(env As String)
+    Dim db As DAO.Database
+    Dim rs As DAO.Recordset
+    Dim fso As Object
+    Dim sourcePath As String
+    Dim destinationPath As String
+    Dim fileOpen As Boolean
+    
+    ' Initialize FileSystemObject
+    Set db = CurrentDb
+    Set rs = db.OpenRecordset("SELECT * FROM EnvironmentTable WHERE environment = '" & env & "'")
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    If Not rs.EOF Then
+        ' Get the current database path and destination path from the table
+        sourcePath = Application.CurrentDb.Name
+        destinationPath = rs!destinationPath & rs!AccessName
+        
+        ' Check if the source file exists
+        If fso.FileExists(sourcePath) Then
+            ' Check if the destination file is open before copying
+            fileOpen = IsFileOpen(destinationPath)
+            
+            If fileOpen Then
+                MsgBox "The destination database is currently open. Please close it and try again.", vbExclamation
+            Else
+                ' Proceed with the copy if the destination is not open
+                fso.CopyFile sourcePath, destinationPath, True
+                MsgBox "Database copied to " & destinationPath
+            End If
+        Else
+            MsgBox "Source database not found.", vbExclamation
+        End If
+    Else
+        MsgBox "Environment not found.", vbExclamation
+    End If
+    
+    ' Cleanup
+    rs.Close
+    Set rs = Nothing
+    Set fso = Nothing
+End Sub
+
+' Function to check if a file is open
+Public Function IsFileOpen(filePath As String) As Boolean
+    On Error Resume Next
+    Dim ff As Integer
+    ff = FreeFile
+    Open filePath For Input Lock Read As #ff
+    Close ff
+    IsFileOpen = (Err.Number <> 0)
+    Err.Clear
+    On Error GoTo 0
+End Function
 
 
