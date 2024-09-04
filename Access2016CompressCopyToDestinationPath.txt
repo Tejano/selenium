@@ -1,0 +1,59 @@
+Yes, you can compress (compact) the Access database before copying it. In VBA, you can use 
+the Application.CompactRepair method to compact and repair the database before performing the copy operation.
+This method can be used to create a compacted version of the database file, which you can then copy.
+
+Here's how you can modify the process:
+1. Compress the Database Using CompactRepair
+You can add a step to compact the database before copying it by using the Application.CompactRepair method.
+
+Example Code to Compact and Copy the Database:
+
+Public Sub CompactAndCopyDatabase(env As String)
+    Dim db As DAO.Database
+    Dim rs As DAO.Recordset
+    Dim fso As Object
+    Dim sourcePath As String
+    Dim compactedPath As String
+    Dim destinationPath As String
+    Dim tempCompactedFile As String
+    
+    Set db = CurrentDb
+    Set rs = db.OpenRecordset("SELECT * FROM EnvironmentTable WHERE environment = '" & env & "'")
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    If Not rs.EOF Then
+        sourcePath = Application.CurrentDb.Name ' Path of the current database
+        tempCompactedFile = fso.GetParentFolderName(sourcePath) & "\temp_compact.accdb" ' Temp file for compacted DB
+        destinationPath = rs!destinationPath & rs!AccessName ' Destination Path
+        
+        ' Compact the current database
+        If Application.CompactRepair(sourcePath, tempCompactedFile, True) Then
+            ' After compacting, copy the compacted database
+            If fso.FileExists(tempCompactedFile) Then
+                fso.CopyFile tempCompactedFile, destinationPath, True
+                MsgBox "Database compacted and copied to " & destinationPath
+                ' Remove the temporary compacted file
+                fso.DeleteFile tempCompactedFile
+            Else
+                MsgBox "Compacted database not found."
+            End If
+        Else
+            MsgBox "Failed to compact the database."
+        End If
+    Else
+        MsgBox "Environment not found."
+    End If
+    
+    rs.Close
+    Set rs = Nothing
+    Set fso = Nothing
+End Sub
+
+How It Works:
+Application.CompactRepair: This method is used to compact the current database (sourcePath) into a 
+temporary file (tempCompactedFile).
+Copy the Compacted Database: After compacting the database, the compacted version is copied to 
+the destination path specified in your environment table.
+Temporary Compacted File: After the copy is completed, the temporary compacted file is deleted.
+2. Update the Button Click Event
+You can update the btnCopyDatabase_Click event to call this new function.
