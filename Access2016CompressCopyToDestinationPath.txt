@@ -147,11 +147,25 @@ End Sub
 
 ' Function to check if a file is open
 Public Function IsFileOpen(filePath As String) As Boolean
-    On Error Resume Next
+    Dim fso As Object
     Dim ff As Integer
+    
+    ' Create a FileSystemObject to check if the file exists
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    ' If the file does not exist, return False
+    If Not fso.FileExists(filePath) Then
+        IsFileOpen = False
+        Exit Function
+    End If
+    
+    ' If the file exists, check if it's open
+    On Error Resume Next
     ff = FreeFile
     Open filePath For Input Lock Read As #ff
     Close ff
+    
+    ' If there is an error, the file is open
     IsFileOpen = (Err.Number <> 0)
     Err.Clear
     On Error GoTo 0
