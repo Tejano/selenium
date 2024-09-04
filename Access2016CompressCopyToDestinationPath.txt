@@ -171,4 +171,54 @@ Public Function IsFileOpen(filePath As String) As Boolean
     On Error GoTo 0
 End Function
 
+Public Sub CopyDatabaseFromTable(env As String)
+    Dim db As DAO.Database
+    Dim rs As DAO.Recordset
+    Dim fso As Object
+    Dim sourcePath As String
+    Dim destinationPath As String
+    Dim accessName As String
+    Dim folderPath As String
+    
+    ' Initialize FileSystemObject
+    Set db = CurrentDb
+    Set rs = db.OpenRecordset("SELECT * FROM EnvironmentTable WHERE environment = '" & env & "'")
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    If Not rs.EOF Then
+        ' Get the current database path
+        sourcePath = Application.CurrentDb.Name
+        
+        ' Retrieve AccessName and ensure it has the .accdb extension
+        accessName = rs!AccessName
+        If Right(accessName, 6) <> ".accdb" Then
+            accessName = accessName & ".accdb"
+        End If
+        
+        ' Extract folder path and validate if it exists
+        folderPath = rs!destinationPath
+        If Not fso.FolderExists(folderPath) Then
+            MsgBox "The destination path '" & folderPath & "' is invalid or does not exist.", vbExclamation
+            Exit Sub
+        End If
+        
+        ' Define the full destination path
+        destinationPath = folderPath & accessName
+        
+        ' Check if the source file exists, then copy it
+        If fso.FileExists(sourcePath) Then
+            fso.CopyFile sourcePath, destinationPath, True
+            MsgBox "Database copied to " & destinationPath
+        Else
+            MsgBox "Source database not found.", vbExclamation
+        End If
+    Else
+        MsgBox "Environment not found.", vbExclamation
+    End If
+    
+    ' Cleanup
+    rs.Close
+    Set rs = Nothing
+    Set fso = Nothing
+End Sub
 
