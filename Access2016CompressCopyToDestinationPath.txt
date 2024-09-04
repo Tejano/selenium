@@ -57,3 +57,23 @@ the destination path specified in your environment table.
 Temporary Compacted File: After the copy is completed, the temporary compacted file is deleted.
 2. Update the Button Click Event
 You can update the btnCopyDatabase_Click event to call this new function.
+
+Private Sub btnCopyDatabase_Click()
+    ' Use the global variable to compact and copy the database for the current environment
+    If Len(globalVariableEnv) > 0 Then
+        Call CompactAndCopyDatabase(globalVariableEnv)
+    Else
+        MsgBox "Environment is not set."
+    End If
+End Sub
+
+Final Notes:
+This solution compacts the database to a temporary file before copying it to the final destination.
+Make sure to handle any potential file locks or access issues that might occur during the compacting 
+or copying process, especially if the database is being used actively.
+
+
+
+
+
+
