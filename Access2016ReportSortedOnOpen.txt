@@ -1,0 +1,23 @@
+Approach 2: Programmatically Sorting in VBA
+If you are dynamically setting the sort in the OnOpen event using VBA, you can also specify both the dynamic sorting field and the month field for the secondary sort.
+ Here’s how you would modify the previous example:
+ 
+ Private Sub Report_Open(Cancel As Integer)
+    Dim sortField As String
+    
+    If [CommType] = "PDP" Or [CommType] = "FeeFlat" Or [CommType] = "RxDs" Then
+        If [PricingLevel] = "Carrier ID" Then
+            sortField = "[Div_ID]"
+        ElseIf [PricingLevel] = "Contract ID" Then
+            sortField = "[Contract_ID]"
+        Else
+            sortField = "[Group_ID]"
+        End If
+    Else
+        sortField = "[Group_ID]"
+    End If
+    
+    ' Set the Order By to both the dynamic sort field and the constant month field
+    Me.OrderBy = sortField & ", [YearMonth]"
+    Me.OrderByOn = True
+End Sub
