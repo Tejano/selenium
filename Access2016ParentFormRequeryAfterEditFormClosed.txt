@@ -1,0 +1,48 @@
+If you want to ensure that the parent form returns to the specific record that was updated in the edit form,
+ you need to store the primary key (or unique identifier) of the record being updated and then, 
+ after the Requery, reposition the parent form on that record.
+
+Modify the Code to Return to the Updated Record:
+Here’s an updated version of your btnClose_Click procedure that will reposition the parent form on
+ the updated record after the Requery:
+ Private Sub btnClose_Click()
+    Dim recordID As Variant
+
+    ' Capture the primary key of the current record in the edit form
+    recordID = Me!YourPrimaryKeyFieldName ' Replace with the actual primary key field
+
+    ' Refresh or Requery the parent form
+    If CurrentProject.AllForms("ParentFormName").IsLoaded Then
+        With Forms("ParentFormName")
+            .Requery
+            ' After requery, find the record with the same primary key
+            .RecordsetClone.FindFirst "[YourPrimaryKeyFieldName] = " & recordID
+            If Not .RecordsetClone.NoMatch Then
+                ' Move to the found record
+                .Bookmark = .RecordsetClone.Bookmark
+            End If
+        End With
+    End If
+    
+    ' Close the edit form
+    DoCmd.Close acForm, Me.Name
+End Sub
+
+ Explanation:
+Capture the Primary Key:
+
+Before closing the edit form, we capture the value of the record's primary key from the edit form (Me!YourPrimaryKeyFieldName). Replace YourPrimaryKeyFieldName with the actual name of your primary key field.
+Requery the Parent Form:
+
+After the Requery, we use the RecordsetClone of the parent form to search for the record with the same primary key (YourPrimaryKeyFieldName) as the one being edited.
+Find and Set the Bookmark:
+
+The .FindFirst method is used to locate the record in the parent form that matches the stored recordID.
+If the record is found, the Bookmark property of the parent form is set to move to that record.
+
+Handling Different Data Types:
+
+If your primary key is a string, ensure the value is enclosed in single quotes:
+Summary:
+This updated version of the code ensures that after the Requery, the parent form navigates to the specific record that was updated in the edit form. This provides a seamless experience 
+for the user, as they will be positioned on the same record they just edited.
