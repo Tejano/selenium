@@ -97,3 +97,90 @@ IsDatabaseInUse Function: This is a placeholder function where you can implement
  to check if the database is in use.
 This structure gives you flexibility, as you can easily control whether an email is sent based on the flag in your table,
  and it cleanly separates the logic for copying and emailing.
+ 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+To make the email sub/function more generic and reusable across other parts of your Access application, 
+you can modify it to accept parameters for the subject, recipients, and body. This will allow you to call the 
+sub from different functions or parts of your Access application while passing in the necessary values dynamically.
+
+Here’s how you can create a generic email function:
+
+Generic Email Function
+ 
+ Sub SendGenericEmail(recipients As String, subject As String, bodyMessage As String)
+    Dim outlookApp As Object
+    Dim mailItem As Object
+    
+    ' Create the Outlook Application
+    Set outlookApp = CreateObject("Outlook.Application")
+    Set mailItem = outlookApp.CreateItem(0) ' Create a new email item
+
+    ' Configure the email
+    With mailItem
+        .Subject = subject ' Set the email subject dynamically
+        .Body = bodyMessage ' Set the body message dynamically
+        .To = recipients ' Set recipients dynamically
+        .Send ' Send the email
+    End With
+
+    MsgBox "Email sent successfully.", vbInformation
+
+    ' Clean up
+    Set mailItem = Nothing
+    Set outlookApp = Nothing
+End Sub
+
+Example of Using the Generic Function in Your Database Copy Process
+You can now modify your CopyDatabase sub to use the generic email function like this:
+
+Sub CopyDatabase()
+    Dim dbPath As String
+    Dim destPath As String
+    Dim dbName As String
+    Dim emailFlag As Boolean
+    Dim tableName As String
+    Dim recipients As String
+    Dim copySuccess As Boolean
+    Dim emailSubject As String
+    Dim emailBody As String
+
+    ' Assuming the fields "AccessName", "Path", "EmailFlag", "Recipients", and "TableName" are in your table
+    dbName = DLookup("AccessName", "YourTable", "ID = 1") ' Adjust ID and table as needed
+    destPath = DLookup("Path", "YourTable", "ID = 1") ' Path field from your table
+    emailFlag = DLookup("EmailFlag", "YourTable", "ID = 1") ' Email flag from your table
+    tableName = DLookup("TableName", "YourTable", "ID = 1") ' Adjust as needed
+    recipients = DLookup("Recipients", "YourTable", "ID = 1") ' Adjust as needed
+
+    dbPath = "C:\Path\To\Your\Database\" & dbName ' Adjust the source path
+    destPath = destPath & "\" & dbName ' Combine with the destination path
+
+    ' Assuming you have code to check if the db is being used, something like this:
+    If IsDatabaseInUse(dbPath) Then
+        MsgBox "Database is in use and cannot be copied.", vbExclamation
+        Exit Sub
+    End If
+
+    ' Try to copy the database
+    On Error Resume Next
+    FileCopy dbPath, destPath
+    If Err.Number = 0 Then
+        copySuccess = True
+        MsgBox "Database copied successfully.", vbInformation
+    Else
+        copySuccess = False
+        MsgBox "Failed to copy the database: " & Err.Description, vbExclamation
+    End If
+    On Error GoTo 0
+
+    ' If the copy was successful and the email flag is set, prepare and send the email
+    If copySuccess And emailFlag Then
+        emailSubject = "New Database Moved - " & tableName ' Dynamic subject
+        emailBody = "A new version of the database (" & dbName & ") has been moved to the following location: " & vbCrLf & _
+                    destPath & vbCrLf & "Please use this updated version."
+
+        ' Call the generic email function
+        Call SendGenericEmail(recipients, emailSubject, emailBody)
+    End If
+End Sub
