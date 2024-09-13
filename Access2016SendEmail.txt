@@ -1,0 +1,99 @@
+Splitting the process into two separate subs, one for copying the database and another for sending the email, 
+makes sense given your need to add an email flag. Here's how you can structure the two subs and ensure that the email is only sent if the copy is successful and the flag is set:
+
+Example Code
+Sub for Copying the Database
+This sub will handle copying the database and checking if the email flag is set. If it is, it will call the email sub.
+
+Sub CopyDatabase()
+    Dim dbPath As String
+    Dim destPath As String
+    Dim dbName As String
+    Dim emailFlag As Boolean
+    Dim tableName As String
+    Dim recipients As String
+    Dim copySuccess As Boolean
+
+    ' Assuming the fields "AccessName", "Path", "EmailFlag", "Recipients", and "TableName" are in your table
+    dbName = DLookup("AccessName", "YourTable", "ID = 1") ' Adjust ID and table as needed
+    destPath = DLookup("Path", "YourTable", "ID = 1") ' Path field from your table
+    emailFlag = DLookup("EmailFlag", "YourTable", "ID = 1") ' Email flag from your table
+
+    dbPath = "C:\Path\To\Your\Database\" & dbName ' Adjust the source path
+    destPath = destPath & "\" & dbName ' Combine with the destination path
+
+    ' Assuming you have code to check if the db is being used, something like this:
+    If IsDatabaseInUse(dbPath) Then
+        MsgBox "Database is in use and cannot be copied.", vbExclamation
+        Exit Sub
+    End If
+
+    ' Try to copy the database
+    On Error Resume Next
+    FileCopy dbPath, destPath
+    If Err.Number = 0 Then
+        copySuccess = True
+        MsgBox "Database copied successfully.", vbInformation
+    Else
+        copySuccess = False
+        MsgBox "Failed to copy the database: " & Err.Description, vbExclamation
+    End If
+    On Error GoTo 0
+
+    ' If the copy was successful and the email flag is set, call the SendEmail sub
+    If copySuccess And emailFlag Then
+        Call SendEmail(destPath, dbName)
+    End If
+End Sub
+
+' Function to check if the database is in use (you need to implement this)
+Function IsDatabaseInUse(dbPath As String) As Boolean
+    ' Placeholder logic, implement your own check
+    IsDatabaseInUse = False
+End Function
+
+Sub for Sending the Email
+This sub handles the actual email sending. It receives the destination path and the database name as parameters.
+Sub SendEmail(destPath As String, dbName As String)
+    Dim tableName As String
+    Dim recipients As String
+    Dim outlookApp As Object
+    Dim mailItem As Object
+    Dim bodyMessage As String
+
+    ' Get additional fields from the table (you may need to adjust the table and ID)
+    tableName = DLookup("TableName", "YourTable", "ID = 1") ' Adjust as needed
+    recipients = DLookup("Recipients", "YourTable", "ID = 1") ' Adjust as needed
+
+    ' Create the Outlook Application
+    Set outlookApp = CreateObject("Outlook.Application")
+    Set mailItem = outlookApp.CreateItem(0) ' Create a new email item
+
+    ' Set the body of the email
+    bodyMessage = "A new version of the database (" & dbName & ") has been moved to the following location: " & vbCrLf & _
+                  destPath & vbCrLf & "Please use this updated version."
+
+    ' Configure the email
+    With mailItem
+        .Subject = "New Database Moved - " & tableName ' Include table name in the subject
+        .Body = bodyMessage
+        .To = recipients ' Use recipients from the table
+        .Send ' Send the email
+    End With
+
+    MsgBox "Email sent to users.", vbInformation
+
+    ' Clean up
+    Set mailItem = Nothing
+    Set outlookApp = Nothing
+End Sub
+
+Key Points:
+CopyDatabase Sub: This sub handles the copy operation and checks if the database is in use. 
+If the copy is successful and the email flag is set, it calls SendEmail.
+SendEmail Sub: This sub sends the email notification. It receives the destPath and
+ dbName as parameters to customize the email message.
+IsDatabaseInUse Function: This is a placeholder function where you can implement your logic
+ to check if the database is in use.
+This structure gives you flexibility, as you can easily control whether an email is sent based on the flag in your table,
+ and it cleanly separates the logic for copying and emailing.
