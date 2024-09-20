@@ -1,0 +1,30 @@
+Alternative: Use DoCmd.RunSQL
+If you are simply running an UPDATE, INSERT, or DELETE query and don’t need to dynamically create pass-through queries,
+ you can also directly use DoCmd.RunSQL with warnings turned off:
+
+
+Private Sub btnExecuteQuery_Click()
+    Dim sqlUpdate As String
+
+    ' Construct the SQL update query
+    sqlUpdate = "UPDATE checklog " & _
+                "SET replaced_by = '" & Me.txtReplacedBy & "', " & _
+                "void_comments = '" & Me.txtVoidComments & "', " & _
+                "check_comments = '" & Me.txtCheckComments & "' " & _
+                "WHERE YourPrimaryKeyField = '" & Me.YourPrimaryKeyField & "';"
+
+    ' Suppress warnings
+    DoCmd.SetWarnings False
+
+    ' Run the SQL update query
+    DoCmd.RunSQL sqlUpdate
+
+    ' Re-enable warnings
+    DoCmd.SetWarnings True
+End Sub
+Conclusion:
+By turning off and then re-enabling warnings around the execution of your pass-through query,
+ you can effectively suppress the "no records returned" message without causing issues with
+ your ODBC driver or needing to set ReturnsRecords = No.
+
+Let me know if this resolves your issue or if you need further clarification!
