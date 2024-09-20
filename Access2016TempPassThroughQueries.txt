@@ -1,0 +1,49 @@
+Key Points:
+Temporary Pass-Through Query: The query is not saved in the database. It is created, executed, 
+and immediately cleaned up after execution.
+Dynamic SQL: You can dynamically build the SQL string based on user input or other form controls,
+making this method flexible and reusable.
+Action Queries: This is designed for action queries (like UPDATE, INSERT, DELETE) that do not return records.
+If you need to handle SELECT 
+queries that return records, you’ll need to set ReturnsRecords = True and process the results.
+
+
+If you need to handle SELECT queries where records are returned, you can modify the subroutine to handle that
+
+
+Sub ExecutePassThroughQuery(newSQL As String, returnsRecords As Boolean)
+    Dim qdf As DAO.QueryDef
+    Dim rs As DAO.Recordset
+    Dim connStr As String
+
+    ' Set the connection string dynamically
+    connStr = "ODBC;Driver={SQL Server};Server=YourServerName;Database=YourDatabaseName;Trusted_Connection=Yes;"
+
+    ' Create a temporary pass-through query
+    Set qdf = CurrentDb.CreateQueryDef("")
+
+    ' Set the connection string and the SQL
+    qdf.Connect = connStr
+    qdf.SQL = newSQL
+    qdf.ReturnsRecords = returnsRecords
+
+    ' Execute the query
+    If returnsRecords Then
+        ' For SELECT queries that return records
+        Set rs = qdf.OpenRecordset()
+        ' Process the returned records as needed
+        While Not rs.EOF
+            Debug.Print rs.Fields(0)  ' Example of processing records
+            rs.MoveNext
+        Wend
+        rs.Close
+        Set rs = Nothing
+    Else
+        ' For action queries like UPDATE, INSERT, DELETE
+        qdf.Execute dbFailOnError
+    End If
+
+    ' Clean up
+    qdf.Close
+    Set qdf = Nothing
+End Sub
