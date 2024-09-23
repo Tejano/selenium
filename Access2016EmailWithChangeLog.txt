@@ -13,6 +13,17 @@ CREATE TABLE ChangeLog (
     ModifiedBy TEXT(50),          ' User who made the change
     ChangeDate DATETIME           ' Date and time of the modification
 );
+CREATE TABLE ChangeLog (
+    ChangeID AUTOINCREMENT PRIMARY KEY,
+    VersionID LONG,               -- Foreign key linking to the Version in the Environment table
+    ChangeDescription MEMO,       -- Description of the change
+    ChangeType TEXT(255),         -- Type of change (Form, Report, Module, Query, etc.)
+    ObjectName TEXT(255),         -- Name of the object modified
+    ModifiedBy TEXT(50),          -- User who made the change
+    ChangeDate DATETIME,          -- Date and time of the change
+    CONSTRAINT FK_VersionID FOREIGN KEY (VersionID) REFERENCES Environment(Version)
+);
+
 
 You can manually log significant changes to forms, modules, or other objects in this table. 
 For example, when you update a form, you can add an entry describing the update.
