@@ -1,3 +1,25 @@
+Here’s a method to track such changes and include them in your email:
+
+1. Manual Change Tracking Table:
+Create a table to manually log significant changes made to the Access database.
+
+sql
+
+CREATE TABLE ChangeLog (
+    ChangeID AUTOINCREMENT PRIMARY KEY,
+    ChangeType TEXT(255),         ' E.g., Form, Query, Module, etc.
+    ObjectName TEXT(255),         ' The name of the object modified
+    ChangeDescription MEMO,       ' Description of the modification
+    ModifiedBy TEXT(50),          ' User who made the change
+    ChangeDate DATETIME           ' Date and time of the modification
+);
+
+You can manually log significant changes to forms, modules, or other objects in this table. 
+For example, when you update a form, you can add an entry describing the update.
+
+
+
+
 To implement the process you've described, where the database move notification email includes change logs only if the database has been updated, and the ChangeLog email flag is reset to False after sending, you can modify the CopyDatabase() function accordingly.
 
 1. Process Overview:
