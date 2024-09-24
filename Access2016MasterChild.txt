@@ -1,0 +1,40 @@
+Private Sub Form_Load()
+
+    Dim rst As DAO.Recordset
+    ' Reference the master subform's recordset
+    Set rst = Me.MasterSubformControlName.Form.RecordsetClone
+    
+    ' Find the record where ActiveFlag is True
+    rst.FindFirst "ActiveFlag = True"
+    
+    If Not rst.NoMatch Then
+        ' Set the focus to the active record in the master subform
+        Me.MasterSubformControlName.Form.Bookmark = rst.Bookmark
+        
+        ' Set the dropdown on the main form to show the active environment
+        Me.YourDropdownControlName = Me.MasterSubformControlName.Form!EnvironmentField ' Adjust EnvironmentField to your actual field name
+    End If
+    
+    ' Optionally: Filter the child form based on the active Version or environment
+    Me.ChildSubformControlName.Form.Filter = "Version = '" & Me.MasterSubformControlName.Form!Version & "'"
+    Me.ChildSubformControlName.Form.FilterOn = True
+
+End Sub
+
+Private Sub Form_Current()
+    ' Apply the filter to the child form based on the current Version
+    Me.Parent.ChildSubformControlName.Form.Filter = "Version = '" & Me!Version & "'"
+    Me.Parent.ChildSubformControlName.Form.FilterOn = True
+End Sub
+
+MasterSubformControlName:
+Private Sub Form_Current()
+    ' Apply the filter to the child form based on the current Version
+    Me.Parent.ChildSubformControlName.Form.Filter = "Version = '" & Me!Version & "'"
+    Me.Parent.ChildSubformControlName.Form.FilterOn = True
+End Sub
+Private Sub Form_AfterUpdate()
+    ' Apply the filter to the child form based on the updated Version
+    Me.Parent.ChildSubformControlName.Form.Filter = "Version = '" & Me!Version & "'"
+    Me.Parent.ChildSubformControlName.Form.FilterOn = True
+End Sub
