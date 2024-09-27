@@ -1,0 +1,51 @@
+Integrating with Table Relinking:
+You can combine the pass-through query relinking with the table relinking code into one subroutine that handles everything in a single step whenever you switch environments.
+
+Combined Code Example for Both Tables and Queries:
+
+
+Sub RelinkTablesAndPassThroughQueries(env As String)
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim qdf As DAO.QueryDef
+    Dim strTableName As String
+    Dim strConnectionString As String
+    
+    ' Set the connection string dynamically based on the environment
+    Select Case env
+        Case "non-prod"
+            strConnectionString = "ODBC;DRIVER={SQL Server};SERVER=NonProdServer;DATABASE=NonProdDB;UID=YourUser;PWD=YourPassword;"
+        Case "prod"
+            strConnectionString = "ODBC;DRIVER={SQL Server};SERVER=ProdServer;DATABASE=ProdDB;UID=YourUser;PWD=YourPassword;"
+    End Select
+    
+    ' Get the current database
+    Set db = CurrentDb()
+
+    ' --- Relink Linked Tables ---
+    For Each tdf In db.TableDefs
+        If Len(tdf.Connect) > 0 Then
+            strTableName = tdf.Name
+            db.TableDefs.Delete strTableName
+            Set tdf = db.CreateTableDef(strTableName)
+            tdf.Connect = strConnectionString
+            tdf.SourceTableName = strTableName
+            db.TableDefs.Append tdf
+            Debug.Print "Table " & strTableName & " relinked successfully."
+        End If
+    Next tdf
+
+    ' --- Relink Pass-Through Queries ---
+    For Each qdf In db.QueryDefs
+        If qdf.Type = dbQSQLPassThrough Then
+            qdf.Connect = strConnectionString
+            qdf.ReturnsRecords = True ' Adjust this based on the query type
+            Debug.Print "Pass-through query " & qdf.Name & " relinked successfully."
+        End If
+    Next qdf
+
+    ' Cleanup
+    Set tdf = Nothing
+    Set qdf = Nothing
+    Set db = Nothing
+End Sub

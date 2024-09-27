@@ -1,0 +1,39 @@
+
+Yes, the code to relink pass-through (PT) queries is very similar to relinking the tables. Pass-through queries in Access are linked directly to the SQL Server database, and their connection strings need to be updated when you switch environments (non-prod, prod, etc.).
+
+Here's how you can handle relinking pass-through queries programmatically.
+
+Steps for Relinking Pass-Through Queries:
+Loop through the QueryDefs collection to find the pass-through queries.
+Update the connection string for each pass-through query.
+Ensure only pass-through queries are modified, as other types of queries (select, update, etc.) don't have a connection string.
+Code Example to Relink Pass-Through Queries:
+
+Sub RelinkPassThroughQueries()
+    Dim db As DAO.Database
+    Dim qdf As DAO.QueryDef
+    Dim newConnectionString As String
+    
+    ' Set the connection string dynamically based on the environment
+    newConnectionString = "ODBC;DRIVER={SQL Server};SERVER=YourServer;DATABASE=YourDatabase;UID=YourUser;PWD=YourPassword;"
+    
+    ' Get the current database
+    Set db = CurrentDb()
+    
+    ' Loop through all queries in the database
+    For Each qdf In db.QueryDefs
+        ' Check if it's a pass-through query
+        If qdf.Type = dbQSQLPassThrough Then
+            ' Update the connection string
+            qdf.Connect = newConnectionString
+            qdf.ReturnsRecords = True ' Set to False if it's an action query that doesn't return records
+            
+            ' Optionally, print to confirm the relink
+            Debug.Print "Pass-through query " & qdf.Name & " relinked successfully."
+        End If
+    Next qdf
+
+    ' Cleanup
+    Set qdf = Nothing
+    Set db = Nothing
+End Sub
