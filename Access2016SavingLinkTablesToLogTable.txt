@@ -1,0 +1,83 @@
+VBA Code to Save Linked Table Information to a Table:
+
+Sub SaveLinkedTablesToTable()
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim rst As DAO.Recordset
+    Dim tableName As String
+    Dim connectionString As String
+    
+    ' Set the database object
+    Set db = CurrentDb()
+
+    ' Check if the destination table exists; if not, create it
+    If Not TableExists("LinkedTablesLog") Then
+        CreateLinkedTablesLogTable
+    End If
+    
+    ' Open a recordset to insert the linked table data
+    Set rst = db.OpenRecordset("LinkedTablesLog", dbOpenDynaset)
+    
+    ' Loop through all the linked tables
+    For Each tdf In db.TableDefs
+        If Len(tdf.Connect) > 0 Then ' Only work on linked tables
+            ' Get the table name and connection string
+            tableName = tdf.Name
+            connectionString = tdf.Connect
+            
+            ' Add a new record to the LinkedTablesLog table
+            rst.AddNew
+            rst!TableName = tableName
+            rst!ConnectionString = connectionString
+            rst!DateLogged = Now() ' Store the current date/time
+            rst.Update
+        End If
+    Next tdf
+    
+    ' Cleanup
+    rst.Close
+    Set rst = Nothing
+    Set tdf = Nothing
+    Set db = Nothing
+    
+    MsgBox "Linked table information saved successfully to LinkedTablesLog table."
+End Sub
+
+' Helper function to check if a table exists
+Function TableExists(tblName As String) As Boolean
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Set db = CurrentDb()
+    On Error Resume Next
+    Set tdf = db.TableDefs(tblName)
+    TableExists = (Err.Number = 0)
+    Set tdf = Nothing
+    On Error GoTo 0
+End Function
+
+' Function to create the LinkedTablesLog table if it doesn't exist
+Sub CreateLinkedTablesLogTable()
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim fld As DAO.Field
+    
+    ' Create the table and define fields
+    Set db = CurrentDb()
+    Set tdf = db.CreateTableDef("LinkedTablesLog")
+    
+    ' Define fields
+    With tdf
+        .Fields.Append .CreateField("TableName", dbText, 255)
+        .Fields.Append .CreateField("ConnectionString", dbMemo) ' Use memo for long connection strings
+        .Fields.Append .CreateField("DateLogged", dbDate)
+    End With
+    
+    ' Append the new table to the database
+    db.TableDefs.Append tdf
+    
+    ' Cleanup
+    Set tdf = Nothing
+    Set db = Nothing
+    
+    MsgBox "LinkedTablesLog table created successfully."
+End Sub
