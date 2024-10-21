@@ -222,6 +222,8 @@ Public Sub CopyDatabaseFromTable(env As String)
     Set fso = Nothing
 End Sub
 
+
+
 Private Sub Form_Load()
     Dim db As DAO.Database
     Dim rs As DAO.Recordset

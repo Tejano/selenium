@@ -1,0 +1,81 @@
+Sub SumAndStoreBeforeConversion()
+
+    Dim db As DAO.Database
+    Dim sqlBefore As String
+    Dim sqlSampleBefore As String
+
+    ' Set the database object
+    Set db = CurrentDb
+    
+    ' 1. Sum Data Before Conversion
+    sqlBefore = "INSERT INTO SumBeforeConversion (Total_Jan22, Total_Feb22, Total_Mar22, Total_Dec24) " & _
+                "SELECT SUM(Jan22), SUM(Feb22), SUM(Mar22), SUM(Dec24) " & _
+                "FROM LinkedTable;"
+    
+    ' Execute the summation and store in SumBeforeConversion table
+    db.Execute sqlBefore, dbFailOnError
+    
+    ' 2. Store Sample Records (10% of the records by Key Field)
+    sqlSampleBefore = "INSERT INTO SampleBeforeConversion (KeyField, Jan22, Feb22, Mar22, Dec24) " & _
+                      "SELECT TOP 10 PERCENT KeyField, Jan22, Feb22, Mar22, Dec24 " & _
+                      "FROM LinkedTable ORDER BY NEWID();"
+    
+    ' Execute the sampling query and store in SampleBeforeConversion table
+    db.Execute sqlSampleBefore, dbFailOnError
+    MsgBox "Data summed and 10% sample stored before conversion."
+
+    ' Clean up
+    Set db = Nothing
+
+End Sub
+
+
+Sub CompareAfterConversionAndSpotCheck()
+
+    Dim db As DAO.Database
+    Dim sqlAfter As String
+    Dim sqlCompareSample As String
+    Dim rsCompareSample As DAO.Recordset
+    Dim diffSample As String
+
+    ' Set the database object
+    Set db = CurrentDb
+    
+    ' 1. Sum Data After Conversion
+    sqlAfter = "INSERT INTO SumAfterConversion (Total_Jan22, Total_Feb22, Total_Mar22, Total_Dec25) " & _
+               "SELECT SUM(Jan22), SUM(Feb22), SUM(Mar22), SUM(Dec25) " & _
+               "FROM LinkedTable;"
+    
+    ' Execute the summation and store in SumAfterConversion table
+    db.Execute sqlAfter, dbFailOnError
+    
+    ' 2. Compare Sampled Records (10% of records by KeyField)
+    sqlCompareSample = "SELECT sBefore.KeyField, " & _
+                       "sBefore.Jan22 - sAfter.Jan22 AS Diff_Jan22, " & _
+                       "sBefore.Feb22 - sAfter.Feb22 AS Diff_Feb22, " & _
+                       "sBefore.Mar22 - sAfter.Mar22 AS Diff_Mar22, " & _
+                       "sBefore.Dec24 - sAfter.Dec25 AS Diff_Dec24 " & _
+                       "FROM SampleBeforeConversion AS sBefore " & _
+                       "INNER JOIN LinkedTable AS sAfter ON sBefore.KeyField = sAfter.KeyField;"
+    
+    ' Open a recordset to get the comparison results for the sampled records
+    Set rsCompareSample = db.OpenRecordset(sqlCompareSample)
+
+    ' Display the results of the sampled records
+    Do While Not rsCompareSample.EOF
+        diffSample = "KeyField: " & rsCompareSample!KeyField & vbCrLf & _
+                     "Jan22 Difference: " & rsCompareSample!Diff_Jan22 & vbCrLf & _
+                     "Feb22 Difference: " & rsCompareSample!Diff_Feb22 & vbCrLf & _
+                     "Mar22 Difference: " & rsCompareSample!Diff_Mar22 & vbCrLf & _
+                     "Dec24 vs Dec25 Difference: " & rsCompareSample!Diff_Dec24
+
+        MsgBox diffSample
+        rsCompareSample.MoveNext
+    Loop
+
+    ' Clean up
+    rsCompareSample.Close
+    Set rsCompareSample = Nothing
+    Set db = Nothing
+
+End Sub
