@@ -79,3 +79,43 @@ Sub CompareAfterConversionAndSpotCheck()
     Set db = Nothing
 
 End Sub
+
+
+CREATE TABLE SumBeforeConversion (
+    Total_Jan22 DOUBLE,
+    Total_Feb22 DOUBLE,
+    Total_Mar22 DOUBLE,
+    Total_Apr22 DOUBLE,
+    Total_May22 DOUBLE,
+    Total_Jun22 DOUBLE,
+    Total_Jul22 DOUBLE,
+    Total_Aug22 DOUBLE,
+    Total_Sep22 DOUBLE,
+    Total_Oct22 DOUBLE,
+    Total_Nov22 DOUBLE,
+    Total_Dec22 DOUBLE,
+    Total_Jan23 DOUBLE,
+    Total_Feb23 DOUBLE,
+    Total_Mar23 DOUBLE,
+    Total_Apr23 DOUBLE,
+    Total_May23 DOUBLE,
+    Total_Jun23 DOUBLE,
+    Total_Jul23 DOUBLE,
+    Total_Aug23 DOUBLE,
+    Total_Sep23 DOUBLE,
+    Total_Oct23 DOUBLE,
+    Total_Nov23 DOUBLE,
+    Total_Dec23 DOUBLE,
+    Total_Jan24 DOUBLE,
+    Total_Feb24 DOUBLE,
+    Total_Mar24 DOUBLE,
+    Total_Apr24 DOUBLE,
+    Total_May24 DOUBLE,
+    Total_Jun24 DOUBLE,
+    Total_Jul24 DOUBLE,
+    Total_Aug24 DOUBLE,
+    Total_Sep24 DOUBLE,
+    Total_Oct24 DOUBLE,
+    Total_Nov24 DOUBLE,
+    Total_Dec24 DOUBLE
+);
