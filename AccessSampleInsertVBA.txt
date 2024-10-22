@@ -237,3 +237,170 @@ Sub ClearBeforeConversionRecords()
     Set db = Nothing
 
 End Sub
+
+
+Sub CompareSumBeforeAfter()
+
+    Dim db As DAO.Database
+    Dim rsCompare As DAO.Recordset
+    Dim sqlCompare As String
+    Dim differencesFound As Boolean
+    Dim diff As String
+
+    ' Set the database object
+    Set db = CurrentDb
+
+    ' SQL statement to compare the summed totals between SumBeforeConversion and SumAfterConversion
+    sqlCompare = "SELECT " & _
+                 "(sBefore.Total_Jan22 - sAfter.Total_Jan22) AS Diff_Jan22, " & _
+                 "(sBefore.Total_Feb22 - sAfter.Total_Feb22) AS Diff_Feb22, " & _
+                 "(sBefore.Total_Mar22 - sAfter.Total_Mar22) AS Diff_Mar22, " & _
+                 "(sBefore.Total_Apr22 - sAfter.Total_Apr22) AS Diff_Apr22, " & _
+                 "(sBefore.Total_May22 - sAfter.Total_May22) AS Diff_May22, " & _
+                 "(sBefore.Total_Jun22 - sAfter.Total_Jun22) AS Diff_Jun22, " & _
+                 "(sBefore.Total_Jul22 - sAfter.Total_Jul22) AS Diff_Jul22, " & _
+                 "(sBefore.Total_Aug22 - sAfter.Total_Aug22) AS Diff_Aug22, " & _
+                 "(sBefore.Total_Sep22 - sAfter.Total_Sep22) AS Diff_Sep22, " & _
+                 "(sBefore.Total_Oct22 - sAfter.Total_Oct22) AS Diff_Oct22, " & _
+                 "(sBefore.Total_Nov22 - sAfter.Total_Nov22) AS Diff_Nov22, " & _
+                 "(sBefore.Total_Dec22 - sAfter.Total_Dec22) AS Diff_Dec22, " & _
+                 "(sBefore.Total_Jan23 - sAfter.Total_Jan23) AS Diff_Jan23, " & _
+                 "(sBefore.Total_Feb23 - sAfter.Total_Feb23) AS Diff_Feb23, " & _
+                 "(sBefore.Total_Mar23 - sAfter.Total_Mar23) AS Diff_Mar23, " & _
+                 "(sBefore.Total_Apr23 - sAfter.Total_Apr23) AS Diff_Apr23, " & _
+                 "(sBefore.Total_May23 - sAfter.Total_May23) AS Diff_May23, " & _
+                 "(sBefore.Total_Jun23 - sAfter.Total_Jun23) AS Diff_Jun23, " & _
+                 "(sBefore.Total_Jul23 - sAfter.Total_Jul23) AS Diff_Jul23, " & _
+                 "(sBefore.Total_Aug23 - sAfter.Total_Aug23) AS Diff_Aug23, " & _
+                 "(sBefore.Total_Sep23 - sAfter.Total_Sep23) AS Diff_Sep23, " & _
+                 "(sBefore.Total_Oct23 - sAfter.Total_Oct23) AS Diff_Oct23, " & _
+                 "(sBefore.Total_Nov23 - sAfter.Total_Nov23) AS Diff_Nov23, " & _
+                 "(sBefore.Total_Dec23 - sAfter.Total_Dec23) AS Diff_Dec23, " & _
+                 "(sBefore.Total_Jan24 - sAfter.Total_Jan24) AS Diff_Jan24, " & _
+                 "(sBefore.Total_Feb24 - sAfter.Total_Feb24) AS Diff_Feb24, " & _
+                 "(sBefore.Total_Mar24 - sAfter.Total_Mar24) AS Diff_Mar24, " & _
+                 "(sBefore.Total_Apr24 - sAfter.Total_Apr24) AS Diff_Apr24, " & _
+                 "(sBefore.Total_May24 - sAfter.Total_May24) AS Diff_May24, " & _
+                 "(sBefore.Total_Jun24 - sAfter.Total_Jun24) AS Diff_Jun24, " & _
+                 "(sBefore.Total_Jul24 - sAfter.Total_Jul24) AS Diff_Jul24, " & _
+                 "(sBefore.Total_Aug24 - sAfter.Total_Aug24) AS Diff_Aug24, " & _
+                 "(sBefore.Total_Sep24 - sAfter.Total_Sep24) AS Diff_Sep24, " & _
+                 "(sBefore.Total_Oct24 - sAfter.Total_Oct24) AS Diff_Oct24, " & _
+                 "(sBefore.Total_Nov24 - sAfter.Total_Nov24) AS Diff_Nov24, " & _
+                 "(sBefore.Total_Dec24 - sAfter.Total_Dec24) AS Diff_Dec24 " & _
+                 "FROM SumBeforeConversion AS sBefore, SumAfterConversion AS sAfter;"
+
+    ' Open a recordset to retrieve the comparison results
+    Set rsCompare = db.OpenRecordset(sqlCompare)
+    
+    ' Check for differences and notify the user if any are found
+    differencesFound = False
+    diff = "Differences found in the following months:" & vbCrLf
+
+    Do While Not rsCompare.EOF
+        For i = 0 To rsCompare.Fields.Count - 1
+            If rsCompare.Fields(i).Value <> 0 Then
+                differencesFound = True
+                diff = diff & rsCompare.Fields(i).Name & ": " & rsCompare.Fields(i).Value & vbCrLf
+            End If
+        Next i
+        rsCompare.MoveNext
+    Loop
+    
+    If differencesFound Then
+        MsgBox diff
+    Else
+        MsgBox "No differences found between the summed values before and after conversion."
+    End If
+
+    ' Clean up
+    rsCompare.Close
+    Set rsCompare = Nothing
+    Set db = Nothing
+
+End Sub
+
+
+Sub CompareSampleBeforeAfter()
+
+    Dim db As DAO.Database
+    Dim rsCompareSample As DAO.Recordset
+    Dim sqlCompareSample As String
+    Dim differencesFound As Boolean
+    Dim diffSample As String
+
+    ' Set the database object
+    Set db = CurrentDb
+
+    ' SQL statement to compare the sampled records between SampleBeforeConversion and SampleAfterConversion
+    sqlCompareSample = "SELECT sBefore.KeyField, " & _
+                       "(sBefore.Jan22 - sAfter.Jan22) AS Diff_Jan22, " & _
+                       "(sBefore.Feb22 - sAfter.Feb22) AS Diff_Feb22, " & _
+                       "(sBefore.Mar22 - sAfter.Mar22) AS Diff_Mar22, " & _
+                       "(sBefore.Apr22 - sAfter.Apr22) AS Diff_Apr22, " & _
+                       "(sBefore.May22 - sAfter.May22) AS Diff_May22, " & _
+                       "(sBefore.Jun22 - sAfter.Jun22) AS Diff_Jun22, " & _
+                       "(sBefore.Jul22 - sAfter.Jul22) AS Diff_Jul22, " & _
+                       "(sBefore.Aug22 - sAfter.Aug22) AS Diff_Aug22, " & _
+                       "(sBefore.Sep22 - sAfter.Sep22) AS Diff_Sep22, " & _
+                       "(sBefore.Oct22 - sAfter.Oct22) AS Diff_Oct22, " & _
+                       "(sBefore.Nov22 - sAfter.Nov22) AS Diff_Nov22, " & _
+                       "(sBefore.Dec22 - sAfter.Dec22) AS Diff_Dec22, " & _
+                       "(sBefore.Jan23 - sAfter.Jan23) AS Diff_Jan23, " & _
+                       "(sBefore.Feb23 - sAfter.Feb23) AS Diff_Feb23, " & _
+                       "(sBefore.Mar23 - sAfter.Mar23) AS Diff_Mar23, " & _
+                       "(sBefore.Apr23 - sAfter.Apr23) AS Diff_Apr23, " & _
+                       "(sBefore.May23 - sAfter.May23) AS Diff_May23, " & _
+                       "(sBefore.Jun23 - sAfter.Jun23) AS Diff_Jun23, " & _
+                       "(sBefore.Jul23 - sAfter.Jul23) AS Diff_Jul23, " & _
+                       "(sBefore.Aug23 - sAfter.Aug23) AS Diff_Aug23, " & _
+                       "(sBefore.Sep23 - sAfter.Sep23) AS Diff_Sep23, " & _
+                       "(sBefore.Oct23 - sAfter.Oct23) AS Diff_Oct23, " & _
+                       "(sBefore.Nov23 - sAfter.Nov23) AS Diff_Nov23, " & _
+                       "(sBefore.Dec23 - sAfter.Dec23) AS Diff_Dec23, " & _
+                       "(sBefore.Jan24 - sAfter.Jan24) AS Diff_Jan24, " & _
+                       "(sBefore.Feb24 - sAfter.Feb24) AS Diff_Feb24, " & _
+                       "(sBefore.Mar24 - sAfter.Mar24) AS Diff_Mar24, " & _
+                       "(sBefore.Apr24 - sAfter.Apr24) AS Diff_Apr24, " & _
+                       "(sBefore.May24 - sAfter.May24) AS Diff_May24, " & _
+                       "(sBefore.Jun24 - sAfter.Jun24) AS Diff_Jun24, " & _
+                       "(sBefore.Jul24 - sAfter.Jul24) AS Diff_Jul24, " & _
+                       "(sBefore.Aug24 - sAfter.Aug24) AS Diff_Aug24, " & _
+                       "(sBefore.Sep24 - sAfter.Sep24) AS Diff_Sep24, " & _
+                       "(sBefore.Oct24 - sAfter.Oct24) AS Diff_Oct24, " & _
+                       "(sBefore.Nov24 - sAfter.Nov24) AS Diff_Nov24, " & _
+                       "(sBefore.Dec24 - sAfter.Dec24) AS Diff_Dec24 " & _
+                       "FROM SampleBeforeConversion AS sBefore " & _
+                       "INNER JOIN SampleAfterConversion AS sAfter ON sBefore.KeyField = sAfter.KeyField;"
+
+    ' Open a recordset to retrieve the comparison results
+    Set rsCompareSample = db.OpenRecordset(sqlCompareSample)
+    
+    ' Check for differences and notify the user if any are found
+    differencesFound = False
+    diffSample = "Differences found for the following records:" & vbCrLf
+
+    Do While Not rsCompareSample.EOF
+        If rsCompareSample!Diff_Jan22 <> 0 Or rsCompareSample!Diff_Feb22 <> 0 Or rsCompareSample!Diff_Mar22 <> 0 Or rsCompareSample!Diff_Dec24 <> 0 Then
+            differencesFound = True
+            diffSample = diffSample & "KeyField: " & rsCompareSample!KeyField & vbCrLf & _
+                         "Jan22 Difference: " & rsCompareSample!Diff_Jan22 & vbCrLf & _
+                         "Feb22 Difference: " & rsCompareSample!Diff_Feb22 & vbCrLf & _
+                         "Mar22 Difference: " & rsCompareSample!Diff_Mar22 & vbCrLf & _
+                         "Dec24 Difference: " & rsCompareSample!Diff_Dec24 & vbCrLf & vbCrLf
+        End If
+        rsCompareSample.MoveNext
+    Loop
+    
+    If differencesFound Then
+        MsgBox diffSample
+    Else
+        MsgBox "No differences found in the sampled records between before and after conversion."
+    End If
+
+    ' Clean up
+    rsCompareSample.Close
+    Set rsCompareSample = Nothing
+    Set db = Nothing
+
+End Sub
