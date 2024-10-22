@@ -547,14 +547,15 @@ Sub CompareSampleBeforeAfter()
     diffSample = "Differences found for the following records:" & vbCrLf
 
     Do While Not rsCompareSample.EOF
-        If rsCompareSample!Diff_Jan22 <> 0 Or rsCompareSample!Diff_Feb22 <> 0 Or rsCompareSample!Diff_Mar22 <> 0 Or rsCompareSample!Diff_Dec24 <> 0 Then
-            differencesFound = True
-            diffSample = diffSample & "KeyField: " & rsCompareSample!KeyField & vbCrLf & _
-                         "Jan22 Difference: " & rsCompareSample!Diff_Jan22 & vbCrLf & _
-                         "Feb22 Difference: " & rsCompareSample!Diff_Feb22 & vbCrLf & _
-                         "Mar22 Difference: " & rsCompareSample!Diff_Mar22 & vbCrLf & _
-                         "Dec24 Difference: " & rsCompareSample!Diff_Dec24 & vbCrLf & vbCrLf
-        End If
+        ' Loop through all the fields dynamically
+        For i = 1 To rsCompareSample.Fields.Count - 1  ' Start at 1 because field 0 is the KeyField
+            If rsCompareSample.Fields(i).Value <> 0 Then
+                differencesFound = True
+                fieldName = rsCompareSample.Fields(i).Name
+                diffSample = diffSample & "KeyField: " & rsCompareSample!KeyField & vbCrLf & _
+                             fieldName & " Difference: " & rsCompareSample.Fields(i).Value & vbCrLf & vbCrLf
+            End If
+        Next i
         rsCompareSample.MoveNext
     Loop
 
