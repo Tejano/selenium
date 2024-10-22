@@ -119,3 +119,76 @@ CREATE TABLE SumBeforeConversion (
     Total_Nov24 DOUBLE,
     Total_Dec24 DOUBLE
 );
+
+
+Sub SumAndStoreBeforeConversion()
+
+    Dim db As DAO.Database
+    Dim sqlBefore As String
+
+    ' Set the database object
+    Set db = CurrentDb
+    
+    ' SQL statement to insert summed values for all months from Jan22 to Dec24 into SumBeforeConversion
+    sqlBefore = "INSERT INTO SumBeforeConversion (Total_Jan22, Total_Feb22, Total_Mar22, Total_Apr22, " & _
+                "Total_May22, Total_Jun22, Total_Jul22, Total_Aug22, Total_Sep22, Total_Oct22, Total_Nov22, " & _
+                "Total_Dec22, Total_Jan23, Total_Feb23, Total_Mar23, Total_Apr23, Total_May23, Total_Jun23, " & _
+                "Total_Jul23, Total_Aug23, Total_Sep23, Total_Oct23, Total_Nov23, Total_Dec23, Total_Jan24, " & _
+                "Total_Feb24, Total_Mar24, Total_Apr24, Total_May24, Total_Jun24, Total_Jul24, Total_Aug24, " & _
+                "Total_Sep24, Total_Oct24, Total_Nov24, Total_Dec24) " & _
+                "SELECT SUM(Jan22), SUM(Feb22), SUM(Mar22), SUM(Apr22), SUM(May22), SUM(Jun22), SUM(Jul22), " & _
+                "SUM(Aug22), SUM(Sep22), SUM(Oct22), SUM(Nov22), SUM(Dec22), SUM(Jan23), SUM(Feb23), " & _
+                "SUM(Mar23), SUM(Apr23), SUM(May23), SUM(Jun23), SUM(Jul23), SUM(Aug23), SUM(Sep23), " & _
+                "SUM(Oct23), SUM(Nov23), SUM(Dec23), SUM(Jan24), SUM(Feb24), SUM(Mar24), SUM(Apr24), " & _
+                "SUM(May24), SUM(Jun24), SUM(Jul24), SUM(Aug24), SUM(Sep24), SUM(Oct24), SUM(Nov24), SUM(Dec24) " & _
+                "FROM LinkedTable;"
+
+    ' Execute the query to store the summed data in SumBeforeConversion table
+    db.Execute sqlBefore, dbFailOnError
+    MsgBox "Data summed and stored in SumBeforeConversion table."
+
+    ' Clean up
+    Set db = Nothing
+
+End Sub
+
+
+CREATE TABLE SampleBeforeConversion (
+    KeyField LONG,           -- Replace with the actual data type of your key field (e.g., LONG for AutoNumber, TEXT for strings)
+    Jan22 DOUBLE,
+    Feb22 DOUBLE,
+    Mar22 DOUBLE,
+    Apr22 DOUBLE,
+    May22 DOUBLE,
+    Jun22 DOUBLE,
+    Jul22 DOUBLE,
+    Aug22 DOUBLE,
+    Sep22 DOUBLE,
+    Oct22 DOUBLE,
+    Nov22 DOUBLE,
+    Dec22 DOUBLE,
+    Jan23 DOUBLE,
+    Feb23 DOUBLE,
+    Mar23 DOUBLE,
+    Apr23 DOUBLE,
+    May23 DOUBLE,
+    Jun23 DOUBLE,
+    Jul23 DOUBLE,
+    Aug23 DOUBLE,
+    Sep23 DOUBLE,
+    Oct23 DOUBLE,
+    Nov23 DOUBLE,
+    Dec23 DOUBLE,
+    Jan24 DOUBLE,
+    Feb24 DOUBLE,
+    Mar24 DOUBLE,
+    Apr24 DOUBLE,
+    May24 DOUBLE,
+    Jun24 DOUBLE,
+    Jul24 DOUBLE,
+    Aug24 DOUBLE,
+    Sep24 DOUBLE,
+    Oct24 DOUBLE,
+    Nov24 DOUBLE,
+    Dec24 DOUBLE
+);
