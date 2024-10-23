@@ -1,0 +1,26 @@
+
+Running the SSIS Package via DTExec in SQL Server
+To run an SSIS package, you can use the Shell command to call the DTExec utility, which is used to run SSIS packages from the command line.
+
+Sub RunSSISPackage()
+
+    Dim SSISPackagePath As String
+    Dim cmd As String
+    Dim result As Integer
+
+    ' Path to the SSIS package file (.dtsx)
+    SSISPackagePath = "C:\Path\To\Your\SSISPackage.dtsx"
+    
+    ' Command to run the SSIS package using DTExec
+    cmd = "DTExec /F """ & SSISPackagePath & """"
+    
+    ' Execute the SSIS package
+    result = Shell(cmd, vbNormalFocus)
+    
+    If result > 0 Then
+        MsgBox "SSIS package executed successfully."
+    Else
+        MsgBox "Error executing SSIS package."
+    End If
+
+End Sub
