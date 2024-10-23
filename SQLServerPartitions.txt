@@ -1,0 +1,79 @@
+
+1. To see partition functions and schemes:
+This will give you an overview of partition functions and schemes, which define how the partitions are created:
+-- List partition functions
+SELECT name, type_desc, boundary_value_on_right
+FROM sys.partition_functions;
+
+-- List partition schemes
+SELECT name, type_desc, partition_function_id
+FROM sys.partition_schemes;
+
+
+
+2. To see partition information for tables:
+This query will help you see which tables are partitioned, the number of partitions, and other relevant information:
+-- Partition details for each table
+SELECT 
+    t.name AS TableName,
+    p.index_id,
+    i.name AS IndexName,
+    i.type_desc AS IndexType,
+    p.partition_number,
+    p.rows AS RowCount,
+    fg.name AS FileGroupName
+FROM 
+    sys.tables t
+INNER JOIN 
+    sys.indexes i ON t.object_id = i.object_id
+INNER JOIN 
+    sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
+INNER JOIN 
+    sys.partition_schemes ps ON i.data_space_id = ps.data_space_id
+INNER JOIN 
+    sys.filegroups fg ON p.data_compression_desc = fg.data_space_id
+WHERE 
+    p.partition_number > 1 -- Shows only partitioned tables
+ORDER BY 
+    TableName, p.partition_number;
+	
+3. To see which columns are used in partitioning:
+To get the columns that are used for partitioning within a table:
+
+-- List partition columns for each table
+SELECT 
+    t.name AS TableName,
+    c.name AS PartitionColumn,
+    pf.name AS PartitionFunction
+FROM 
+    sys.tables t
+INNER JOIN 
+    sys.indexes i ON t.object_id = i.object_id
+INNER JOIN 
+    sys.partition_schemes ps ON i.data_space_id = ps.data_space_id
+INNER JOIN 
+    sys.partition_functions pf ON ps.function_id = pf.function_id
+INNER JOIN 
+    sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+INNER JOIN 
+    sys.columns c ON t.object_id = c.object_id AND ic.column_id = c.column_id
+WHERE 
+    i.data_space_id = ps.data_space_id;
+
+4. To check the boundaries of partitions:
+This will show the boundaries defined in the partition function:
+-- View the partition boundary points
+SELECT 
+    pf.name AS PartitionFunctionName,
+    rv.value AS BoundaryValue,
+    ps.name AS PartitionSchemeName
+FROM 
+    sys.partition_functions pf
+JOIN 
+    sys.partition_range_values rv ON pf.function_id = rv.function_id
+JOIN 
+    sys.partition_schemes ps ON pf.function_id = ps.function_id
+ORDER BY 
+    pf.name, rv.boundary_id;
+
+These queries provide insights into the partitions created in your SQL Server database. Let me know if you need further details or assistance with the results!
