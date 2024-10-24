@@ -34,3 +34,35 @@ Sub ExecutePassThroughQuery()
     MsgBox "Table dropped and recreated successfully."
 
 End Sub
+
+Sub RefreshLinkedTable()
+
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim tableName As String
+    Dim connectString As String
+    
+    ' Set the name of the table to relink (adjust this accordingly)
+    tableName = "YourLinkedTableName"
+    
+    ' Get a reference to the current database
+    Set db = CurrentDb
+    
+    ' Get the table definition of the linked table
+    Set tdf = db.TableDefs(tableName)
+    
+    ' Store the existing connection string (used for re-linking)
+    connectString = tdf.Connect
+    
+    ' Refresh the link by re-assigning the connection string and calling RefreshLink
+    tdf.Connect = connectString
+    tdf.RefreshLink
+    
+    MsgBox "Linked table '" & tableName & "' has been refreshed."
+
+    ' Clean up
+    Set tdf = Nothing
+    Set db = Nothing
+
+End Sub
+
