@@ -66,3 +66,24 @@ Sub RefreshLinkedTable()
 
 End Sub
 
+Sub ExecutePassThroughQueryDAO()
+
+    Dim db As DAO.Database
+    Dim qdf As DAO.QueryDef
+
+    ' Reference the current database
+    Set db = CurrentDb
+
+    ' Reference the pass-through query
+    Set qdf = db.QueryDefs("qpt_DropAndRecreateTable")
+
+    ' Execute the pass-through query
+    qdf.Execute dbFailOnError
+
+    MsgBox "Table dropped and recreated successfully."
+
+    ' Clean up
+    Set qdf = Nothing
+    Set db = Nothing
+
+End Sub
