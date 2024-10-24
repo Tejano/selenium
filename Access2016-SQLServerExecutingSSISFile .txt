@@ -24,3 +24,13 @@ Sub RunSSISPackage()
     End If
 
 End Sub
+
+
+Sub ExecutePassThroughQuery()
+
+    ' Execute the pass-through query to drop and recreate the table
+    DoCmd.OpenQuery "qpt_DropAndRecreateTable"
+    
+    MsgBox "Table dropped and recreated successfully."
+
+End Sub
