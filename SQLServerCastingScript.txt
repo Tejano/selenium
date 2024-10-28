@@ -6,6 +6,10 @@ FROM YourTable
 WHERE TRY_CAST(YourDecimalColumn AS DECIMAL(9,2)) IS NULL
   AND YourDecimalColumn IS NOT NULL;
 
+SELECT *
+FROM YourTable
+WHERE TRY_CONVERT(DECIMAL(9,2), YourDecimalColumn) IS NULL
+  AND YourDecimalColumn IS NOT NULL;
 
 1. Find Indexes on the Column
 Use this query to find indexes that include your column:
