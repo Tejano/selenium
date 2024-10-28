@@ -1,0 +1,4 @@
+SELECT *
+FROM YourTable
+WHERE TRY_CAST(YourDecimalColumn AS DECIMAL(9,2)) IS NULL
+  AND YourDecimalColumn IS NOT NULL;
