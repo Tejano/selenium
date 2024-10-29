@@ -11,6 +11,43 @@ FROM YourTable
 WHERE TRY_CONVERT(DECIMAL(9,2), YourDecimalColumn) IS NULL
   AND YourDecimalColumn IS NOT NULL;
 
+Check for Floating-Point Precision Issues Sometimes, values that appear as 0.00 or other decimals might have 
+minuscule floating-point differences due to rounding errors or storage anomalies. You can identify these by rounding values and comparing them directly:
+SELECT *
+FROM YourTable
+WHERE ROUND(YourDecimalColumn, 2) NOT IN (0.00, YourDecimalColumn)
+  AND YourDecimalColumn IS NOT NULL;
+
+
+Sometimes NULL-allowed columns may contain values that look like valid numbers but don’t align with standard representations,
+such as very small negative values that round to zero or small positives that evade > 0.00 criteria. Identify them as follows:
+SELECT *
+FROM YourTable
+WHERE YourDecimalColumn < 0.0001 AND YourDecimalColumn > -0.0001
+  AND YourDecimalColumn IS NOT NULL;
+
+
+
+Identify Any Hidden Characters in the Data
+Occasionally, hidden characters like whitespace or control characters may exist in the data,
+ especially if it was imported from external sources. These might prevent correct comparisons even though they visually appear valid. Here’s how to check:
+SELECT *
+FROM YourTable
+WHERE LEN(LTRIM(RTRIM(YourDecimalColumn))) <> LEN(CAST(YourDecimalColumn AS VARCHAR));
+
+Check for Floating-Point Precision Issues Sometimes, values that appear as 0.00 or other decimals might 
+have minuscule floating-point differences due to rounding errors or storage anomalies.
+You can identify these by rounding values and comparing them directly:
+SELECT *
+FROM YourTable
+WHERE ROUND(YourDecimalColumn, 2) NOT IN (0.00, YourDecimalColumn)
+  AND YourDecimalColumn IS NOT NULL;
+
+
+
+
+
+
 1. Find Indexes on the Column
 Use this query to find indexes that include your column:
 SELECT 
