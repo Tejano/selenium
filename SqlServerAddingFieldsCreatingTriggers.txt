@@ -1,0 +1,53 @@
+
+
+Add Columns
+ALTER TABLE YourTableName
+ADD 
+    Created DATETIME NULL,
+    CreatedBy NVARCHAR(50) NULL,
+    LastUpdated DATETIME NULL,
+    LastUpdatedBy NVARCHAR(50) NULL;
+
+Drop Columns
+If you need to drop these columns later, use the following ALTER TABLE statement:
+ALTER TABLE YourTableName
+DROP COLUMN 
+    Created,
+    CreatedBy,
+    LastUpdated,
+    LastUpdatedBy;
+	
+	
+CREATE TRIGGER trg_SetCreatedFields
+ON YourTableName
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE YourTableName
+    SET 
+        Created = GETDATE(),
+        CreatedBy = SUSER_SNAME()
+    FROM 
+        YourTableName t
+    INNER JOIN 
+        inserted i ON t.PrimaryKeyColumn = i.PrimaryKeyColumn;
+END;	
+
+CREATE TRIGGER trg_SetLastUpdatedFields
+ON YourTableName
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE YourTableName
+    SET 
+        LastUpdated = GETDATE(),
+        LastUpdatedBy = SUSER_SNAME()
+    FROM 
+        YourTableName t
+    INNER JOIN 
+        inserted i ON t.PrimaryKeyColumn = i.PrimaryKeyColumn;
+END;
