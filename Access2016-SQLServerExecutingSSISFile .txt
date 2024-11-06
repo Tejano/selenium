@@ -25,7 +25,12 @@ Sub RunSSISPackage()
 
 End Sub
 
-
+1. Run the SSIS Package Using SQL Server Agent
+Step 1: Open SQL Server Agent in SSMS.
+Step 2: Create a new job and add a job step of type SQL Server Integration Services Package.
+Step 3: Configure the job step to specify the SSIS package location (e.g., File System, SQL Server, SSISDB).
+Step 4: Save the job and run it directly from SQL Server Agent in SSMS.
+This method allows you to schedule or run the SSIS package on demand.
 Sub ExecutePassThroughQuery()
 
     ' Execute the pass-through query to drop and recreate the table
