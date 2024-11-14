@@ -1,0 +1,45 @@
+
+To set up Python on your machine to run the script, follow these steps:
+
+1. Install Python
+If you don’t have Python installed:
+
+Go to the Python website and download the latest version.
+During installation:
+Check the box that says “Add Python to PATH” (this will make running Python commands easier).
+Select “Install Now” or choose a custom installation path if needed.
+Once installed, open a command prompt or terminal and type:
+bash
+Copy code
+python --version
+You should see the Python version printed if the installation was successful.
+2. Install Required Libraries
+You’ll need to install two primary libraries: pandas for data manipulation and pyodbc for database connectivity.
+
+Open a command prompt or terminal and run:
+bash
+Copy code
+pip install pandas pyodbc
+This will download and install the required libraries.
+3. Set Up SQL Server ODBC Driver
+If you don’t have the SQL Server ODBC driver installed, download and install it from Microsoft’s ODBC Driver for SQL Server page.
+
+Choose the version compatible with your system (typically ODBC Driver 17 for SQL Server).
+Install the driver, as this is required for pyodbc to connect to SQL Server.
+4. Run the Python Script
+Once Python and the required libraries are installed:
+
+Save the script from the previous answer into a .py file, e.g., overflow_checker.py.
+Open a command prompt, navigate to the folder where you saved the script, and run:
+bash
+Copy code
+python overflow_checker.py
+This should connect to your SQL Server, validate the data, and display any issues directly in the terminal or save them to a CSV file.
+
+5. Verify Connectivity
+The connection string used in the script (connection_string) will need to be customized with your SQL Server’s details (e.g., server, database, username, password). Test the connection to ensure everything is set up properly.
+
+Quick Troubleshooting Tips
+Path Issues: If Python isn’t recognized in the command prompt, make sure it’s added to your PATH environment variable.
+Library Installation Errors: If pip fails, ensure Python is installed correctly and try restarting your command prompt.
+With this setup, you’ll be ready to run Python scripts that interact with SQL Server, including the automated validation script. Let me know if you have any questions along the way!
