@@ -77,3 +77,123 @@ Reusable: You only need to specify the table name, and the component handles the
 Minimal Manual Intervention: Dynamically retrieves schema information, so no need to hard-code column names or types.
 Easy Logging: Generates a CSV report of problematic fields and values, which can be saved or reviewed directly.
 This solution automates as much as possible, making it adaptable to different tables and schemas with almost no setup for each new case.
+
+*** With File
+Yes, you can absolutely provide the INSERT...SELECT SQL snippet as a file, and the script can parse this file to dynamically extract the relevant source and target columns. This approach minimizes manual setup by automating the column mapping based on the contents of the SQL file.
+
+Here's how the process would work:
+
+Read the SQL File: The script reads the SQL snippet containing the INSERT...SELECT statement.
+Parse the Statement: It extracts the list of source and target columns from the SQL snippet.
+Use the Parsed Columns for Validation: With the extracted columns, the script then validates the source data against the constraints of the target table.
+Python Script to Parse the INSERT...SELECT Statement from a File
+This script will:
+
+Read and parse an INSERT...SELECT SQL file.
+Extract source and target column mappings.
+Use those mappings to check for overflow issues based on target table constraints.
+import pyodbc
+import pandas as pd
+import re
+
+# SQL Server connection setup
+connection_string = 'DRIVER={SQL Server};SERVER=your_server;DATABASE=your_db;UID=your_user;PWD=your_password'
+conn = pyodbc.connect(connection_string)
+
+# Path to the SQL file containing the INSERT...SELECT statement
+sql_file_path = "insert_select.sql"
+
+# Step 1: Read and parse the SQL file to extract source and target columns
+with open(sql_file_path, 'r') as file:
+    sql_content = file.read()
+
+# Regex to extract target table, target columns, source table, and source columns
+insert_pattern = re.search(r"INSERT INTO (\w+)\s*\(([^)]+)\)", sql_content, re.IGNORECASE)
+select_pattern = re.search(r"SELECT (.+?) FROM (\w+)", sql_content, re.IGNORECASE)
+
+# Extract target and source tables and columns
+target_table = insert_pattern.group(1).strip()
+target_columns = [col.strip() for col in insert_pattern.group(2).split(",")]
+source_table = select_pattern.group(2).strip()
+source_columns = [col.strip() for col in select_pattern.group(1).split(",")]
+
+# Step 2: Create a dictionary to map source columns to target columns
+column_mapping = dict(zip(source_columns, target_columns))
+
+# Step 3: Retrieve metadata for the target columns based on the mapping
+target_columns_str = "', '".join(target_columns)
+metadata_query = f"""
+SELECT COLUMN_NAME, DATA_TYPE, NUMERIC_PRECISION, NUMERIC_SCALE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = '{target_table}' 
+  AND COLUMN_NAME IN ('{target_columns_str}')
+  AND DATA_TYPE IN ('numeric', 'decimal', 'float', 'real')
+"""
+metadata = pd.read_sql(metadata_query, conn)
+
+# Step 4: Retrieve data from the source table (only the relevant columns)
+source_columns_str = ', '.join(source_columns)
+data_query = f"SELECT {source_columns_str} FROM {source_table}"
+data = pd.read_sql(data_query, conn)
+
+# Step 5: Validate each source column based on target constraints
+def validate_numeric(row, source_column, precision, scale):
+    try:
+        max_value = 10 ** (precision - scale) - 10 ** -scale
+        min_value = -max_value
+        value = float(row[source_column])
+        if not (min_value <= value <= max_value):
+            return f"Overflow in {source_column} with value {value}"
+    except:
+        return f"Invalid data in {source_column} with value {row[source_column]}"
+    return None
+
+# Step 6: Apply validation for each column based on the target's constraints
+issues = []
+for idx, row in data.iterrows():
+    for _, col_meta in metadata.iterrows():
+        target_column = col_meta['COLUMN_NAME']
+        precision = col_meta['NUMERIC_PRECISION']
+        scale = col_meta['NUMERIC_SCALE']
+        
+        # Find corresponding source column based on mapping
+        source_column = next((k for k, v in column_mapping.items() if v == target_column), None)
+        if source_column:
+            issue = validate_numeric(row, source_column, precision, scale)
+            if issue:
+                issues.append({"Row": idx, "Issue": issue})
+
+# Step 7: Output the issues
+if issues:
+    issues_df = pd.DataFrame(issues)
+    print(issues_df)
+    issues_df.to_csv("validation_issues.csv", index=False)  # Optional: save to CSV for recordkeeping
+else:
+    print("No issues found.")
+
+Explanation of the Script
+SQL File Parsing:
+
+The script reads the SQL file and uses regular expressions to extract:
+The target table and target columns.
+The source table and source columns.
+Dynamic Column Mapping:
+
+A dictionary (column_mapping) is created to map source columns to target columns automatically based on the INSERT...SELECT statement.
+Retrieve Target Metadata:
+
+Using the target columns from the mapping, the script fetches the constraints (precision and scale) for each numeric target column.
+Source Data Retrieval:
+
+Only the relevant source columns are selected from the source table.
+Validation:
+
+Each source column’s values are validated against the target table constraints. Any issues (overflow or invalid data) are logged.
+Output:
+
+If issues are found, they’re printed and saved to a CSV file for review.
+Benefits of This Approach
+Fully Automated Column Mapping: The script automatically extracts column mappings from the SQL file, eliminating the need for manual setup.
+Reusable for Various INSERT...SELECT Statements: You can swap out the SQL file without modifying the script.
+Simplified Setup: Just provide the INSERT...SELECT SQL file path, and the script handles the rest.
+This approach gives you a versatile tool for automated validation based on the actual SQL statement, saving time and minimizing setup requirements. Let me know if you need any additional adjustments!
