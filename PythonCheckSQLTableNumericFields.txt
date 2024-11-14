@@ -1,0 +1,79 @@
+
+To reduce setup even further and make this solution more generic, you can use dynamic schema detection to automatically retrieve data types and constraints directly from SQL Server. This way, you won’t need to manually specify field names, data types, or constraints for each new case.
+
+Here’s how to achieve an even more automated solution:
+
+Enhanced Python Solution with Dynamic Schema Detection
+This approach dynamically pulls metadata from SQL Server to identify numeric columns and their constraints, making it more flexible for various tables without requiring manual setup for each field.
+
+Steps:
+Auto-Detect Column Types and Constraints: Retrieve the table’s schema information directly from SQL Server.
+Apply Validation Based on Detected Constraints: Use this metadata to validate data for numeric overflow without hardcoding field constraints.
+Log Issues Automatically: Output only problematic records, highlighting the specific field and value causing the overflow.
+
+
+
+
+
+import pyodbc
+import pandas as pd
+
+# SQL Server connection setup
+connection_string = 'DRIVER={SQL Server};SERVER=your_server;DATABASE=your_db;UID=your_user;PWD=your_password'
+conn = pyodbc.connect(connection_string)
+
+# Define the table you want to check
+table_name = "YourSourceTable"
+
+# Step 1: Retrieve column metadata (name, type, precision, scale) for numeric fields
+metadata_query = f"""
+SELECT COLUMN_NAME, DATA_TYPE, NUMERIC_PRECISION, NUMERIC_SCALE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = '{table_name}' AND DATA_TYPE IN ('numeric', 'decimal', 'float', 'real')
+"""
+metadata = pd.read_sql(metadata_query, conn)
+
+# Step 2: Retrieve the table data
+data_query = f"SELECT * FROM {table_name}"
+data = pd.read_sql(data_query, conn)
+
+# Step 3: Validate each numeric field based on its metadata constraints
+def validate_numeric(row, column, precision, scale):
+    try:
+        max_value = 10 ** (precision - scale) - 10 ** -scale
+        min_value = -max_value
+        value = float(row[column])
+        if not (min_value <= value <= max_value):
+            return f"Overflow in {column}: {value}"
+    except:
+        return f"Invalid data in {column}: {row[column]}"
+    return None
+
+# Step 4: Apply validation for each numeric column and log issues
+issues = []
+for idx, row in data.iterrows():
+    for _, col_meta in metadata.iterrows():
+        column = col_meta['COLUMN_NAME']
+        precision = col_meta['NUMERIC_PRECISION']
+        scale = col_meta['NUMERIC_SCALE']
+        issue = validate_numeric(row, column, precision, scale)
+        if issue:
+            issues.append({"Row": idx, "Issue": issue})
+
+# Step 5: Output the issues
+if issues:
+    issues_df = pd.DataFrame(issues)
+    print(issues_df)
+    issues_df.to_csv("validation_issues.csv", index=False)  # Optional: save to CSV for recordkeeping
+else:
+    print("No issues found.")
+	
+How This Solution Reduces Manual Setup:
+Automated Schema Detection: The script fetches numeric column constraints (NUMERIC_PRECISION and NUMERIC_SCALE) directly from the database, eliminating the need to define them manually.
+Universal Validation Function: This function applies universally to all numeric fields without any need for modification.
+Flexible Output: The results can be viewed directly in the console or saved to a CSV file with no extra configuration.
+Advantages:
+Reusable: You only need to specify the table name, and the component handles the rest.
+Minimal Manual Intervention: Dynamically retrieves schema information, so no need to hard-code column names or types.
+Easy Logging: Generates a CSV report of problematic fields and values, which can be saved or reviewed directly.
+This solution automates as much as possible, making it adaptable to different tables and schemas with almost no setup for each new case.
