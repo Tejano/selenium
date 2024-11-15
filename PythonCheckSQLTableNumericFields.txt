@@ -344,9 +344,9 @@ with open(sql_file_path, 'r') as file:
 print("SQL Content:")
 print(sql_content)
 
-# Adjust the regular expression to find the INSERT INTO statement
+# Adjust the regex to match SQL with multi-line column lists
 insert_pattern = re.search(
-    r"INSERT INTO\s+(\w+)\s*\((.*?)\)\s*SELECT",
+    r"INSERT INTO\s+([\w\.\[\]]+)\s*\((.*?)\)\s*SELECT",
     sql_content,
     re.IGNORECASE | re.DOTALL
 )
@@ -380,9 +380,9 @@ with open(sql_file_path, 'r') as file:
 print("SQL Content:")
 print(sql_content)
 
-# Adjust the regular expression to find the INSERT INTO statement
+# Adjust the regex to match SQL with multi-line column lists
 insert_pattern = re.search(
-    r"INSERT INTO\s+([\w\[\]]+)\s*(\((.*?)\))?",
+    r"INSERT INTO\s+([\w\.\[\]]+)\s*\((.*?)\)\s*SELECT",
     sql_content,
     re.IGNORECASE | re.DOTALL
 )
@@ -391,20 +391,20 @@ if not insert_pattern:
     print("Debug: Unable to match the INSERT INTO statement. Check the SQL content:")
     print(sql_content)
 else:
-    # Extract target table
+    # Extract the target table
     target_table = insert_pattern.group(1).strip()
 
     # Extract columns if available
-    if insert_pattern.group(3):
-        target_columns = [col.strip() for col in insert_pattern.group(3).split(",")]
-    else:
-        target_columns = None
-
-    # Debugging: Print extracted information
-    print(f"Target Table: {target_table}")
-    if target_columns:
+    if insert_pattern.group(2):  # Group 2 matches the column list
+        target_columns = [col.strip() for col in insert_pattern.group(2).split(",")]
         print(f"Target Columns: {target_columns}")
     else:
+        target_columns = None
         print("No columns specified in the INSERT INTO statement.")
+
+    # Debugging: Print the target table
+    print(f"Target Table: {target_table}")
+
+
 
 
