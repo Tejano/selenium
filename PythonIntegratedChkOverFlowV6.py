@@ -68,9 +68,9 @@ logging.info(f"Raw SELECT Columns (Before Filtering): {select_columns}")
 
 # Step 5: Map Source Fields to Target Fields
 
-# Filter NULL AS fields and bounded fields
+# Refine NULL AS and bounded field detection
 null_as_fields = [col for col in select_columns if re.match(r"NULL\s+AS\s+\w+", col, re.IGNORECASE)]
-bound_fields = [col for col in select_columns if "." in col]  # Fields with `.` are considered bound
+bound_fields = [col for col in select_columns if re.match(r"[\w]+\.[\w]+", col)]  # Match fields with table alias
 
 excluded_fields = null_as_fields + bound_fields
 
@@ -81,6 +81,7 @@ logging.info(f"Excluded Fields: {excluded_fields}")
 filtered_select_columns = [col for col in select_columns if col not in excluded_fields]
 filtered_target_columns = [col for i, col in enumerate(target_columns) if select_columns[i] not in excluded_fields]
 
+# Debug filtered columns
 logging.info(f"Filtered SELECT Columns: {filtered_select_columns}")
 logging.info(f"Filtered Target Columns: {filtered_target_columns}")
 
@@ -91,6 +92,7 @@ if len(filtered_target_columns) != len(filtered_select_columns):
 
 field_mapping = dict(zip(filtered_target_columns, filtered_select_columns))
 logging.info(f"Field Mapping After Filtering: {field_mapping}")
+
 
 
 # Step 6: Set up the Database Connection
