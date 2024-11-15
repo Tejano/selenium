@@ -334,3 +334,32 @@ finally:
         cursor.close()
     if 'conn' in locals():
         conn.close()
+
+
+# Read the SQL file
+with open(sql_file_path, 'r') as file:
+    sql_content = file.read()
+
+# Debugging: Print the SQL content to confirm it's read correctly
+print("SQL Content:")
+print(sql_content)
+
+# Adjust the regular expression to find the INSERT INTO statement
+insert_pattern = re.search(
+    r"INSERT INTO\s+(\w+)\s*\((.*?)\)\s*SELECT",
+    sql_content,
+    re.IGNORECASE | re.DOTALL
+)
+
+if not insert_pattern:
+    print("Debug: Unable to match the INSERT INTO statement. Check the SQL content:")
+    print(sql_content)
+    raise ValueError("The SQL file does not contain a valid INSERT INTO statement.")
+
+# Extract target table and columns
+target_table = insert_pattern.group(1).strip()
+target_columns = [col.strip() for col in insert_pattern.group(2).split(",")]
+
+# Debugging: Print extracted information
+print(f"Target Table: {target_table}")
+print(f"Target Columns: {target_columns}")
