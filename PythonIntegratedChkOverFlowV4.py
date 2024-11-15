@@ -113,7 +113,7 @@ except Exception as e:
     logging.error(f"Error fetching source data: {e}")
     raise
 
-# Step 9: Validate Numeric Columns for Overflow (Vectorized)
+# Step 9: Validate Numeric Columns for Precision/Scale Mismatches
 issues = []
 try:
     for _, col_meta in metadata.iterrows():
@@ -124,10 +124,19 @@ try:
         min_value = -max_value
 
         if column in source_data.columns:
+            # Vectorized validation for the column
             invalid_rows = source_data[(source_data[column] < min_value) | (source_data[column] > max_value)]
+            
+            # Log issues for each invalid row
             for idx, row in invalid_rows.iterrows():
-                issues.append({"Row": idx, "Column": column, "Value": row[column], "Issue": "Numeric Overflow"})
-    logging.info("Validation completed.")
+                issues.append({
+                    "Row": idx,
+                    "Column": column,
+                    "Value": row[column],
+                    "Valid Range": f"{min_value} to {max_value}",
+                    "Issue": "Numeric Overflow"
+                })
+    logging.info("Validation for numeric precision/scale mismatches completed.")
 except Exception as e:
     logging.error(f"Error during validation: {e}")
     raise
@@ -144,3 +153,4 @@ else:
 # Cleanup
 conn.close()
 logging.info("Script completed.")
+
