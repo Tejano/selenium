@@ -2,10 +2,14 @@ import pyodbc
 import pandas as pd
 import re
 import logging
+from datetime import datetime
 
-# Configure Logging
+# Generate a timestamped log file name
+log_filename = f"validation_script_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+
+# Configure logging
 logging.basicConfig(
-    filename="validation_script.log",
+    filename=log_filename,
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
