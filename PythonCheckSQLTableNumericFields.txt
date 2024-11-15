@@ -231,14 +231,18 @@ sql_file_path = r"C:\path\to\your\insert_select.sql"
 # Step 2: Read the SQL file
 with open(sql_file_path, 'r') as file:
     sql_content = file.read()
+	sql_content_cleaned = re.sub(r"(--.*?\n|DECLARE .*?;|SET .*?;)", "", sql_content, flags=re.IGNORECASE | re.DOTALL)
 print("SQL Content Read from File:")
 print(sql_content)
 # Step 3: Parse the SQL content to extract source and target tables and columns
-insert_pattern = re.search(r"INSERT INTO (\w+)\s*\(([^)]+)\)", sql_content, re.IGNORECASE)
-select_pattern = re.search(r"SELECT (.+?) FROM (\w+)", sql_content, re.IGNORECASE)
+#insert_pattern = re.search(r"INSERT INTO (\w+)\s*\(([^)]+)\)", sql_content, re.IGNORECASE)
+
 
 # Adjust the regular expression to find the first INSERT INTO statement
-insert_pattern = re.search(r"INSERT INTO (\w+)\s*\((.*?)\)", sql_content, re.IGNORECASE | re.DOTALL)
+
+insert_pattern = re.search(
+ r"INSERT INTO\s+(\w+)\s*\(([^)]+)\)",
+ sql_content_cleaned, re.IGNORECASE | re.DOTALL)
 if not insert_pattern:
     raise ValueError("The SQL file does not contain a valid INSERT INTO statement.")
 
@@ -250,6 +254,7 @@ target_columns = [col.strip() for col in insert_pattern.group(2).split(",")]
 print(f"Target Table: {target_table}")
 print(f"Target Columns: {target_columns}")
 
+select_pattern = re.search(r"SELECT (.+?) FROM (\w+)", sql_content_cleaned, re.IGNORECASE)
 source_table = select_pattern.group(2).strip()
 source_columns = [col.strip() for col in select_pattern.group(1).split(",")]
 
