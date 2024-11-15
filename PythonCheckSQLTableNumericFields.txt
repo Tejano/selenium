@@ -406,5 +406,39 @@ else:
     print(f"Target Table: {target_table}")
 
 
+Step 2: Create a Minimal Test Script
+Here’s a script to focus solely on parsing the SELECT statement and extracting its columns:
+
+import re
+
+# Read the test SQL file
+sql_file_path = r"C:\path\to\your\test_insert_select.sql"
+with open(sql_file_path, 'r') as file:
+    sql_content = file.read()
+
+# Debugging: Print the SQL content
+print("SQL Content:")
+print(sql_content)
+
+# Match the SELECT statement after the INSERT INTO
+select_pattern = re.search(r"SELECT (.+?) FROM (\w+)", sql_content, re.IGNORECASE | re.DOTALL)
+
+if not select_pattern:
+    print("Debug: Unable to match the SELECT statement. Check the SQL content:")
+    print(sql_content)
+else:
+    # Extract the columns and source table
+    select_columns = select_pattern.group(1).strip()
+    source_table = select_pattern.group(2).strip()
+
+    # Debugging: Print results
+    print("Extracted SELECT Columns:")
+    print(select_columns)
+    print("Source Table:", source_table)
+
+    # Split columns for detailed output
+    split_columns = [col.strip() for col in select_columns.split(",")]
+    print("Parsed Columns:")
+    print(split_columns)
 
 
