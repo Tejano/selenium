@@ -421,11 +421,16 @@ print("SQL Content:")
 print(sql_content)
 
 # Match the SELECT statement after the INSERT INTO
-select_pattern = re.search(r"SELECT (.+?) FROM (\w+)", sql_content, re.IGNORECASE | re.DOTALL)
+select_pattern = re.search(
+    r"SELECT\s+(.+?)\s+FROM\s+([\w\.\[\]]+)",
+    sql_content,
+    re.IGNORECASE | re.DOTALL
+)
 
 if not select_pattern:
     print("Debug: Unable to match the SELECT statement. Check the SQL content:")
     print(sql_content)
+    raise ValueError("The SQL file does not contain a valid SELECT statement.")
 else:
     # Extract the columns and source table
     select_columns = select_pattern.group(1).strip()
@@ -440,5 +445,4 @@ else:
     split_columns = [col.strip() for col in select_columns.split(",")]
     print("Parsed Columns:")
     print(split_columns)
-
 
