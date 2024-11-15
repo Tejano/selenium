@@ -67,7 +67,6 @@ logging.info(f"Source Table: {source_table}")
 logging.info(f"Raw SELECT Columns (Before Filtering): {select_columns}")
 
 # Step 5: Map Source Fields to Target Fields
-# Extract and log target and source columns
 logging.info(f"Target Columns (Original): {target_columns}")
 logging.info(f"Source Columns (Original): {select_columns}")
 
@@ -75,7 +74,6 @@ if len(target_columns) != len(select_columns):
     logging.error("Mismatch between target and source column counts.")
     raise ValueError("The number of target columns does not match the number of source columns.")
 
-# Create a mapping of target to source columns based on position
 field_mapping = dict(zip(target_columns, select_columns))
 logging.info(f"Field Mapping: {field_mapping}")
 
@@ -109,7 +107,7 @@ except Exception as e:
     raise
 
 # Step 8: Fetch Source Data
-source_query = f"SELECT {', '.join(filtered_select_columns)} FROM {source_table}"
+source_query = f"SELECT {', '.join(select_columns)} FROM {source_table}"
 logging.info(f"Generated Source Query: {source_query}")
 
 try:
@@ -129,7 +127,6 @@ try:
         max_value = 10 ** (precision - scale) - 10 ** -scale
         min_value = -max_value
 
-        # Get the corresponding source column for the target column
         source_column = field_mapping.get(target_column)
 
         if source_column in source_data.columns:
@@ -155,7 +152,6 @@ except Exception as e:
     logging.error(f"Error during validation: {e}")
     raise
 
-
 # Step 10: Output Results
 if issues:
     issues_df = pd.DataFrame(issues)
@@ -168,3 +164,4 @@ else:
 # Cleanup
 conn.close()
 logging.info("Script completed.")
+
