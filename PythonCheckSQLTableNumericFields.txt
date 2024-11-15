@@ -367,6 +367,10 @@ print(f"Target Columns: {target_columns}")
 
 
 //////////////////////////////////////////////////////////
+import re
+
+# Specify the file path to your SQL file
+sql_file_path = r"C:\path\to\your\insert_select.sql"
 
 # Read the SQL file
 with open(sql_file_path, 'r') as file:
@@ -386,13 +390,13 @@ insert_pattern = re.search(
 if not insert_pattern:
     print("Debug: Unable to match the INSERT INTO statement. Check the SQL content:")
     print(sql_content)
-    raise ValueError("The SQL file does not contain a valid INSERT INTO statement.")
+else:
+    # Extract target table and columns
+    target_table = insert_pattern.group(1).strip()
+    target_columns = [col.strip() for col in insert_pattern.group(2).split(",")]
 
-# Extract target table and columns
-target_table = insert_pattern.group(1).strip()
-target_columns = [col.strip() for col in insert_pattern.group(2).split(",")]
+    # Debugging: Print extracted information
+    print(f"Target Table: {target_table}")
+    print(f"Target Columns: {target_columns}")
 
-# Debugging: Print extracted information
-print(f"Target Table: {target_table}")
-print(f"Target Columns: {target_columns}")
 
