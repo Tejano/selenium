@@ -99,5 +99,38 @@ def validate_numeric(row, source_column, precision, scale):
         max_value = 10 ** (precision - scale) - 10 ** -scale
         min_value = -max_value
         value = float(row[source_column])
-        if not (min_value <= value <
+        if not (min_value <= value <= max_value):
+            return f"Overflow in {source_column} with value {value}"
+    except Exception as e:
+        return f"Invalid data in {source_column} with value {row[source_column]}: {e}"
+    return None
 
+issues = []
+for idx, row in source_data.iterrows():
+    for _, col_meta in metadata.iterrows():
+        target_column = col_meta['COLUMN_NAME']
+        precision = col_meta['NUMERIC_PRECISION']
+        scale = col_meta['NUMERIC_SCALE']
+
+        # Map source column to target column
+        if filtered_target_columns:
+            source_column = next((filtered_select_columns[i] for i, col in enumerate(filtered_target_columns) if col == target_column), None)
+        else:
+            source_column = None
+
+        if source_column:
+            issue = validate_numeric(row, source_column, precision, scale)
+            if issue:
+                issues.append({"Row": idx, "Issue": issue})
+
+# Step 10: Output Results
+if issues:
+    issues_df = pd.DataFrame(issues)
+    print("\nValidation Issues Found:")
+    print(issues_df)
+    issues_df.to_csv("validation_issues.csv", index=False)  # Save to CSV
+else:
+    print("\nNo overflow issues found.")
+
+# Cleanup
+conn.close()
