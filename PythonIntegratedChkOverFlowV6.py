@@ -67,15 +67,31 @@ logging.info(f"Source Table: {source_table}")
 logging.info(f"Raw SELECT Columns (Before Filtering): {select_columns}")
 
 # Step 5: Map Source Fields to Target Fields
-logging.info(f"Target Columns (Original): {target_columns}")
-logging.info(f"Source Columns (Original): {select_columns}")
 
-if len(target_columns) != len(select_columns):
-    logging.error("Mismatch between target and source column counts.")
-    raise ValueError("The number of target columns does not match the number of source columns.")
+# Filter NULL AS fields and bounded fields
+null_as_fields = [col for col in select_columns if re.match(r"NULL\s+AS\s+\w+", col, re.IGNORECASE)]
+bound_fields = [col for col in select_columns if "." in col]  # Fields with `.` are considered bound
 
-field_mapping = dict(zip(target_columns, select_columns))
-logging.info(f"Field Mapping: {field_mapping}")
+excluded_fields = null_as_fields + bound_fields
+
+# Log excluded fields for debugging
+logging.info(f"Excluded Fields: {excluded_fields}")
+
+# Filter out excluded fields
+filtered_select_columns = [col for col in select_columns if col not in excluded_fields]
+filtered_target_columns = [col for i, col in enumerate(target_columns) if select_columns[i] not in excluded_fields]
+
+logging.info(f"Filtered SELECT Columns: {filtered_select_columns}")
+logging.info(f"Filtered Target Columns: {filtered_target_columns}")
+
+# Map filtered source fields to target fields
+if len(filtered_target_columns) != len(filtered_select_columns):
+    logging.error("Mismatch between filtered target and source column counts.")
+    raise ValueError("The number of filtered target columns does not match the number of filtered source columns.")
+
+field_mapping = dict(zip(filtered_target_columns, filtered_select_columns))
+logging.info(f"Field Mapping After Filtering: {field_mapping}")
+
 
 # Step 6: Set up the Database Connection
 connection_string = (
