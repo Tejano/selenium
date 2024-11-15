@@ -37,10 +37,19 @@ if not select_pattern:
     print(sql_content)
     raise ValueError("The SQL file does not contain a valid SELECT statement.")
 
-select_columns = [col.strip() for col in select_pattern.group(1).split(",")]
+#select_columns = [col.strip() for col in select_pattern.group(1).split(",")]
+select_columns_raw = select_pattern.group(1).strip()
 source_table = select_pattern.group(2).strip()
+
+# Process the SELECT columns safely
+select_columns = [col.strip() for col in select_columns_raw.split(",")]
+
+# Debugging: Print parsed columns and generated query
+print("Debug: Parsed SELECT Columns:")
+print(select_columns)
 print(f"Source Table: {source_table}")
-print(f"Source Columns: {select_columns}")
+
+
 
 # Step 2: Set up the database connection
 connection_string = (
@@ -64,6 +73,8 @@ print(metadata)
 
 # Step 4: Fetch Source Data
 source_query = f"SELECT {', '.join(select_columns)} FROM {source_table}"
+print("Debug: Generated Source Query:")
+print(source_query)
 source_data = pd.read_sql(source_query, conn)
 print("Source Data:")
 print(source_data)
