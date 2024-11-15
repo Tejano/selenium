@@ -197,3 +197,15 @@ Fully Automated Column Mapping: The script automatically extracts column mapping
 Reusable for Various INSERT...SELECT Statements: You can swap out the SQL file without modifying the script.
 Simplified Setup: Just provide the INSERT...SELECT SQL file path, and the script handles the rest.
 This approach gives you a versatile tool for automated validation based on the actual SQL statement, saving time and minimizing setup requirements. Let me know if you need any additional adjustments!
+]
+
+import pyodbc
+
+connection_string = (
+    "DRIVER={ODBC Driver 17 for SQL Server};"
+    "SERVER=your_server_name;"
+    "DATABASE=your_database_name;"
+    "UID=your_username;"
+    "PWD=your_password;"
+)
+conn = pyodbc.connect(connection_string)
