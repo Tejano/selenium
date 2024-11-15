@@ -382,7 +382,7 @@ print(sql_content)
 
 # Adjust the regular expression to find the INSERT INTO statement
 insert_pattern = re.search(
-    r"INSERT INTO\s+(\w+)\s*\((.*?)\)\s*SELECT",
+    r"INSERT INTO\s+([\w\[\]]+)\s*(\((.*?)\))?",
     sql_content,
     re.IGNORECASE | re.DOTALL
 )
@@ -391,12 +391,20 @@ if not insert_pattern:
     print("Debug: Unable to match the INSERT INTO statement. Check the SQL content:")
     print(sql_content)
 else:
-    # Extract target table and columns
+    # Extract target table
     target_table = insert_pattern.group(1).strip()
-    target_columns = [col.strip() for col in insert_pattern.group(2).split(",")]
+
+    # Extract columns if available
+    if insert_pattern.group(3):
+        target_columns = [col.strip() for col in insert_pattern.group(3).split(",")]
+    else:
+        target_columns = None
 
     # Debugging: Print extracted information
     print(f"Target Table: {target_table}")
-    print(f"Target Columns: {target_columns}")
+    if target_columns:
+        print(f"Target Columns: {target_columns}")
+    else:
+        print("No columns specified in the INSERT INTO statement.")
 
 
