@@ -231,7 +231,8 @@ sql_file_path = r"C:\path\to\your\insert_select.sql"
 # Step 2: Read the SQL file
 with open(sql_file_path, 'r') as file:
     sql_content = file.read()
-
+print("SQL Content Read from File:")
+print(sql_content)
 # Step 3: Parse the SQL content to extract source and target tables and columns
 insert_pattern = re.search(r"INSERT INTO (\w+)\s*\(([^)]+)\)", sql_content, re.IGNORECASE)
 select_pattern = re.search(r"SELECT (.+?) FROM (\w+)", sql_content, re.IGNORECASE)
