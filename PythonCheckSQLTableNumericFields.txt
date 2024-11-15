@@ -209,3 +209,13 @@ connection_string = (
     "PWD=your_password;"
 )
 conn = pyodbc.connect(connection_string)
+
+import pyodbc
+
+connection_string = (
+    "DRIVER={ODBC Driver 17 for SQL Server};"
+    "SERVER=your_server_name;"
+    "DATABASE=your_database_name;"
+    "Trusted_Connection=yes;"
+)
+conn = pyodbc.connect(connection_string)
