@@ -50,11 +50,16 @@ select_columns = [col.strip() for col in select_columns_raw.split(",")]
 print("\nSource Table:", source_table)
 print("Raw SELECT Columns (Before Filtering):", select_columns)
 
-# Step 5: Filter `NULL AS` Fields
+# Step 5: Filter `NULL AS` Fields and Bound Fields
 # Identify and exclude fields that are explicitly `NULL AS FieldName`
 null_as_fields = [col for col in select_columns if re.match(r"NULL\s+AS\s+\w+", col, re.IGNORECASE)]
-filtered_select_columns = [col for col in select_columns if col not in null_as_fields]
-filtered_target_columns = [col for i, col in enumerate(target_columns) if select_columns[i] not in null_as_fields]
+# Identify and exclude bound fields prefixed with table aliases (e.g., B.Field)
+bound_fields = [col for col in select_columns if "." in col and not col.strip().startswith("CASE")]
+
+# Exclude `NULL AS` and bound fields
+excluded_fields = null_as_fields + bound_fields
+filtered_select_columns = [col for col in select_columns if col not in excluded_fields]
+filtered_target_columns = [col for i, col in enumerate(target_columns) if select_columns[i] not in excluded_fields]
 
 print("\nFiltered SELECT Columns:", filtered_select_columns)
 print("Filtered Target Columns:", filtered_target_columns)
@@ -94,39 +99,5 @@ def validate_numeric(row, source_column, precision, scale):
         max_value = 10 ** (precision - scale) - 10 ** -scale
         min_value = -max_value
         value = float(row[source_column])
-        if not (min_value <= value <= max_value):
-            return f"Overflow in {source_column} with value {value}"
-    except Exception as e:
-        return f"Invalid data in {source_column} with value {row[source_column]}: {e}"
-    return None
-
-issues = []
-for idx, row in source_data.iterrows():
-    for _, col_meta in metadata.iterrows():
-        target_column = col_meta['COLUMN_NAME']
-        precision = col_meta['NUMERIC_PRECISION']
-        scale = col_meta['NUMERIC_SCALE']
-
-        # Map source column to target column
-        if filtered_target_columns:
-            source_column = next((filtered_select_columns[i] for i, col in enumerate(filtered_target_columns) if col == target_column), None)
-        else:
-            source_column = None
-
-        if source_column:
-            issue = validate_numeric(row, source_column, precision, scale)
-            if issue:
-                issues.append({"Row": idx, "Issue": issue})
-
-# Step 10: Output Results
-if issues:
-    issues_df = pd.DataFrame(issues)
-    print("\nValidation Issues Found:")
-    print(issues_df)
-    issues_df.to_csv("validation_issues.csv", index=False)  # Save to CSV
-else:
-    print("\nNo overflow issues found.")
-
-# Cleanup
-conn.close()
+        if not (min_value <= value <
 
