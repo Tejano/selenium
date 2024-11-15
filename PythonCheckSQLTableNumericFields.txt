@@ -219,3 +219,102 @@ connection_string = (
     "Trusted_Connection=yes;"
 )
 conn = pyodbc.connect(connection_string)
+
+
+import pyodbc
+import pandas as pd
+import re
+
+# Step 1: Specify the file path to the SQL file on the C: drive
+sql_file_path = r"C:\path\to\your\insert_select.sql"
+
+# Step 2: Read the SQL file
+with open(sql_file_path, 'r') as file:
+    sql_content = file.read()
+
+# Step 3: Parse the SQL content to extract source and target tables and columns
+insert_pattern = re.search(r"INSERT INTO (\w+)\s*\(([^)]+)\)", sql_content, re.IGNORECASE)
+select_pattern = re.search(r"SELECT (.+?) FROM (\w+)", sql_content, re.IGNORECASE)
+
+# Extract target and source tables and columns
+target_table = insert_pattern.group(1).strip()
+target_columns = [col.strip() for col in insert_pattern.group(2).split(",")]
+source_table = select_pattern.group(2).strip()
+source_columns = [col.strip() for col in select_pattern.group(1).split(",")]
+
+# Step 4: Map source columns to target columns
+column_mapping = dict(zip(source_columns, target_columns))
+
+# Step 5: Set up the connection string for Windows Authentication
+connection_string = (
+    "DRIVER={ODBC Driver 17 for SQL Server};"
+    "SERVER=your_server_name;"
+    "DATABASE=your_database_name;"
+    "Trusted_Connection=yes;"
+)
+
+try:
+    # Connect to the database
+    conn = pyodbc.connect(connection_string)
+    cursor = conn.cursor()
+
+    # Step 6: Retrieve metadata for the target columns
+    target_columns_str = "', '".join(target_columns)
+    metadata_query = f"""
+    SELECT COLUMN_NAME, DATA_TYPE, NUMERIC_PRECISION, NUMERIC_SCALE
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = '{target_table}' 
+      AND COLUMN_NAME IN ('{target_columns_str}')
+      AND DATA_TYPE IN ('numeric', 'decimal', 'float', 'real')
+    """
+    metadata = pd.read_sql(metadata_query, conn)
+
+    # Step 7: Retrieve data from the source table
+    source_columns_str = ', '.join(source_columns)
+    source_query = f"SELECT {source_columns_str} FROM {source_table}"
+    source_data = pd.read_sql(source_query, conn)
+
+    # Step 8: Validate each numeric field in the source table against the target constraints
+    def validate_numeric(row, source_column, precision, scale):
+        try:
+            max_value = 10 ** (precision - scale) - 10 ** -scale
+            min_value = -max_value
+            value = float(row[source_column])
+            if not (min_value <= value <= max_value):
+                return f"Overflow in {source_column} with value {value}"
+        except:
+            return f"Invalid data in {source_column} with value {row[source_column]}"
+        return None
+
+    # Apply validation and collect issues
+    issues = []
+    for idx, row in source_data.iterrows():
+        for _, col_meta in metadata.iterrows():
+            target_column = col_meta['COLUMN_NAME']
+            precision = col_meta['NUMERIC_PRECISION']
+            scale = col_meta['NUMERIC_SCALE']
+            
+            # Map the target column back to the source column
+            source_column = next((k for k, v in column_mapping.items() if v == target_column), None)
+            if source_column:
+                issue = validate_numeric(row, source_column, precision, scale)
+                if issue:
+                    issues.append({"Row": idx, "Issue": issue})
+
+    # Step 9: Output the issues
+    if issues:
+        issues_df = pd.DataFrame(issues)
+        print(issues_df)
+        issues_df.to_csv("validation_issues.csv", index=False)  # Optional: save to CSV
+    else:
+        print("No overflow issues found.")
+
+except pyodbc.Error as e:
+    print("Database error occurred:", e)
+
+finally:
+    # Close the connection
+    if 'cursor' in locals():
+        cursor.close()
+    if 'conn' in locals():
+        conn.close()
