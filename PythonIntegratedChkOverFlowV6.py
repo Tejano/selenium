@@ -68,10 +68,16 @@ logging.info(f"Raw SELECT Columns (Before Filtering): {select_columns}")
 
 # Step 5: Map Source Fields to Target Fields
 
-# Refine NULL AS and bounded field detection
-null_as_fields = [col for col in select_columns if re.match(r"NULL\s+AS\s+\w+", col, re.IGNORECASE)]
-bound_fields = [col for col in select_columns if re.match(r"[\w]+\.[\w]+", col)]  # Match fields with table alias
+# Clean up whitespace in the select columns
+select_columns = [col.strip() for col in select_columns]
 
+# Detect NULL AS fields
+null_as_fields = [col for col in select_columns if re.match(r"NULL\s+AS\s+\w+", col, re.IGNORECASE)]
+
+# Detect fields with table aliases or dotted notation
+bound_fields = [col for col in select_columns if re.match(r"[\w]+\.[\w]+", col.strip())]
+
+# Combine excluded fields
 excluded_fields = null_as_fields + bound_fields
 
 # Log excluded fields for debugging
@@ -88,11 +94,18 @@ logging.info(f"Filtered Target Columns: {filtered_target_columns}")
 # Map filtered source fields to target fields
 if len(filtered_target_columns) != len(filtered_select_columns):
     logging.error("Mismatch between filtered target and source column counts.")
+    logging.error(f"Filtered Target Columns: {filtered_target_columns}")
+    logging.error(f"Filtered SELECT Columns: {filtered_select_columns}")
     raise ValueError("The number of filtered target columns does not match the number of filtered source columns.")
 
 field_mapping = dict(zip(filtered_target_columns, filtered_select_columns))
 logging.info(f"Field Mapping After Filtering: {field_mapping}")
 
+# Debug remaining fields
+remaining_bound_fields = [col for col in filtered_select_columns if re.match(r"[\w]+\.[\w]+", col)]
+if remaining_bound_fields:
+    logging.error(f"Remaining bounded fields: {remaining_bound_fields}")
+    raise ValueError(f"These bounded fields were not excluded: {remaining_bound_fields}")
 
 
 # Step 6: Set up the Database Connection
@@ -125,7 +138,7 @@ except Exception as e:
     raise
 
 # Step 8: Fetch Source Data
-source_query = f"SELECT {', '.join(select_columns)} FROM {source_table}"
+source_query = f"SELECT {', '.join(filtered_select_columns)} FROM {source_table}"
 logging.info(f"Generated Source Query: {source_query}")
 
 try:
