@@ -1,5 +1,3 @@
-import re
-
 def read_sql_from_file(file_path):
     """
     Reads the contents of a SQL file.
@@ -11,6 +9,7 @@ def read_sql_from_file(file_path):
     with open(file_path, "r", encoding="utf-8") as sql_file:
         return sql_file.read()
 
+
 def clean_sql(sql_statement):
     """
     Cleans the SQL statement by removing comments and ensuring proper formatting.
@@ -19,13 +18,12 @@ def clean_sql(sql_statement):
     Returns:
         str: The cleaned SQL statement.
     """
-    # Remove single-line comments (-- comment)
-    sql_statement = re.sub(r"--.*", "", sql_statement)
-    # Remove multi-line comments (/* comment */)
-    sql_statement = re.sub(r"/\*.*?\*/", "", sql_statement, flags=re.DOTALL)
-    # Remove excessive whitespace
-    sql_statement = re.sub(r"\s+", " ", sql_statement.strip())
+    import re
+    sql_statement = re.sub(r"--.*", "", sql_statement)  # Remove single-line comments
+    sql_statement = re.sub(r"/\*.*?\*/", "", sql_statement, flags=re.DOTALL)  # Remove multi-line comments
+    sql_statement = re.sub(r"\s+", " ", sql_statement.strip())  # Normalize whitespace
     return sql_statement
+
 
 def sql_to_vb_ado(sql_statement, sub_name="GeneratedSub", conn_name="conn"):
     """
@@ -37,10 +35,7 @@ def sql_to_vb_ado(sql_statement, sub_name="GeneratedSub", conn_name="conn"):
     Returns:
         str: The VB ADO Subroutine as a string.
     """
-    # Clean the SQL for proper VBA compatibility
     sql_cleaned = clean_sql(sql_statement)
-
-    # Generate VBA Subroutine with dynamic parameters
     vb_code = f"""
 Sub {sub_name}(ByVal startMonth As Integer, ByVal endMonth As Integer)
     Dim {conn_name} As ADODB.Connection
@@ -78,6 +73,7 @@ End Sub
 """
     return vb_code
 
+
 def write_to_file(output_file_path, content):
     """
     Writes the given content to a file.
@@ -88,22 +84,19 @@ def write_to_file(output_file_path, content):
     with open(output_file_path, "w", encoding="utf-8") as output_file:
         output_file.write(content)
 
+
 def main():
     """
     Main execution flow: reads SQL file, processes it, and generates VBA code.
     """
     sql_file_path = "example.sql"  # Replace with your SQL file path
-    output_file_path = "GeneratedVBA.vb"  # Replace with your desired output file path
+    output_file_path = "GeneratedVBA.bas"  # Replace with your desired output file path
 
-    # Step 1: Read SQL from file
     sql_statement = read_sql_from_file(sql_file_path)
-
-    # Step 2: Convert SQL to VBA
     generated_vba = sql_to_vb_ado(sql_statement, sub_name="ProcessSales", conn_name="conn")
 
-    # Step 3: Print to console and write to file
-    print(generated_vba)  # Print to console
-    write_to_file(output_file_path, generated_vba)  # Write to file
+    print(generated_vba)
+    write_to_file(output_file_path, generated_vba)
 
 
 if __name__ == "__main__":
