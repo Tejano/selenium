@@ -1,3 +1,5 @@
+import re
+
 def read_sql_from_file(file_path):
     """
     Reads the contents of a SQL file.
@@ -9,7 +11,6 @@ def read_sql_from_file(file_path):
     with open(file_path, "r", encoding="utf-8") as sql_file:
         return sql_file.read()
 
-
 def clean_sql(sql_statement):
     """
     Cleans the SQL statement by removing comments and ensuring proper formatting.
@@ -18,12 +19,13 @@ def clean_sql(sql_statement):
     Returns:
         str: The cleaned SQL statement.
     """
-    import re
-    sql_statement = re.sub(r"--.*", "", sql_statement)  # Remove single-line comments
-    sql_statement = re.sub(r"/\*.*?\*/", "", sql_statement, flags=re.DOTALL)  # Remove multi-line comments
-    sql_statement = re.sub(r"\s+", " ", sql_statement.strip())  # Normalize whitespace
+    # Remove single-line comments (-- comment)
+    sql_statement = re.sub(r"--.*", "", sql_statement)
+    # Remove multi-line comments (/* comment */)
+    sql_statement = re.sub(r"/\*.*?\*/", "", sql_statement, flags=re.DOTALL)
+    # Remove excessive whitespace
+    sql_statement = re.sub(r"\s+", " ", sql_statement.strip())
     return sql_statement
-
 
 def sql_to_vb_ado(sql_statement, sub_name="GeneratedSub", conn_name="conn"):
     """
@@ -73,7 +75,6 @@ End Sub
 """
     return vb_code
 
-
 def write_to_file(output_file_path, content):
     """
     Writes the given content to a file.
@@ -84,7 +85,6 @@ def write_to_file(output_file_path, content):
     with open(output_file_path, "w", encoding="utf-8") as output_file:
         output_file.write(content)
 
-
 def main():
     """
     Main execution flow: reads SQL file, processes it, and generates VBA code.
@@ -92,12 +92,12 @@ def main():
     sql_file_path = "example.sql"  # Replace with your SQL file path
     output_file_path = "GeneratedVBA.bas"  # Replace with your desired output file path
 
-    sql_statement = read_sql_from_file(sql_file_path)
-    generated_vba = sql_to_vb_ado(sql_statement, sub_name="ProcessSales", conn_name="conn")
+    sql_statement = read_sql_from_file(sql_file_path)  # Read SQL file content
+    generated_vba = sql_to_vb_ado(sql_statement, sub_name="ProcessSales", conn_name="conn")  # Generate VBA code
 
-    print(generated_vba)
-    write_to_file(output_file_path, generated_vba)
-
+    print(generated_vba)  # Print the VBA code to the console
+    write_to_file(output_file_path, generated_vba)  # Write the VBA code to a .bas file
 
 if __name__ == "__main__":
     main()
+
