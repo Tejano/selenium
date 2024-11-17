@@ -55,3 +55,13 @@ Sub TestPassThroughQuery()
     Set qdf = Nothing
     Set db = Nothing
 End Sub
+
+
+SELECT 
+    DP.name AS [Login],
+    DP2.name AS [Permission],
+    DP3.permission_name
+FROM sys.server_principals AS DP
+LEFT JOIN sys.server_permissions AS DP3 ON DP.principal_id = DP3.grantee_principal_id
+LEFT JOIN sys.server_principals AS DP2 ON DP3.grantee_principal_id = DP2.principal_id
+WHERE DP.name = SUSER_NAME();
