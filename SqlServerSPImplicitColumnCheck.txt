@@ -1,0 +1,53 @@
+
+
+To address the issue of stored procedures (SPs) referencing the RowVersion column indirectly (e.g., via SELECT *), and ensure the SPs use all the columns explicitly, you can take the following steps:
+
+1. Identify Stored Procedures Referencing the Table
+Start by identifying all stored procedures that reference the affected table. Use the system views in SQL Server to find SPs that mention the table:
+
+
+
+SELECT DISTINCT OBJECT_NAME(sm.object_id) AS ProcedureName
+FROM sys.sql_modules sm
+WHERE sm.definition LIKE '%YourTableName%'
+  AND sm.definition NOT LIKE '%RowVersion%'; -- Check if RowVersion is explicitly referenced
+
+Replace YourTableName with the name of the table.
+This query finds stored procedures where RowVersion might not be explicitly referenced.
+
+2. Check for SELECT * in Stored Procedures
+Find SPs that use SELECT * in their queries. This is a common source of issues when schema changes occur:
+
+SELECT DISTINCT OBJECT_NAME(sm.object_id) AS ProcedureName
+FROM sys.sql_modules sm
+WHERE sm.definition LIKE 'SELECT *%'
+  AND sm.definition LIKE '%YourTableName%';
+This identifies stored procedures that query all columns (SELECT *) from the table.
+
+3. Extract and Inspect SP Definitions
+For each stored procedure identified, retrieve its full definition to check for SELECT * or implicit column references:
+
+SELECT OBJECT_NAME(object_id) AS ProcedureName, definition
+FROM sys.sql_modules
+WHERE OBJECT_NAME(object_id) = 'YourStoredProcedureName'; -- Replace with SP name
+
+4. Automate Detection of Missing Columns
+To automate the detection of missing columns in SPs:
+
+Get the Table's Schema: Retrieve the current column list for the table:
+SELECT COLUMN_NAME
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'YourTableName';
+
+Compare the Column List Against SP Definitions: Use this query to check if all table columns are referenced in the SPs:
+
+SELECT DISTINCT OBJECT_NAME(sm.object_id) AS ProcedureName
+FROM sys.sql_modules sm
+WHERE sm.definition LIKE '%YourTableName%'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM INFORMATION_SCHEMA.COLUMNS c
+      WHERE c.TABLE_NAME = 'YourTableName'
+        AND sm.definition LIKE '%' + c.COLUMN_NAME + '%'
+  );
+
