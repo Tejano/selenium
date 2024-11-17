@@ -1,0 +1,57 @@
+Sub TestPassThroughQuery()
+    Dim db As DAO.Database
+    Dim qdf As DAO.QueryDef
+    Dim strSQL As String
+    Dim connStr As String
+
+    ' Define the ODBC connection string
+    connStr = "ODBC;DRIVER=ODBC Driver 17 for SQL Server;" & _
+              "SERVER=YourServerName;DATABASE=YourDatabaseName;" & _
+              "Trusted_Connection=Yes;"
+
+    ' SQL with hardcoded parameters for testing
+    strSQL = "DECLARE @start_month INT = 1; " & _
+             "DECLARE @end_month INT = 6; " & _
+             "DECLARE @cutover INT; " & _
+             "SELECT @cutover = MAX(SomeColumn) FROM SourceTable " & _
+             "WHERE Month BETWEEN @start_month AND @end_month; " & _
+             "IF @cutover IS NOT NULL " & _
+             "BEGIN " & _
+             "    CREATE TABLE #TempTable (ID INT, Value NVARCHAR(50), Month INT, Cutover INT); " & _
+             "    INSERT INTO #TempTable (ID, Value, Month, Cutover) " & _
+             "    SELECT ID, Value, Month, @cutover FROM SourceTable " & _
+             "    WHERE Month BETWEEN @start_month AND @end_month; " & _
+             "    UPDATE #TempTable SET Value = 'Updated' " & _
+             "    WHERE ID IN (SELECT ID FROM AnotherTable); " & _
+             "    SELECT * FROM #TempTable; " & _
+             "    DROP TABLE #TempTable; " & _
+             "END " & _
+             "ELSE " & _
+             "BEGIN " & _
+             "    SELECT 'Error: No data found to calculate @cutover' AS ErrorMessage; " & _
+             "END;"
+
+    ' Create and execute the pass-through query
+    Set db = CurrentDb
+    Set qdf = db.CreateQueryDef("")
+
+    qdf.Connect = connStr
+    qdf.SQL = strSQL
+    qdf.ReturnsRecords = True
+
+    ' Open and process the result set
+    Dim rst As DAO.Recordset
+    Set rst = qdf.OpenRecordset()
+
+    Do While Not rst.EOF
+        Debug.Print rst.Fields(0).Name, rst.Fields(0).Value
+        rst.MoveNext
+    Loop
+
+    ' Clean up
+    rst.Close
+    Set rst = Nothing
+    qdf.Close
+    Set qdf = Nothing
+    Set db = Nothing
+End Sub
