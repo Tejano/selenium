@@ -1,0 +1,47 @@
+
+Unfortunately, debug statements like PRINT or RAISERROR in SQL Server are not directly visible in Access when running a pass-through query. Access does not capture messages sent to the client by SQL Server—only the result set or errors that terminate execution.
+
+To view debug output from your pass-through query in Access, you’ll need to handle it differently. Here are some approaches:
+
+1. Capture Debug Output in a Result Set
+Instead of using PRINT or RAISERROR, return debug messages as part of a result set using a SELECT statement. Access will capture and display this output.
+
+
+
+DECLARE @start_month INT = 1;
+DECLARE @end_month INT = 6;
+DECLARE @cutover INT;
+
+-- Return debug info as part of result sets
+SELECT 'Debug: Parameters' AS DebugInfo, @start_month AS StartMonth, @end_month AS EndMonth;
+
+-- Simulate calculation for @cutover
+SELECT @cutover = MAX(SomeColumn)
+FROM SourceTable
+WHERE Month BETWEEN @start_month AND @end_month;
+
+-- Return debug info for @cutover
+SELECT 'Debug: Cutover Value' AS DebugInfo, @cutover AS Cutover;
+
+-- Main query logic
+IF @cutover IS NOT NULL
+BEGIN
+    CREATE TABLE #TempTable (ID INT, Value NVARCHAR(50), Month INT, Cutover INT);
+
+    INSERT INTO #TempTable (ID, Value, Month, Cutover)
+    SELECT ID, Value, Month, @cutover
+    FROM SourceTable
+    WHERE Month BETWEEN @start_month AND @end_month;
+
+    -- Debug: Return inserted rows
+    SELECT 'Debug: TempTable Records' AS DebugInfo, * FROM #TempTable;
+
+    -- Final output
+    SELECT * FROM #TempTable;
+
+    DROP TABLE #TempTable;
+END
+ELSE
+BEGIN
+    SELECT 'Error: No data found to calculate @cutover' AS DebugInfo;
+END;
