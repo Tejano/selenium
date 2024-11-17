@@ -45,3 +45,51 @@ ELSE
 BEGIN
     SELECT 'Error: No data found to calculate @cutover' AS DebugInfo;
 END;
+
+-- Declare variables
+DECLARE @start_month INT = 1;
+DECLARE @end_month INT = 6;
+DECLARE @current_month INT = @start_month;
+DECLARE @cutover INT;
+
+-- Create a temp table to collect debug info
+CREATE TABLE #DebugLog (Month INT, DebugMessage NVARCHAR(255));
+
+-- Simulate calculation for @cutover
+SELECT @cutover = MAX(SomeColumn)
+FROM SourceTable
+WHERE Month BETWEEN @start_month AND @end_month;
+
+-- Log the cutover value
+INSERT INTO #DebugLog (Month, DebugMessage)
+VALUES (NULL, 'Cutover value: ' + ISNULL(CAST(@cutover AS NVARCHAR(10)), 'NULL'));
+
+-- Create another temp table to store loop results
+CREATE TABLE #TempTable (ID INT, Value NVARCHAR(50), Month INT);
+
+-- Loop through each month
+WHILE @current_month <= @end_month
+BEGIN
+    -- Insert data into the main temp table
+    INSERT INTO #TempTable (ID, Value, Month)
+    SELECT ID, Value, @current_month
+    FROM SourceTable
+    WHERE Month = @current_month;
+
+    -- Log debug info for this iteration
+    INSERT INTO #DebugLog (Month, DebugMessage)
+    VALUES (@current_month, 'Processed month ' + CAST(@current_month AS NVARCHAR(10)));
+
+    -- Move to the next month
+    SET @current_month = @current_month + 1;
+END
+
+-- Return results
+SELECT * FROM #TempTable;
+
+-- Return debug log as a second result set (if needed for Access)
+SELECT * FROM #DebugLog;
+
+-- Clean up (optional in the same session)
+DROP TABLE #TempTable;
+DROP TABLE #DebugLog;
