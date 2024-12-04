@@ -1,0 +1,23 @@
+SELECT
+    COUNT(*) AS TotalRecords, -- Total record count
+    SUM(CASE 
+            WHEN month_column <= CAST(FORMAT(GETDATE(), 'yyyyMM') AS INT) - 100 THEN 1 
+            ELSE 0 
+        END) AS OlderThan10Years, -- Records older than 10 years
+    SUM(CASE 
+            WHEN month_column <= CAST(FORMAT(DATEADD(YEAR, 5, GETDATE()), 'yyyyMM') AS INT) - 100 THEN 1 
+            ELSE 0 
+        END) AS OlderThan10YearsIn5Years -- Records that will be older than 10 years in 5 years
+FROM
+    your_table;
+Explanation:
+COUNT(*): Counts all the records in the table.
+FORMAT(GETDATE(), 'yyyyMM'): Fetches the current date and formats it to YYYYMM.
+CAST(... AS INT): Converts the formatted date into an integer for comparison.
+DATEADD(YEAR, 5, GETDATE()): Adds 5 years to the current date for future comparison.
+SUM(CASE WHEN condition THEN 1 ELSE 0 END): Counts records that satisfy the specific conditions:
+OlderThan10Years: Records where month_column is 10 years or older.
+OlderThan10YearsIn5Years: Records where month_column will be 10 years or older 5 years from now.
+Assumptions:
+month_column is an integer in YYYYMM format.
+The database supports GETDATE() (for SQL Server). If you’re using a different RDBMS, let me know to adjust the query accordingly.
