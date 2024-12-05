@@ -21,3 +21,33 @@ OlderThan10YearsIn5Years: Records where month_column will be 10 years or older 5
 Assumptions:
 month_column is an integer in YYYYMM format.
 The database supports GETDATE() (for SQL Server). If you’re using a different RDBMS, let me know to adjust the query accordingly.
+
+SELECT 
+    'TableA' AS TableName, 
+    COUNT(*) AS TotalRecords,
+    SUM(CASE 
+            WHEN month_column <= CAST(CONVERT(VARCHAR(6), DATEADD(YEAR, -10, GETDATE()), 112) AS INT) THEN 1 
+            ELSE 0 
+        END) AS OlderThan10Years,
+    SUM(CASE 
+            WHEN month_column <= CAST(CONVERT(VARCHAR(6), DATEADD(YEAR, -5, GETDATE()), 112) AS INT) THEN 1 
+            ELSE 0 
+        END) AS OlderThan10YearsIn5Years
+FROM 
+    TableA
+UNION ALL
+SELECT 
+    'TableB' AS TableName, 
+    COUNT(*) AS TotalRecords,
+    SUM(CASE 
+            WHEN month_column <= CAST(CONVERT(VARCHAR(6), DATEADD(YEAR, -10, GETDATE()), 112) AS INT) THEN 1 
+            ELSE 0 
+        END) AS OlderThan10Years,
+    SUM(CASE 
+            WHEN month_column <= CAST(CONVERT(VARCHAR(6), DATEADD(YEAR, -5, GETDATE()), 112) AS INT) THEN 1 
+            ELSE 0 
+        END) AS OlderThan10YearsIn5Years
+FROM 
+    TableB;
+
+
