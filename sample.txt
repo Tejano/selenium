@@ -1,0 +1,30 @@
+Self-Assessment for [Your Name]
+Major Accomplishments in 2024
+SQL Server Migration and Architecture Upgrade
+
+Successfully led the migration from SQL Server 2016 to SQL Server 2019, meeting enterprise corporate target dates.
+Transitioned from a single-machine setup hosting SQL Server, SSRS, and SSIS to an enterprise architecture with dedicated machines for each service, enhancing performance, scalability, and security.
+Coordinated extensively with cross-functional teams:
+SSRS Team: Ensured seamless migration of reporting services.
+DBA Team: Supported the setup and migration of the SSIS server.
+Collaborated with teams using the SQL Server for production and non-production databases.
+Automated testing tools were developed, and extensive manual testing was performed to validate the database migration.
+SSIS Package and Job Updates
+
+Updated and tested all SSIS packages and jobs to integrate with the new corporate Exchange Server for email notifications.
+Performed manual testing to verify the reliability and functionality of all SSIS processes, ensuring they met enterprise requirements and deadlines.
+Application Support During Cloud Migration
+
+Provided technical support for a team migrating a PCF-hosted microservices application to OpenShift and AWS.
+Addressed and resolved issues encountered during the migration, contributing to its success and ensuring the team met corporate timelines.
+Access and Excel Database Upgrades
+
+Supported the organization's upgrade to Microsoft 365 by converting and enhancing legacy Access and Excel databases critical to business operations.
+Led the migration of an ADP application to Access 2016, a complex process that required extensive custom coding and problem-solving to ensure a smooth transition.
+Delivered this project on time, aligning with enterprise deadlines.
+Team Contributions and Adaptability
+
+Delivered multiple high-priority projects as part of a two-person team after the departure of two team members in February, demonstrating adaptability and exceptional collaboration under increased workload.
+Professional Development
+
+Successfully completed the Dale Carnegie Course, enhancing interpersonal and leadership skills to drive team collaboration and productivity.
