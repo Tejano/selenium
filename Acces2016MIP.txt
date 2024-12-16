@@ -27,7 +27,8 @@ Sub ExportAndLabelExcel()
     MsgBox "Excel file exported and labeled successfully!"
 End Sub
 
-
+Option 1: Redirect PowerShell Output to a Log File
+You can use the -RedirectStandardOutput and -RedirectStandardError options to capture both standard output and errors into a file.
 Sub ExportAndLabelExcel()
     Dim strFilePath As String
     Dim strTableName As String
@@ -58,3 +59,75 @@ Sub ExportAndLabelExcel()
     ' Cleanup
     Set shell = Nothing
 End Sub
+Explanation:
+2>&1: Redirects both the standard error (2) and standard output (1) streams to the same destination.
+Out-File: Sends the combined output to the specified log file.
+-Append: Ensures new output is appended to the existing log file, so you don’t overwrite previous logs.
+
+Option 2: Capture Output in VBA
+If you prefer to capture the output directly in VBA without using a log file, you can use the Exec method instead of Run:
+
+Sub ExportAndLabelExcel()
+    Dim strFilePath As String
+    Dim strTableName As String
+    Dim shell As Object
+    Dim psCommand As String
+    Dim execObject As Object
+    Dim output As String
+
+    ' Path to save the Excel file
+    strFilePath = "C:\Path\To\ExportedFile.xlsx"
+
+    ' Table name to export
+    strTableName = "YourTableName"
+
+    ' Step 1: Export data to Excel using TransferSpreadsheet
+    DoCmd.TransferSpreadsheet acExport, acSpreadsheetTypeExcel12Xml, strTableName, strFilePath, True
+
+    ' Step 2: Apply MIP label using PowerShell
+    Set shell = CreateObject("WScript.Shell")
+    psCommand = "powershell.exe -Command ""Set-AIPFileLabel -Path '" & strFilePath & "' -LabelId 'Your-MIP-Label-ID' -JustificationMessage 'Automated labeling after export'"""
+
+    ' Execute the PowerShell command and capture output
+    Set execObject = shell.Exec(psCommand)
+    Do While execObject.Status = 0
+        DoEvents  ' Wait for the command to finish
+    Loop
+
+    ' Capture output
+    output = execObject.StdOut.ReadAll
+
+    ' Check for errors
+    If InStr(execObject.StdErr.ReadAll, "Error") > 0 Then
+        MsgBox "An error occurred: " & output, vbCritical
+    Else
+        MsgBox "Process completed successfully: " & output
+    End If
+
+    ' Cleanup
+    Set execObject = Nothing
+    Set shell = Nothing
+End Sub
+Explanation:
+Exec Method:
+Allows you to execute the PowerShell command and capture its output and error streams in VBA.
+StdOut.ReadAll:
+Reads the standard output from the executed PowerShell command.
+StdErr.ReadAll:
+Reads the error stream from the PowerShell command to check for errors.
+
+
+Best Practice for Debugging PowerShell Commands
+Test PowerShell Commands Manually: Run the Set-AIPFileLabel command directly in a PowerShell window to verify it works as expected:
+Set-AIPFileLabel -Path "C:\Path\To\ExportedFile.xlsx" -LabelId "Your-MIP-Label-ID" -JustificationMessage "Automated labeling after export"
+
+Check for Missing Prerequisites:
+
+Ensure the Azure Information Protection Unified Labeling Client is installed.
+Verify that the LabelId is valid and accessible to the current user.
+
+Enable PowerShell Logging: Use PowerShell's built-in logging to capture all executed commands and errors:
+
+Start-Transcript -Path "C:\Path\To\TranscriptLog.txt"
+Set-AIPFileLabel -Path "C:\Path\To\ExportedFile.xlsx" -LabelId "Your-MIP-Label-ID" -JustificationMessage "Automated labeling after export"
+Stop-Transcript
