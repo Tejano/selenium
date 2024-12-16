@@ -26,3 +26,35 @@ Sub ExportAndLabelExcel()
 
     MsgBox "Excel file exported and labeled successfully!"
 End Sub
+
+
+Sub ExportAndLabelExcel()
+    Dim strFilePath As String
+    Dim strTableName As String
+    Dim shell As Object
+    Dim psCommand As String
+    Dim logFilePath As String
+
+    ' Path to save the Excel file
+    strFilePath = "C:\Path\To\ExportedFile.xlsx"
+
+    ' Path for the log file
+    logFilePath = "C:\Path\To\PowerShellLog.txt"
+
+    ' Table name to export
+    strTableName = "YourTableName"
+
+    ' Step 1: Export data to Excel using TransferSpreadsheet
+    DoCmd.TransferSpreadsheet acExport, acSpreadsheetTypeExcel12Xml, strTableName, strFilePath, True
+
+    ' Step 2: Apply MIP label using PowerShell
+    Set shell = CreateObject("WScript.Shell")
+    psCommand = "powershell.exe -Command ""Set-AIPFileLabel -Path '" & strFilePath & "' -LabelId 'Your-MIP-Label-ID' -JustificationMessage 'Automated labeling after export' 2>&1 | Out-File -FilePath '" & logFilePath & "' -Append"""
+    shell.Run psCommand, 1, True  ' Run synchronously to wait for the command to complete
+
+    ' Optional: Notify user to check the log file for errors
+    MsgBox "Process completed. Check the log file for details: " & logFilePath
+
+    ' Cleanup
+    Set shell = Nothing
+End Sub
