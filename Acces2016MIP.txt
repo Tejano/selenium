@@ -131,3 +131,59 @@ Enable PowerShell Logging: Use PowerShell's built-in logging to capture all exec
 Start-Transcript -Path "C:\Path\To\TranscriptLog.txt"
 Set-AIPFileLabel -Path "C:\Path\To\ExportedFile.xlsx" -LabelId "Your-MIP-Label-ID" -JustificationMessage "Automated labeling after export"
 Stop-Transcript
+
+
+Workflow Summary
+Export the File Using DoCmd.TransferSpreadsheet:
+
+Create the Excel file as usual.
+Open Excel via VBA (Using Automation):
+
+Load the exported Excel file into an Excel Application Object.
+Apply the MIP sensitivity label programmatically using the SensitivityLabel property.
+Save and Close the File:
+
+
+Save the Excel file after applying the label.
+Sub ExportExcelWithMIP()
+    Dim strFilePath As String
+    Dim strTableName As String
+    Dim xlApp As Object
+    Dim xlWorkbook As Object
+    
+    ' Path to save the Excel file
+    strFilePath = "C:\Path\To\ExportedFile.xlsx"
+    
+    ' Table name to export
+    strTableName = "YourTableName"
+    
+    ' Step 1: Export data to Excel using TransferSpreadsheet
+    DoCmd.TransferSpreadsheet acExport, acSpreadsheetTypeExcel12Xml, strTableName, strFilePath, True
+
+    ' Step 2: Open Excel file and apply sensitivity label
+    Set xlApp = CreateObject("Excel.Application")
+    xlApp.Visible = False ' Keep Excel invisible during processing
+    
+    ' Open the exported Excel file
+    Set xlWorkbook = xlApp.Workbooks.Open(strFilePath)
+    
+    ' Step 3: Apply Sensitivity Label
+    On Error Resume Next
+    xlWorkbook.SensitivityLabel.SetLabel "Confidential", "" ' Replace with your MIP Label name
+    If Err.Number <> 0 Then
+        MsgBox "Error applying MIP label: " & Err.Description, vbCritical
+        Err.Clear
+    End If
+    On Error GoTo 0
+
+    ' Save and close the Excel file
+    xlWorkbook.Save
+    xlWorkbook.Close False
+    xlApp.Quit
+    
+    ' Cleanup
+    Set xlWorkbook = Nothing
+    Set xlApp = Nothing
+
+    MsgBox "Excel file exported and MIP label applied successfully!"
+End Sub
