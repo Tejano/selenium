@@ -108,3 +108,89 @@ Testing and Debugging
 Test the script with Excel VBA first to confirm it works.
 Run the Access VBA script to ensure the integration with Excel behaves as expected.
 Verify the applied label manually by opening the Excel file.
+
+
+Yes, you can retrieve the lblInfo object and its associated properties in Excel VBA when a sensitivity label is applied. 
+The SensitivityLabel object in Excel provides information 
+about the applied label, such as its name and ID, through the GetLabelInfo method.
+
+Example: Retrieve Label Information in Excel VBA
+Here’s how you can check if a sensitivity label is applied to a workbook and retrieve its details:
+
+Sub GetSensitivityLabelInfo()
+    Dim lblInfo As Office.LabelInfo
+    Dim xlWorkbook As Workbook
+    
+    ' Reference the active workbook (or replace with specific workbook)
+    Set xlWorkbook = ThisWorkbook
+
+    On Error Resume Next
+    ' Get label information
+    Set lblInfo = xlWorkbook.SensitivityLabel.GetLabelInfo()
+    On Error GoTo 0
+
+    If lblInfo Is Nothing Then
+        MsgBox "No sensitivity label applied to the workbook.", vbInformation
+    Else
+        ' Display label details
+        MsgBox "Sensitivity Label Info:" & vbCrLf & _
+               "Name: " & lblInfo.Name & vbCrLf & _
+               "ID: " & lblInfo.LabelId & vbCrLf & _
+               "Description: " & lblInfo.Description, vbInformation
+    End If
+
+    ' Clean up
+    Set lblInfo = Nothing
+    Set xlWorkbook = Nothing
+End Sub
+
+Yes, you can retrieve the lblInfo object and its associated properties in Excel VBA when a sensitivity label is applied. The SensitivityLabel object in Excel provides information about the applied label, such as its name and ID, through the GetLabelInfo method.
+
+Example: Retrieve Label Information in Excel VBA
+Here’s how you can check if a sensitivity label is applied to a workbook and retrieve its details:
+
+vba
+Copy code
+Sub GetSensitivityLabelInfo()
+    Dim lblInfo As Office.LabelInfo
+    Dim xlWorkbook As Workbook
+    
+    ' Reference the active workbook (or replace with specific workbook)
+    Set xlWorkbook = ThisWorkbook
+
+    On Error Resume Next
+    ' Get label information
+    Set lblInfo = xlWorkbook.SensitivityLabel.GetLabelInfo()
+    On Error GoTo 0
+
+    If lblInfo Is Nothing Then
+        MsgBox "No sensitivity label applied to the workbook.", vbInformation
+    Else
+        ' Display label details
+        MsgBox "Sensitivity Label Info:" & vbCrLf & _
+               "Name: " & lblInfo.Name & vbCrLf & _
+               "ID: " & lblInfo.LabelId & vbCrLf & _
+               "Description: " & lblInfo.Description, vbInformation
+    End If
+
+    ' Clean up
+    Set lblInfo = Nothing
+    Set xlWorkbook = Nothing
+End Sub
+
+Explanation of the Code
+Retrieve Label Information:
+
+xlWorkbook.SensitivityLabel.GetLabelInfo() retrieves the label details applied to the workbook.
+Handle Cases Without a Label:
+
+If no label is applied, lblInfo will return Nothing.
+Display Label Details:
+
+You can access properties like:
+lblInfo.Name: The name of the sensitivity label.
+lblInfo.LabelId: The unique ID (GUID) of the label.
+lblInfo.Description: A description of the label.
+Workbook Reference:
+
+Replace ThisWorkbook with a specific workbook object if needed.
