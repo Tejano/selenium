@@ -1,4 +1,5 @@
 1. Find All Dependencies for the Table
+
 This query provides all objects that depend on the table dbo.TableName:
 
 SELECT OBJECT_NAME(referencing_id) AS DependentObjectName, 
@@ -7,9 +8,36 @@ SELECT OBJECT_NAME(referencing_id) AS DependentObjectName,
 FROM sys.sql_expression_dependencies
 WHERE referenced_id = OBJECT_ID('dbo.TableName');
 
-2. List Objects Where dbo.TableName Is Used
-This query checks all objects in the database for references to dbo.TableName:
+
+--2. List Objects Where dbo.TableName Is Used
+--This query checks all objects in the database for references to dbo.TableName:
+
 SELECT o.name AS ObjectName, o.type_desc AS ObjectType
 FROM sys.objects o
 INNER JOIN sys.sql_modules m ON o.object_id = m.object_id
 WHERE m.definition LIKE '%dbo.TableName%';
+
+
+--3. Find Objects Referencing Specific Columns
+--Use sys.sql_modules to search for references to the specific columns:
+
+SELECT o.name AS ObjectName,
+       o.type_desc AS ObjectType,
+       m.definition
+FROM sys.objects o
+INNER JOIN sys.sql_modules m ON o.object_id = m.object_id
+WHERE m.definition LIKE '%YourColumnName%' -- Replace with the column name
+  AND o.type IN ('P', 'V', 'FN', 'TR');    -- P = Stored Procedure, V = View, FN = Function, TR = Trigger
+  
+  
+--4. Check for INSERT or UPDATE Operations
+--Filter objects to find where the column is being inserted into or updated in other tables:
+
+SELECT o.name AS ObjectName,
+       o.type_desc AS ObjectType,
+       m.definition
+FROM sys.objects o
+INNER JOIN sys.sql_modules m ON o.object_id = m.object_id
+WHERE m.definition LIKE '%INSERT%'
+  AND m.definition LIKE '%YourColumnName%'
+  AND o.type = 'P'; -- Focus on stored procedures
