@@ -1,0 +1,15 @@
+1. Find All Dependencies for the Table
+This query provides all objects that depend on the table dbo.TableName:
+
+SELECT OBJECT_NAME(referencing_id) AS DependentObjectName, 
+       OBJECT_NAME(referenced_id) AS ReferencedObjectName,
+       is_ambiguous
+FROM sys.sql_expression_dependencies
+WHERE referenced_id = OBJECT_ID('dbo.TableName');
+
+2. List Objects Where dbo.TableName Is Used
+This query checks all objects in the database for references to dbo.TableName:
+SELECT o.name AS ObjectName, o.type_desc AS ObjectType
+FROM sys.objects o
+INNER JOIN sys.sql_modules m ON o.object_id = m.object_id
+WHERE m.definition LIKE '%dbo.TableName%';
