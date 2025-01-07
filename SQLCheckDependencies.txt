@@ -60,3 +60,34 @@ WHERE m.definition LIKE '%INSERT%'
   AND o.type IN ('P', 'V', 'FN', 'TR'); -- Stored Procedures, Views, Functions, Triggers
 
 
+--Filter by Columns:
+
+--The sys.columns table is used to verify the column exists in the table. This eliminates false matches where the column does not exist.
+--Restrict to Relevant Tables:
+
+--The query only considers tables where the column is explicitly referenced in the SQL logic.
+--Relevant SQL Objects:
+
+--Filters to relevant object types (P, V, FN, TR) for stored procedures, views, functions, or triggers.
+
+--Fallback: Manual Inspection
+--If there are still issues (e.g., dynamic SQL), use this alternative to locate exact references:
+
+SELECT o.name AS ObjectName,
+       o.type_desc AS ObjectType,
+       m.definition
+FROM sys.objects o
+INNER JOIN sys.sql_modules m ON o.object_id = m.object_id
+WHERE m.definition LIKE '%YourColumnName%'
+  AND m.definition LIKE '%YourTableName%';
+
+--Common Issues and Solutions
+--Dynamic SQL:
+
+--If stored procedures use dynamic SQL to construct queries, manual review is necessary as sys.sql_modules cannot parse dynamic SQL content.
+--Ambiguity:
+
+--Ensure table and column names are unique or fully qualified (e.g., dbo.YourTableName).
+--Case Sensitivity:
+
+--Adjust the case of table/column names if the database is case-sensitive.
