@@ -52,9 +52,11 @@ SELECT DISTINCT
        m.definition AS ObjectDefinition
 FROM sys.sql_modules m
 INNER JOIN sys.objects o ON m.object_id = o.object_id
-INNER JOIN sys.tables t ON m.definition LIKE '%[' + t.name + ']%'
+INNER JOIN sys.columns c ON c.name = 'YourColumnName'
+INNER JOIN sys.tables t ON t.object_id = c.object_id
 WHERE m.definition LIKE '%INSERT%' 
+  AND m.definition LIKE '%[' + t.name + ']%'
   AND m.definition LIKE '%YourColumnName%'
-  AND m.definition LIKE '%YourTableName%'
-  AND o.type = 'P'; -- Focus on stored procedures
+  AND o.type IN ('P', 'V', 'FN', 'TR'); -- Stored Procedures, Views, Functions, Triggers
+
 
