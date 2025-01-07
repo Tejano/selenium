@@ -92,10 +92,19 @@ WHERE m.definition LIKE '%YourColumnName%'
 
 --Adjust the case of table/column names if the database is case-sensitive.
 
---Refresh the Views
+1. Identify Affected Views
+SELECT o.name AS ViewName
+FROM sys.objects o
+INNER JOIN sys.sql_modules m ON o.object_id = m.object_id
+WHERE o.type = 'V' -- V for Views
+  AND m.definition LIKE '%YourColumnName%';
+
+2. Check View Definitions
+EXEC sp_helptext 'ViewName';
+
+-- 3. Refresh the Views
 --If the column alteration affects the schema (e.g., changes the data type or precision), you should refresh the view to ensure it uses the updated schema:
 EXEC sp_refreshview 'ViewName';
-
 
 --Automate View Refresh (Optional)
 --If many views reference the table, you can automate the refresh process
