@@ -91,3 +91,30 @@ WHERE m.definition LIKE '%YourColumnName%'
 --Case Sensitivity:
 
 --Adjust the case of table/column names if the database is case-sensitive.
+
+--Refresh the Views
+--If the column alteration affects the schema (e.g., changes the data type or precision), you should refresh the view to ensure it uses the updated schema:
+EXEC sp_refreshview 'ViewName';
+
+
+--Automate View Refresh (Optional)
+--If many views reference the table, you can automate the refresh process
+
+DECLARE ViewCursor CURSOR FOR
+SELECT OBJECT_NAME(object_id)
+FROM sys.sql_expression_dependencies
+WHERE referenced_id = OBJECT_ID('dbo.YourTableName')
+      AND is_ambiguous = 0;
+
+OPEN ViewCursor;
+
+FETCH NEXT FROM ViewCursor INTO @ViewName;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    EXEC sp_refreshview @ViewName;
+    FETCH NEXT FROM ViewCursor INTO @ViewName;
+END;
+
+CLOSE ViewCursor;
+DEALLOCATE ViewCursor;
