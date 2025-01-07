@@ -41,3 +41,13 @@ INNER JOIN sys.sql_modules m ON o.object_id = m.object_id
 WHERE m.definition LIKE '%INSERT%'
   AND m.definition LIKE '%YourColumnName%'
   AND o.type = 'P'; -- Focus on stored procedures
+
+--Step 5. Identify Target Tables for Alteration
+--If the column is inserted into other tables, identify those tables using the following query:
+SELECT DISTINCT t.name AS TargetTable
+FROM sys.sql_modules m
+INNER JOIN sys.objects o ON m.object_id = o.object_id
+INNER JOIN sys.tables t ON m.definition LIKE '%' + t.name + '%'
+WHERE m.definition LIKE '%YourColumnName%'
+  AND m.definition LIKE '%INSERT%'
+  AND o.type = 'P'; -- Focus on stored procedures
