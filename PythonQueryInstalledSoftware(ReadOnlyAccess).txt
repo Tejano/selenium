@@ -57,3 +57,18 @@ Execution:
 Save this script to a file (e.g., list_installed_apps_machine.py).
 Run it using your Python interpreter. Since you're only reading the registry, admin privileges are not required.
 This approach ensures you can list globally installed applications without needing to modify the system or require elevated permissions.
+
+VS Code:
+4. Configure the Python Interpreter
+In VS Code, open your Python file.
+Select the Python interpreter:
+Press Ctrl + Shift + P to open the Command Palette.
+Type and select "Python: Select Interpreter".
+Choose the Python interpreter installed on your system (e.g., Python 3.x).
+
+5. Run the Script
+Open the file containing the script (e.g., list_installed_apps.py).
+Run the script:
+Press F5 to start debugging, or
+Press Ctrl + F5 to run without debugging.
+View the output in the Terminal panel at the bottom of VS Code.
