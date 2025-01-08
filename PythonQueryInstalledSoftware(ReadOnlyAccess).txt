@@ -72,3 +72,99 @@ Run the script:
 Press F5 to start debugging, or
 Press Ctrl + F5 to run without debugging.
 View the output in the Terminal panel at the bottom of VS Code.
+
+
+
+Below are examples of how to modify the script to save the results to either a text file or an Excel file.
+
+1. Write Results to a Text File
+import winreg
+
+def get_installed_software_machine():
+    registry_paths = [
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+        r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+    ]
+
+    installed_apps = []
+
+    for subkey in registry_paths:
+        try:
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, subkey) as key:
+                for i in range(winreg.QueryInfoKey(key)[0]):
+                    try:
+                        subkey_name = winreg.EnumKey(key, i)
+                        with winreg.OpenKey(key, subkey_name) as app_key:
+                            app_name = winreg.QueryValueEx(app_key, "DisplayName")[0]
+                            app_version = winreg.QueryValueEx(app_key, "DisplayVersion")[0] if 'DisplayVersion' in [winreg.EnumValue(app_key, j)[0] for j in range(winreg.QueryInfoKey(app_key)[1])] else 'N/A'
+                            installed_apps.append((app_name, app_version))
+                    except (FileNotFoundError, OSError, IndexError):
+                        pass
+        except FileNotFoundError:
+            continue
+
+    return installed_apps
+
+if __name__ == "__main__":
+    apps = get_installed_software_machine()
+    with open("installed_apps.txt", "w", encoding="utf-8") as file:
+        file.write(f"{'Application Name':<50} {'Version':<20}\n")
+        file.write("-" * 70 + "\n")
+        for name, version in sorted(apps):
+            file.write(f"{name:<50} {version:<20}\n")
+    print("Results saved to 'installed_apps.txt'")
+	
+2. Write Results to an Excel File	
+
+This script uses the openpyxl library to create an Excel file.
+
+Install the openpyxl Library:
+Run the following command to install the library:
+
+pip install openpyxl
+
+Script to Write Results to Excel:
+
+import winreg
+from openpyxl import Workbook
+
+def get_installed_software_machine():
+    registry_paths = [
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+        r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+    ]
+
+    installed_apps = []
+
+    for subkey in registry_paths:
+        try:
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, subkey) as key:
+                for i in range(winreg.QueryInfoKey(key)[0]):
+                    try:
+                        subkey_name = winreg.EnumKey(key, i)
+                        with winreg.OpenKey(key, subkey_name) as app_key:
+                            app_name = winreg.QueryValueEx(app_key, "DisplayName")[0]
+                            app_version = winreg.QueryValueEx(app_key, "DisplayVersion")[0] if 'DisplayVersion' in [winreg.EnumValue(app_key, j)[0] for j in range(winreg.QueryInfoKey(app_key)[1])] else 'N/A'
+                            installed_apps.append((app_name, app_version))
+                    except (FileNotFoundError, OSError, IndexError):
+                        pass
+        except FileNotFoundError:
+            continue
+
+    return installed_apps
+
+if __name__ == "__main__":
+    apps = get_installed_software_machine()
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Installed Applications"
+    
+    # Write headers
+    sheet.append(["Application Name", "Version"])
+    
+    # Write app data
+    for name, version in sorted(apps):
+        sheet.append([name, version])
+    
+    workbook.save("installed_apps.xlsx")
+    print("Results saved to 'installed_apps.xlsx'")
