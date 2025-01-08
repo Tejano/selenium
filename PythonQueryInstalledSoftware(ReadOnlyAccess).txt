@@ -1,0 +1,59 @@
+
+Script to Query Installed Software (Read Access Only):
+
+import winreg
+
+def get_installed_software_machine():
+    registry_paths = [
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+        r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+    ]
+
+    installed_apps = []
+
+    for subkey in registry_paths:
+        try:
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, subkey) as key:
+                for i in range(winreg.QueryInfoKey(key)[0]):
+                    try:
+                        subkey_name = winreg.EnumKey(key, i)
+                        with winreg.OpenKey(key, subkey_name) as app_key:
+                            app_name = winreg.QueryValueEx(app_key, "DisplayName")[0]
+                            app_version = winreg.QueryValueEx(app_key, "DisplayVersion")[0] if 'DisplayVersion' in [winreg.EnumValue(app_key, j)[0] for j in range(winreg.QueryInfoKey(app_key)[1])] else 'N/A'
+                            installed_apps.append((app_name, app_version))
+                    except (FileNotFoundError, OSError, IndexError):
+                        # Skip keys that don't have a DisplayName or are inaccessible
+                        pass
+        except FileNotFoundError:
+            # Skip if the registry path doesn't exist
+            continue
+
+    return installed_apps
+
+if __name__ == "__main__":
+    apps = get_installed_software_machine()
+    if apps:
+        print(f"{'Application Name':<50} {'Version':<20}")
+        print("-" * 70)
+        for name, version in sorted(apps):
+            print(f"{name:<50} {version:<20}")
+    else:
+        print("No applications found in HKEY_LOCAL_MACHINE.")
+		
+Explanation:
+Registry Paths:
+
+The script queries both 32-bit (SOFTWARE\WOW6432Node) and 64-bit (SOFTWARE) application paths under HKEY_LOCAL_MACHINE.
+Read-Only Access:
+
+The script uses winreg.OpenKey() to open the registry keys in read-only mode (default behavior).
+Error Handling:
+
+It skips registry keys that don't have a DisplayName or DisplayVersion value.
+Output:
+
+The script prints a list of installed applications with their names and versions.
+Execution:
+Save this script to a file (e.g., list_installed_apps_machine.py).
+Run it using your Python interpreter. Since you're only reading the registry, admin privileges are not required.
+This approach ensures you can list globally installed applications without needing to modify the system or require elevated permissions.
