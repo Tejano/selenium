@@ -151,3 +151,50 @@ If retrieving the label using GetLabelInfo is unsupported, you may still be able
     Set xlWorkbook = Nothing
     Set xlApp = Nothing
 End Sub
+Complete Updated Code Example
+Here’s the complete, updated subroutine:
+Sub ApplySensitivityLabel()
+    Dim xlApp As Object
+    Dim xlWorkbook As Object
+    Dim lblInfo As Object
+    Dim filePath As String
+
+    ' Initialize Excel application
+    Set xlApp = CreateObject("Excel.Application")
+    xlApp.Visible = False
+
+    ' Create a new workbook
+    Set xlWorkbook = xlApp.Workbooks.Add
+
+    ' Specify file path
+    filePath = "C:\Users\YourUsername\Documents\GeneratedFile.xlsx"
+
+    ' Apply sensitivity label
+    On Error Resume Next
+    Set lblInfo = xlWorkbook.SensitivityLabel.CreateLabelInfo()
+    If Not lblInfo Is Nothing Then
+        lblInfo.LabelId = "Your-Label-GUID-Here" ' Replace with your Label GUID
+        lblInfo.SetLabel "Automated justification message"
+    Else
+        MsgBox "Unable to set sensitivity label. Ensure the LabelId is valid.", vbCritical
+    End If
+    On Error GoTo 0
+
+    ' Save the workbook
+    On Error Resume Next
+    xlWorkbook.SaveAs filePath, 51 ' Explicitly specify the file format
+    If Err.Number <> 0 Then
+        MsgBox "Error saving file: " & Err.Description, vbCritical
+        Err.Clear
+    Else
+        MsgBox "File saved successfully at " & filePath
+    End If
+    On Error GoTo 0
+
+    ' Cleanup
+    xlWorkbook.Close False
+    xlApp.Quit
+    Set lblInfo = Nothing
+    Set xlWorkbook = Nothing
+    Set xlApp = Nothing
+End Sub
