@@ -187,3 +187,46 @@ Sub ExportExcelWithMIP()
 
     MsgBox "Excel file exported and MIP label applied successfully!"
 End Sub
+Not all builds of Office expose the SensitivityLabel property programmatically. To verify, use Immediate Window in the VBA editor:
+
+Debug.Print xlWorkbook.SensitivityLabel Is Nothing
+
+If True is returned, the property is not available in your version of Excel.
+
+
+
+
+
+4. Late Binding as a Workaround
+If issues persist when referencing the libraries in Access, you can try late binding. Late binding eliminates the dependency on specific versions of the 
+referenced libraries, which might help if corporate policies are restricting access.
+Sub ApplySensitivityLabelLateBinding()
+    Dim xlApp As Object
+    Dim xlWorkbook As Object
+    Dim lblInfo As Object
+
+    ' Create Excel application
+    Set xlApp = CreateObject("Excel.Application")
+    xlApp.Visible = False
+    Set xlWorkbook = xlApp.Workbooks.Open("C:\Path\To\File.xlsx")
+
+    ' Access Sensitivity Label information
+    On Error Resume Next
+    Set lblInfo = xlWorkbook.SensitivityLabel.CreateLabelInfo()
+    If lblInfo Is Nothing Then
+        MsgBox "SensitivityLabel is not available or no label is applied."
+    Else
+        lblInfo.LabelId = "Your-Label-GUID-Here"
+        lblInfo.SetLabel "Automated justification message"
+        xlWorkbook.Save
+        MsgBox "Label applied successfully!"
+    End If
+    On Error GoTo 0
+
+    ' Cleanup
+    xlWorkbook.Close False
+    xlApp.Quit
+    Set lblInfo = Nothing
+    Set xlWorkbook = Nothing
+    Set xlApp = Nothing
+End Sub
