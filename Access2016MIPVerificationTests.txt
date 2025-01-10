@@ -109,3 +109,45 @@ Sub GenerateAndVerifyExcelWithMIP()
     Set xlWorkbook = Nothing
     Set xlApp = Nothing
 End Sub
+
+Alternative Approach: Apply Labels Instead of Checking
+If retrieving the label using GetLabelInfo is unsupported, you may still be able
+ to apply a label programmatically using the SetLabel method.
+ 
+ Sub ApplySensitivityLabel()
+    Dim xlApp As Object
+    Dim xlWorkbook As Object
+    Dim lblInfo As Object
+
+    ' Create Excel application
+    Set xlApp = CreateObject("Excel.Application")
+    xlApp.Visible = False
+
+    ' Create or open workbook
+    Set xlWorkbook = xlApp.Workbooks.Add
+
+    ' Save the workbook to ensure APIs work
+    xlWorkbook.SaveAs "C:\Path\To\GeneratedFile.xlsx"
+
+    ' Apply sensitivity label
+    On Error Resume Next
+    Set lblInfo = xlWorkbook.SensitivityLabel.CreateLabelInfo()
+    If Not lblInfo Is Nothing Then
+        lblInfo.LabelId = "Your-Label-GUID-Here" ' Replace with valid GUID
+        lblInfo.SetLabel "Automated justification"
+        MsgBox "Label applied successfully!"
+    Else
+        MsgBox "Unable to apply sensitivity label. Ensure LabelId is valid.", vbCritical
+    End If
+    On Error GoTo 0
+
+    ' Save and close
+    xlWorkbook.Save
+    xlWorkbook.Close False
+    xlApp.Quit
+
+    ' Cleanup
+    Set lblInfo = Nothing
+    Set xlWorkbook = Nothing
+    Set xlApp = Nothing
+End Sub
