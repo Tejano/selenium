@@ -52,3 +52,60 @@ Sub TestSensitivityLabelInExcel()
     End If
     On Error GoTo 0
 End Sub
+
+Revised Example Code for Debugging
+Here’s an updated version of the code with enhanced debugging to validate the label application:
+Sub GenerateAndVerifyExcelWithMIP()
+    Dim xlApp As Object
+    Dim xlWorkbook As Object
+    Dim xlWorksheet As Object
+    Dim lblInfo As Object
+    Dim filePath As String
+
+    ' Initialize Excel application
+    Set xlApp = CreateObject("Excel.Application")
+    xlApp.Visible = False
+
+    ' Create a new workbook
+    Set xlWorkbook = xlApp.Workbooks.Add
+    Set xlWorksheet = xlWorkbook.Worksheets(1)
+
+    ' Add sample data to the worksheet
+    xlWorksheet.Cells(1, 1).Value = "Sample Data"
+
+    ' Apply a sensitivity label
+    On Error Resume Next
+    Set lblInfo = xlWorkbook.SensitivityLabel.CreateLabelInfo()
+    If Not lblInfo Is Nothing Then
+        lblInfo.LabelId = "Your-Label-GUID-Here" ' Replace with the GUID provided by IT
+        lblInfo.SetLabel "Automated justification message"
+        xlWorkbook.Save
+        MsgBox "Label applied successfully!"
+    Else
+        MsgBox "Unable to set sensitivity label. Ensure the LabelId is correct.", vbCritical
+        xlWorkbook.Close False
+        xlApp.Quit
+        Exit Sub
+    End If
+    On Error GoTo 0
+
+    ' Save the workbook
+    filePath = "C:\Path\To\GeneratedFile.xlsx"
+    xlWorkbook.SaveAs filePath
+
+    ' Verify label application
+    Dim appliedLblInfo As Object
+    Set appliedLblInfo = xlWorkbook.SensitivityLabel.GetLabelInfo()
+    If Not appliedLblInfo Is Nothing Then
+        MsgBox "Label successfully applied: " & appliedLblInfo.Name
+    Else
+        MsgBox "Label not applied correctly.", vbCritical
+    End If
+
+    ' Cleanup
+    xlWorkbook.Close False
+    xlApp.Quit
+    Set lblInfo = Nothing
+    Set xlWorkbook = Nothing
+    Set xlApp = Nothing
+End Sub
