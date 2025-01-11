@@ -151,6 +151,7 @@ If retrieving the label using GetLabelInfo is unsupported, you may still be able
     Set xlWorkbook = Nothing
     Set xlApp = Nothing
 End Sub
+
 Complete Updated Code Example
 Here’s the complete, updated subroutine:
 Sub ApplySensitivityLabel()
@@ -195,6 +196,42 @@ Sub ApplySensitivityLabel()
     xlWorkbook.Close False
     xlApp.Quit
     Set lblInfo = Nothing
+    Set xlWorkbook = Nothing
+    Set xlApp = Nothing
+End Sub
+2. Test Saving Without MIP
+To confirm that the issue is related to sensitivity labels and not the SaveAs method itself,
+ try saving the workbook without applying the label.
+ 
+ Sub TestSaveWorkbook()
+    Dim xlApp As Object
+    Dim xlWorkbook As Object
+    Dim filePath As String
+
+    ' Initialize Excel application
+    Set xlApp = CreateObject("Excel.Application")
+    xlApp.Visible = False
+
+    ' Create a new workbook
+    Set xlWorkbook = xlApp.Workbooks.Add
+
+    ' Specify file path
+    filePath = "C:\Temp\GeneratedFile.xlsx"
+
+    ' Save the workbook
+    On Error Resume Next
+    xlWorkbook.SaveAs filePath, 51 ' Explicitly specify the file format
+    If Err.Number <> 0 Then
+        MsgBox "Error saving file: " & Err.Description, vbCritical
+        Err.Clear
+    Else
+        MsgBox "File saved successfully at " & filePath
+    End If
+    On Error GoTo 0
+
+    ' Cleanup
+    xlWorkbook.Close False
+    xlApp.Quit
     Set xlWorkbook = Nothing
     Set xlApp = Nothing
 End Sub
