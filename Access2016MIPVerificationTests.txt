@@ -235,3 +235,63 @@ To confirm that the issue is related to sensitivity labels and not the SaveAs me
     Set xlWorkbook = Nothing
     Set xlApp = Nothing
 End Sub
+
+
+Sub ApplySensitivityLabelWithErrorHandling()
+    Dim xlApp As Object
+    Dim xlWorkbook As Object
+    Dim lblInfo As Object
+    Dim filePath As String
+
+    On Error GoTo ErrorHandler ' Set error handler
+
+    ' Initialize Excel application
+    Set xlApp = CreateObject("Excel.Application")
+    xlApp.Visible = False
+
+    ' Create a new workbook
+    Set xlWorkbook = xlApp.Workbooks.Add
+
+    ' Specify file path
+    filePath = "C:\Temp\GeneratedFile.xlsx"
+
+    ' Apply sensitivity label
+    On Error Resume Next
+    Set lblInfo = xlWorkbook.SensitivityLabel.CreateLabelInfo()
+    If Not lblInfo Is Nothing Then
+        lblInfo.LabelId = "Your-Label-GUID-Here" ' Replace with your actual Label GUID
+        lblInfo.SetLabel "Automated justification message"
+
+        ' Ensure label is applied
+        xlWorkbook.SensitivityLabel.SetLabel lblInfo, lblInfo
+        Debug.Print "Label successfully applied."
+    Else
+        Debug.Print "Failed to apply sensitivity label."
+        MsgBox "Could not apply sensitivity label. File will not be saved.", vbExclamation
+        GoTo Cleanup
+    End If
+    On Error GoTo ErrorHandler ' Restore error handler
+
+    ' Save the workbook
+    xlWorkbook.SaveAs filePath, 51 ' Explicitly specify .xlsx format
+    Debug.Print "Workbook saved successfully at " & filePath
+    MsgBox "File saved with sensitivity label at: " & filePath, vbInformation
+
+Cleanup:
+    ' Cleanup resources
+    On Error Resume Next
+    xlWorkbook.Close False
+    xlApp.Quit
+    Set lblInfo = Nothing
+    Set xlWorkbook = Nothing
+    Set xlApp = Nothing
+    Exit Sub
+
+ErrorHandler:
+    ' Log error and display message
+    Debug.Print "Error " & Err.Number & ": " & Err.Description
+    MsgBox "An error occurred: " & Err.Description & " (Error " & Err.Number & ")", vbCritical
+
+    ' Cleanup resources in case of error
+    Resume Cleanup
+End Sub
