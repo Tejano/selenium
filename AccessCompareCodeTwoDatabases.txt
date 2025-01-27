@@ -1,0 +1,136 @@
+Sub CompareDatabases(dbPath1 As String, dbPath2 As String)
+    Dim db1 As Object
+    Dim db2 As Object
+    Dim obj1 As AccessObject
+    Dim obj2 As AccessObject
+    Dim objType As String
+    Dim areSame As Boolean
+    Dim msg As String
+    
+    ' Open the two databases
+    Set db1 = CreateObject("Access.Application")
+    db1.OpenCurrentDatabase dbPath1
+    Set db2 = CreateObject("Access.Application")
+    db2.OpenCurrentDatabase dbPath2
+
+    ' Compare VBA modules
+    CompareModules db1, db2
+    
+    ' Compare Forms
+    CompareObjects db1, db2, acForm, "Forms"
+    
+    ' Compare Reports
+    CompareObjects db1, db2, acReport, "Reports"
+    
+    ' Compare Queries
+    CompareQueries db1, db2, "Queries"
+    
+    ' Close the databases
+    db1.Quit
+    db2.Quit
+    
+    MsgBox "Comparison complete. Check the Immediate Window for results.", vbInformation
+End Sub
+
+Sub CompareModules(db1 As Object, db2 As Object)
+    Dim obj1 As Object
+    Dim obj2 As Object
+    Dim areSame As Boolean
+    Dim msg As String
+    
+    Debug.Print "Comparing Modules..."
+    For Each obj1 In db1.VBE.VBProjects(1).VBComponents
+        If obj1.Type = vbext_ct_StdModule Or obj1.Type = vbext_ct_ClassModule Then
+            On Error Resume Next
+            Set obj2 = db2.VBE.VBProjects(1).VBComponents(obj1.Name)
+            On Error GoTo 0
+            
+            If Not obj2 Is Nothing Then
+                areSame = (obj1.CodeModule.Lines(1, obj1.CodeModule.CountOfLines) = _
+                           obj2.CodeModule.Lines(1, obj2.CodeModule.CountOfLines))
+                msg = "Module: " & obj1.Name & " - " & IIf(areSame, "No Differences", "Differences Found")
+            Else
+                msg = "Module: " & obj1.Name & " not found in db2"
+            End If
+            Debug.Print msg
+        End If
+    Next
+End Sub
+
+Sub CompareObjects(db1 As Object, db2 As Object, objType As AcObjectType, objTypeName As String)
+    Dim obj1 As AccessObject
+    Dim obj2 As AccessObject
+    Dim areSame As Boolean
+    Dim msg As String
+    
+    Debug.Print "Comparing " & objTypeName & "..."
+    For Each obj1 In db1.CurrentProject.AllObjects(objType)
+        On Error Resume Next
+        Set obj2 = db2.CurrentProject.AllObjects(objType)(obj1.Name)
+        On Error GoTo 0
+        
+        If Not obj2 Is Nothing Then
+            Dim tempFile1 As String, tempFile2 As String
+            tempFile1 = Environ("Temp") & "\" & obj1.Name & "_" & objTypeName & "_1.txt"
+            tempFile2 = Environ("Temp") & "\" & obj1.Name & "_" & objTypeName & "_2.txt"
+            
+            ' Export objects to temporary files
+            db1.Application.SaveAsText objType, obj1.Name, tempFile1
+            db2.Application.SaveAsText objType, obj1.Name, tempFile2
+            
+            ' Compare file contents
+            areSame = CompareFileContents(tempFile1, tempFile2)
+            msg = objTypeName & ": " & obj1.Name & " - " & IIf(areSame, "No Differences", "Differences Found")
+            
+            ' Clean up temporary files
+            Kill tempFile1
+            Kill tempFile2
+        Else
+            msg = objTypeName & ": " & obj1.Name & " not found in db2"
+        End If
+        Debug.Print msg
+    Next
+End Sub
+
+Sub CompareQueries(db1 As Object, db2 As Object, objTypeName As String)
+    Dim obj1 As AccessObject
+    Dim obj2 As AccessObject
+    Dim areSame As Boolean
+    Dim msg As String
+    
+    Debug.Print "Comparing " & objTypeName & "..."
+    For Each obj1 In db1.CurrentProject.AllQueries
+        On Error Resume Next
+        Set obj2 = db2.CurrentProject.AllQueries(obj1.Name)
+        On Error GoTo 0
+        
+        If Not obj2 Is Nothing Then
+            areSame = (db1.Application.CurrentDb.QueryDefs(obj1.Name).SQL = _
+                       db2.Application.CurrentDb.QueryDefs(obj1.Name).SQL)
+            msg = objTypeName & ": " & obj1.Name & " - " & IIf(areSame, "No Differences", "Differences Found")
+        Else
+            msg = objTypeName & ": " & obj1.Name & " not found in db2"
+        End If
+        Debug.Print msg
+    Next
+End Sub
+
+Function CompareFileContents(file1 As String, file2 As String) As Boolean
+    Dim file1Contents As String, file2Contents As String
+    Dim f1 As Integer, f2 As Integer
+    
+    ' Read the first file
+    f1 = FreeFile
+    Open file1 For Input As #f1
+    file1Contents = Input(LOF(f1), f1)
+    Close #f1
+    
+    ' Read the second file
+    f2 = FreeFile
+    Open file2 For Input As #f2
+    file2Contents = Input(LOF(f2), f2)
+    Close #f2
+    
+    ' Compare the contents
+    CompareFileContents = (file1Contents = file2Contents)
+End Function
