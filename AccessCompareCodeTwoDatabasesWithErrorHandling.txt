@@ -76,36 +76,43 @@ Sub CompareObjects(db1 As Object, db2 As Object, objType As AcObjectType, objTyp
 
     Dim obj1 As AccessObject
     Dim obj2 As AccessObject
+    Dim tempFile1 As String
+    Dim tempFile2 As String
     Dim areSame As Boolean
     Dim msg As String
 
     Debug.Print "Comparing " & objTypeName & "..."
-    
+
     ' Loop through all objects of the specified type in db1
     For Each obj1 In db1.CurrentProject.AllObjects(objType)
         On Error Resume Next
-        Set obj2 = db2.CurrentProject.AllObjects(objType)(obj1.Name)
+        ' Check if the object exists in db2
+        Set obj2 = Nothing
+        For Each obj2 In db2.CurrentProject.AllObjects(objType)
+            If obj2.Name = obj1.Name Then Exit For
+        Next
         On Error GoTo 0
-        
-        If Not obj2 Is Nothing Then
-            Dim tempFile1 As String, tempFile2 As String
+
+        If Not obj2 Is Nothing And obj2.Name = obj1.Name Then
+            ' Define temporary file paths
             tempFile1 = Environ("Temp") & "\" & obj1.Name & "_" & objTypeName & "_1.txt"
             tempFile2 = Environ("Temp") & "\" & obj1.Name & "_" & objTypeName & "_2.txt"
-            
-            ' Export objects to temporary files using Application.SaveAsText
+
+            ' Export objects to temporary files
             db1.Application.SaveAsText objType, obj1.Name, tempFile1
             db2.Application.SaveAsText objType, obj1.Name, tempFile2
-            
+
             ' Compare the contents of the files
             areSame = CompareFileContents(tempFile1, tempFile2)
             msg = objTypeName & ": " & obj1.Name & " - " & IIf(areSame, "No Differences", "Differences Found")
-            
+
             ' Clean up temporary files
             Kill tempFile1
             Kill tempFile2
         Else
             msg = objTypeName & ": " & obj1.Name & " not found in db2"
         End If
+
         Debug.Print msg
     Next
 
@@ -115,6 +122,7 @@ ErrHandler:
     Debug.Print "Error in CompareObjects (" & objTypeName & "): " & Err.Description & " (Error #" & Err.Number & ")"
     Resume Next
 End Sub
+
 
 
 
