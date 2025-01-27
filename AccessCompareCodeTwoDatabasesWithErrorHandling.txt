@@ -171,3 +171,29 @@ ErrHandler:
     Debug.Print "Error in CompareFileContents: " & Err.Description & " (Error #" & Err.Number & ")"
     CompareFileContents = False
 End Function
+
+Key Error Handling Features:
+Global Error Handling:
+
+Added a global error handler (ErrHandler) for each subroutine and function.
+Logs errors to the Immediate Window with a description and error number.
+Graceful Recovery:
+
+If an error occurs in comparing a specific object, the routine continues with the next object.
+Temporary files are always cleaned up to prevent leftover files from accumulating.
+Cleanup on Failure:
+
+Ensures both databases are closed properly even if an error occurs.
+Error Logging:
+
+Logs specific details about the error and the object type (e.g., "Module", "Form") for easy debugging.
+
+How to Use:
+Run the Subroutine: Call the CompareDatabases subroutine as before:
+
+CompareDatabases "C:\Path\To\Database1.accdb", "C:\Path\To\Database2.accdb"
+Check the Immediate Window: Errors and results are logged in the Immediate Window for review.
+
+Handle Errors: Review any errors printed in the Immediate Window for debugging. For example:
+
+Error in CompareObjects (Forms): Object not found (Error #3011)
