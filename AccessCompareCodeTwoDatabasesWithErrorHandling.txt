@@ -117,6 +117,7 @@ ErrHandler:
 End Sub
 
 
+
 Sub CompareQueries(db1 As Object, db2 As Object, objTypeName As String)
     On Error GoTo ErrHandler
 
