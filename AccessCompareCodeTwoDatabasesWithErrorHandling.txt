@@ -80,6 +80,8 @@ Sub CompareObjects(db1 As Object, db2 As Object, objType As AcObjectType, objTyp
     Dim msg As String
 
     Debug.Print "Comparing " & objTypeName & "..."
+    
+    ' Loop through all objects of the specified type in db1
     For Each obj1 In db1.CurrentProject.AllObjects(objType)
         On Error Resume Next
         Set obj2 = db2.CurrentProject.AllObjects(objType)(obj1.Name)
@@ -90,11 +92,11 @@ Sub CompareObjects(db1 As Object, db2 As Object, objType As AcObjectType, objTyp
             tempFile1 = Environ("Temp") & "\" & obj1.Name & "_" & objTypeName & "_1.txt"
             tempFile2 = Environ("Temp") & "\" & obj1.Name & "_" & objTypeName & "_2.txt"
             
-            ' Export objects to temporary files
+            ' Export objects to temporary files using Application.SaveAsText
             db1.Application.SaveAsText objType, obj1.Name, tempFile1
             db2.Application.SaveAsText objType, obj1.Name, tempFile2
             
-            ' Compare file contents
+            ' Compare the contents of the files
             areSame = CompareFileContents(tempFile1, tempFile2)
             msg = objTypeName & ": " & obj1.Name & " - " & IIf(areSame, "No Differences", "Differences Found")
             
@@ -113,6 +115,7 @@ ErrHandler:
     Debug.Print "Error in CompareObjects (" & objTypeName & "): " & Err.Description & " (Error #" & Err.Number & ")"
     Resume Next
 End Sub
+
 
 Sub CompareQueries(db1 As Object, db2 As Object, objTypeName As String)
     On Error GoTo ErrHandler
