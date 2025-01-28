@@ -80,20 +80,23 @@ Sub CompareObjects(db1 As Object, db2 As Object, objType As AcObjectType, objTyp
     Dim tempFile2 As String
     Dim areSame As Boolean
     Dim msg As String
+    Dim foundMatch As Boolean
 
     Debug.Print "Comparing " & objTypeName & "..."
 
     ' Loop through all objects of the specified type in db1
     For Each obj1 In db1.CurrentProject.AllObjects(objType)
-        On Error Resume Next
-        ' Check if the object exists in db2
-        Set obj2 = Nothing
-        For Each obj2 In db2.CurrentProject.AllObjects(objType)
-            If obj2.Name = obj1.Name Then Exit For
-        Next
-        On Error GoTo 0
+        foundMatch = False ' Reset match flag for each obj1
 
-        If Not obj2 Is Nothing And obj2.Name = obj1.Name Then
+        ' Look for a matching object in db2
+        For Each obj2 In db2.CurrentProject.AllObjects(objType)
+            If obj2.Name = obj1.Name Then
+                foundMatch = True
+                Exit For
+            End If
+        Next
+
+        If foundMatch Then
             ' Define temporary file paths
             tempFile1 = Environ("Temp") & "\" & obj1.Name & "_" & objTypeName & "_1.txt"
             tempFile2 = Environ("Temp") & "\" & obj1.Name & "_" & objTypeName & "_2.txt"
@@ -122,6 +125,7 @@ ErrHandler:
     Debug.Print "Error in CompareObjects (" & objTypeName & "): " & Err.Description & " (Error #" & Err.Number & ")"
     Resume Next
 End Sub
+
 
 
 
