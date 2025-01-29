@@ -247,3 +247,72 @@ Private Sub Form_Load()
     rs.Close
     Set rs = Nothing
 End Sub
+
+Public Sub CopyDatabaseFromTable(env As String)
+    Dim db As DAO.Database
+    Dim rs As DAO.Recordset
+    Dim fso As Object
+    Dim sourcePath As String
+    Dim destinationPath As String
+    Dim accessName As String
+    Dim folderPath As String
+    Dim tempPath As String
+
+    ' Initialize objects
+    Set db = CurrentDb
+    Set rs = db.OpenRecordset("SELECT * FROM EnvironmentTable WHERE environment = '" & env & "'")
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    ' Ensure the recordset has data
+    If Not rs.EOF Then
+        ' Get the current database path
+        sourcePath = Application.CurrentDb.Name
+        
+        ' Retrieve AccessName and ensure it has the .accdb extension
+        accessName = rs!AccessName
+        If Right(accessName, 6) <> ".accdb" Then
+            accessName = accessName & ".accdb"
+        End If
+        
+        ' Extract folder path and validate if it exists
+        folderPath = rs!destinationPath
+        If Right(folderPath, 1) <> "\" Then folderPath = folderPath & "\"
+        
+        ' Ensure the folder exists
+        If Not fso.FolderExists(folderPath) Then
+            MsgBox "The destination path '" & folderPath & "' does not exist.", vbExclamation
+            Exit Sub
+        End If
+        
+        ' Define the full destination path
+        destinationPath = folderPath & accessName
+        tempPath = folderPath & "TempCopy.accdb"
+        
+        ' Try CompactDatabase to avoid file lock issues
+        On Error Resume Next
+        DBEngine.CompactDatabase sourcePath, tempPath
+        
+        ' Check for errors
+        If Err.Number <> 0 Then
+            MsgBox "Error copying database: " & Err.Description, vbCritical
+            Exit Sub
+        End If
+        Err.Clear
+
+        ' Rename temp copy to final destination
+        If fso.FileExists(tempPath) Then
+            If fso.FileExists(destinationPath) Then fso.DeleteFile destinationPath, True
+            Name tempPath As destinationPath
+            MsgBox "Database copied successfully to " & destinationPath, vbInformation
+        Else
+            MsgBox "Error: Temporary copy was not created.", vbCritical
+        End If
+    Else
+        MsgBox "Environment not found.", vbExclamation
+    End If
+
+    ' Cleanup
+    rs.Close
+    Set rs = Nothing
+    Set fso = Nothing
+End Sub
