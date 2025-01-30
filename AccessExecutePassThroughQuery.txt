@@ -1,0 +1,38 @@
+If you're getting a "Property Not Found" error when executing a Pass-Through (PT) query that inserts records into a table, the issue is likely because PT queries do not return recordsets but Access expects one.
+
+Solution
+Instead of using DoCmd.OpenQuery, you should use DAO.QueryDef.Execute, which is designed for action queries (INSERT, UPDATE, DELETE).
+
+Public Sub ExecutePassThroughQuery(queryName As String)
+    Dim qdf As DAO.QueryDef
+    
+    On Error GoTo ErrorHandler
+
+    ' Reference the saved PT query
+    Set qdf = CurrentDb.QueryDefs(queryName)
+
+    ' Ensure it does not return records
+    qdf.ReturnsRecords = False
+
+    ' Execute the query (works for INSERT, UPDATE, DELETE)
+    qdf.Execute dbFailOnError
+
+    MsgBox "Pass-Through Query executed successfully!", vbInformation
+    
+    ' Cleanup
+    Set qdf = Nothing
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "Error executing Pass-Through Query: " & Err.Description, vbCritical
+    Set qdf = Nothing
+End Sub
+
+How to Use
+Call this function in VBA, replacing "YourPTQueryName" with your actual query name:
+ExecutePassThroughQuery "YourPTQueryName"
+
+Why This Works
+✔ Prevents Property Errors – PT Queries do not return records when used for inserts, so ReturnsRecords = False ensures no attempt is made to fetch results.
+✔ Properly Executes Action Queries – Using .Execute dbFailOnError ensures proper execution and error handling.
+✔ Bypasses Recordset Issues – Unlike DoCmd.OpenQuery, which expects a UI-bound result, .Execute runs queries directly.
