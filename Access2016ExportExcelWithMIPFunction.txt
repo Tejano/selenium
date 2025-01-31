@@ -6,7 +6,9 @@ TableName → The name of the table they want to export
 FilePath → The destination of the exported Excel file
 VBA Code: Export with MIP Label
 
-Function ExportTableWithMIP(TableName As String, FilePath As String)
+Function ExportTableToExcelWithMIP(TableName As String, FilePath As String)
+    On Error GoTo ErrorHandler  ' Enable error handling
+
     Dim xlApp As Object
     Dim xlWB As Object
     Dim lblInfo As Object
@@ -32,16 +34,28 @@ Function ExportTableWithMIP(TableName As String, FilePath As String)
 
     ' Save and close the file
     xlWB.Save
-    xlWB.Close False
-    xlApp.Quit
 
-    ' Cleanup
+Cleanup:  ' Unified cleanup section
+    On Error Resume Next  ' Prevent any further errors during cleanup
+    If Not xlWB Is Nothing Then xlWB.Close False
+    If Not xlApp Is Nothing Then xlApp.Quit
     Set lblInfo = Nothing
     Set xlWB = Nothing
     Set xlApp = Nothing
+    On Error GoTo 0  ' Restore normal error handling
 
     MsgBox "Exported and labeled: " & TableName, vbInformation, "Success"
+    Exit Function  ' Exit function normally
+
+' Error Handling
+ErrorHandler:
+    Dim errorMsg As String
+    errorMsg = "Error " & Err.Number & ": " & Err.Description
+    MsgBox "An error occurred while exporting: " & vbCrLf & errorMsg, vbCritical, "Export Error"
+    Resume Cleanup  ' Always perform cleanup before exiting
+
 End Function
+
 
 Step 2: Instruct the Business Users on How to Use It in a Macro
 Instead of modifying VBA, they continue using Macros:
