@@ -1,0 +1,78 @@
+
+Step 1: Provide This VBA Function
+This function takes two parameters:
+
+TableName → The name of the table they want to export
+FilePath → The destination of the exported Excel file
+VBA Code: Export with MIP Label
+
+Function ExportTableWithMIP(TableName As String, FilePath As String)
+    Dim xlApp As Object
+    Dim xlWB As Object
+    Dim lblInfo As Object
+
+    ' Ensure parameters are valid
+    If TableName = "" Or FilePath = "" Then
+        MsgBox "Table name or file path is missing.", vbExclamation, "Error"
+        Exit Function
+    End If
+
+    ' Export table to Excel
+    DoCmd.TransferSpreadsheet acExport, acSpreadsheetTypeExcel12Xml, TableName, FilePath, True
+
+    ' Open Excel and apply MIP label
+    Set xlApp = CreateObject("Excel.Application")
+    Set xlWB = xlApp.Workbooks.Open(FilePath)
+    
+    ' Apply Sensitivity Label (MIP)
+    Set lblInfo = xlWB.SensitivityLabel.CreateLabelInfo()
+    lblInfo.LabelId = "your-label-guid"  ' Replace with actual label GUID
+    lblInfo.SetLabel = "Confidential Document"  ' Adjust as needed
+    xlWB.SensitivityLabel.SetLabel lblInfo, lblInfo
+
+    ' Save and close the file
+    xlWB.Save
+    xlWB.Close False
+    xlApp.Quit
+
+    ' Cleanup
+    Set lblInfo = Nothing
+    Set xlWB = Nothing
+    Set xlApp = Nothing
+
+    MsgBox "Exported and labeled: " & TableName, vbInformation, "Success"
+End Function
+
+Step 2: Instruct the Business Users on How to Use It in a Macro
+Instead of modifying VBA, they continue using Macros:
+
+Open Access and create a new Macro.
+
+Select "RunCode".
+
+In the "Function Name" field, enter:
+
+ExportTableWithMIP("YourTableName", "C:\Exports\YourFile.xlsx")
+Replace "YourTableName" with the actual table name.
+Replace "C:\Exports\YourFile.xlsx" with the correct file path.
+Save the macro and run it.
+
+Step 3: Optional – Let Users Choose Table & File Path Before Running the Macro
+If the business team wants more flexibility, you can suggest: ✔ Creating a configuration table (tblExportConfig) where they define:
+
+TableName
+FilePath
+ExportFlag (to select which tables to export) ✔ Or using a simple form where they enter the Table Name and File Path before running the macro.
+Final Recommendation for the Business Users
+📌 Option 1 (Recommended for Them):
+
+Keep using Macros, but call the VBA function (ExportTableWithMIP) inside the macro.
+📌 Option 2 (For More Control):
+
+Store export details in a table (tblExportConfig), then run a macro that loops through the table and exports only selected tables.
+📌 Option 3 (For Future Expansion):
+
+If needed, they can add a form to enter table names & file paths before running the macro.
+This approach keeps their process the same but adds MIP labeling with minimal changes. 🚀
+
+Let me know if they need additional customization!
