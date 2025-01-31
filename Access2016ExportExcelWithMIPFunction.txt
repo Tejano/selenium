@@ -29,7 +29,7 @@ Function ExportTableToExcelWithMIP(TableName As String, FilePath As String)
     ' Apply Sensitivity Label (MIP)
     Set lblInfo = xlWB.SensitivityLabel.CreateLabelInfo()
     lblInfo.LabelId = "your-label-guid"  ' Replace with actual label GUID
-    lblInfo.SetLabel = "Confidential Document"  ' Adjust as needed
+    lblInfo.SetLabel "Confidential Document"  ' Adjust as needed
     xlWB.SensitivityLabel.SetLabel lblInfo, lblInfo
 
     ' Save and close the file
