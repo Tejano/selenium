@@ -12,7 +12,8 @@ Function ExportTableToExcelWithMIP(TableName As String, FilePath As String)
     Dim xlApp As Object
     Dim xlWB As Object
     Dim lblInfo As Object
-
+    Dim isSuccess As Boolean  ' Flag to track success
+	
     ' Ensure parameters are valid
     If TableName = "" Or FilePath = "" Then
         MsgBox "Table name or file path is missing.", vbExclamation, "Error"
@@ -34,7 +35,8 @@ Function ExportTableToExcelWithMIP(TableName As String, FilePath As String)
 
     ' Save and close the file
     xlWB.Save
-
+    isSuccess = True  ' Mark success only if everything runs without errors 
+	
 Cleanup:  ' Unified cleanup section
     On Error Resume Next  ' Prevent any further errors during cleanup
     If Not xlWB Is Nothing Then xlWB.Close False
@@ -43,8 +45,9 @@ Cleanup:  ' Unified cleanup section
     Set xlWB = Nothing
     Set xlApp = Nothing
     On Error GoTo 0  ' Restore normal error handling
-
-    MsgBox "Exported and labeled: " & TableName, vbInformation, "Success"
+    If isSuccess Then
+      MsgBox "Exported and labeled: " & TableName, vbInformation, "Success"
+	End If
     Exit Function  ' Exit function normally
 
 ' Error Handling
@@ -52,7 +55,8 @@ ErrorHandler:
     Dim errorMsg As String
     errorMsg = "Error " & Err.Number & ": " & Err.Description
     MsgBox "An error occurred while exporting: " & vbCrLf & errorMsg, vbCritical, "Export Error"
-    Resume Cleanup  ' Always perform cleanup before exiting
+    isSuccess = False  ' Ensure no success message is shown
+	Resume Cleanup  ' Always perform cleanup before exiting
 
 End Function
 
