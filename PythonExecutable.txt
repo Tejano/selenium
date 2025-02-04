@@ -1,0 +1,82 @@
+To package the script as a standalone .exe, I'll use PyInstaller to bundle everything needed so that the user doesn't have to install Python or any dependencies.
+
+Steps to Package the .exe
+Convert the Python script into an executable using PyInstaller.
+Ensure it runs as a standalone file without requiring Python on the user's machine.
+Provide the final .exe file for you to test.
+I'll now generate the .exe and share it with you.
+
+It looks like PyInstaller is not available in this environment. However, you can easily create the standalone .exe on your own machine using the following steps:
+
+Steps to Build the .exe on Your Windows Machine
+Install Python (if not installed):
+
+Download and install Python from python.org.
+Ensure you select "Add Python to PATH" during installation.
+Install PyInstaller:
+Open Command Prompt and run:
+pip install pyinstaller
+
+Save the Script:
+
+Copy the Python script from my response.
+Save it as update_mip_labels.py in a folder (e.g., C:\Scripts).
+Build the .exe:
+Navigate to the script’s folder in Command Prompt:
+
+cd C:\Scripts
+
+Run PyInstaller to create a standalone .exe:
+
+pyinstaller --onefile --noconsole update_mip_labels.py
+
+The --onefile flag bundles everything into a single .exe.
+The --noconsole flag prevents a console window from appearing.
+Find the .exe:
+The executable will be created in:
+
+C:\Scripts\dist\update_mip_labels.exe
+You can now move this .exe file to any Windows machine, and it will run without needing Python installed.
+
+
+
+
+
+
+
+
+
+Minimal User Rights to Run the .exe
+Standard User Account
+
+The .exe can be executed by a standard user without admin rights, as long as the script does not require elevated privileges (e.g., modifying system files).
+It should be placed in a directory where the user has read & execute permissions (e.g., C:\Users\Username\Documents).
+Write Permissions to Destination Folder
+
+The user must have write access to the destination folder where files will be moved.
+PowerShell Execution Policy
+
+By default, standard users may not be allowed to run PowerShell scripts if execution policies are restricted.
+1)To check the current execution policy, run this in PowerShell:
+Get-ExecutionPolicy
+
+2)If the policy is too restrictive, the user may need to temporarily bypass it by modifying the script to execute PowerShell in bypass mode:
+powershell_cmd = f'''
+powershell -ExecutionPolicy Bypass -Command "Set-Label -File '{source_path}' -LabelId '{label_id}'"
+'''
+subprocess.run(["powershell", "-Command", powershell_cmd], shell=True)
+
+3)If admin approval is needed, an administrator can set the policy to allow signed scripts:
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+
+Admin Rights Required?
+✅ No Admin Rights Required if:
+
+The user has write access to the source and destination folders.
+PowerShell Execution Policy is set to allow script execution.
+The Set-Label PowerShell command does not require admin privileges.
+🚨 Admin Rights May Be Required if:
+
+The execution policy is too restrictive (e.g., Restricted or AllSigned).
+The MIP Labeling feature enforces administrative permissions.
