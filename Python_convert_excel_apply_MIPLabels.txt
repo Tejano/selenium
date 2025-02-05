@@ -1,0 +1,91 @@
+**Automating the Conversion of Excel 97-2003 Files to Modern Format and Applying Sensitivity Labels**
+
+*Issue:* Applying sensitivity labels to Excel 97-2003 files (`.xls` format) is not supported.
+
+*Solution:* Convert `.xls` files to the modern `.xlsx` format, which supports sensitivity labeling, and then apply the labels.
+
+**Steps:**
+
+1. **Install Required Python Libraries:**
+
+   - `pandas`: For data manipulation.
+   - `openpyxl`: To write `.xlsx` files.
+   - `pyxlsb`: To read `.xls` files.
+
+   Install these libraries using `pip`:
+
+   ```bash
+   pip install pandas openpyxl pyxlsb
+Python Script to Convert and Label Files:
+
+python
+Copy
+Edit
+import os
+import shutil
+import subprocess
+import pandas as pd
+
+# Define source folder where the Excel files are located
+source_folder = r"C:\path\to\source\folder"
+
+# Default destination folder
+default_destination = r"C:\Users\Public\Documents\Processed_Files"
+
+# Allow user to change the destination
+destination_folder = input(f"Enter destination folder [{default_destination}]: ").strip()
+if not destination_folder:
+    destination_folder = default_destination
+
+# Check if user has write access to the destination folder
+if not os.access(destination_folder, os.W_OK):
+    print(f"Warning: No write access to {destination_folder}. Please choose another location.")
+    destination_folder = input("Enter a writable destination folder: ").strip()
+
+# Ensure destination folder exists
+os.makedirs(destination_folder, exist_ok=True)
+
+# Define the Label ID for MIP
+label_id = "YOUR_LABEL_ID_HERE"  # Replace with the correct label ID
+
+# Loop through all Excel files in the source folder
+for file_name in os.listdir(source_folder):
+    if file_name.endswith(".xls"):  # Check for Excel 97-2003 files
+        source_path = os.path.join(source_folder, file_name)
+        dest_path_xlsx = os.path.join(destination_folder, file_name.replace(".xls", ".xlsx"))
+
+        print(f"Processing: {file_name}")
+
+        # Convert .xls to .xlsx
+        try:
+            df = pd.read_excel(source_path, engine='pyxlsb')
+            df.to_excel(dest_path_xlsx, index=False, engine='openpyxl')
+            print(f"Converted: {file_name} to {dest_path_xlsx}")
+        except Exception as e:
+            print(f"Error converting {file_name}: {e}")
+            continue
+
+        # Apply MIP label using PowerShell in bypass mode
+        powershell_cmd = f'''
+        powershell -ExecutionPolicy Bypass -Command "Set-Label -File '{dest_path_xlsx}' -LabelId '{label_id}'"
+        '''
+        subprocess.run(["powershell", "-Command", powershell_cmd], shell=True)
+
+        print(f"Labeled: {dest_path_xlsx}")
+
+print("Processing complete.")
+
+Notes:
+
+Backup: Ensure you have backups of your original .xls files before running the script.
+Testing: Test the script with a few files to confirm it works as expected before processing all files.
+Dependencies: Ensure all required Python libraries are installed.
+By converting your Excel 97-2003 files to the modern .xlsx format, you can apply sensitivity labels as needed. If you encounter any issues or need further assistance, feel free to ask!
+
+pgsql
+Copy
+Edit
+
+You can copy and paste this content into a text file on your system for reference. If you need any further assistance, feel free to ask!
+::contentReference[oaicite:0]{index=0}
+ 
