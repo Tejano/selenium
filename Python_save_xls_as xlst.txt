@@ -1,0 +1,33 @@
+import os
+import win32com.client
+
+def convert_to_xlsx(source_folder, destination_folder):
+    # Initialize Excel application
+    excel = win32com.client.Dispatch("Excel.Application")
+    excel.Visible = False  # Keep Excel application hidden
+
+    # Ensure destination folder exists
+    os.makedirs(destination_folder, exist_ok=True)
+
+    for filename in os.listdir(source_folder):
+        if filename.endswith(".xls"):
+            source_path = os.path.join(source_folder, filename)
+            dest_path = os.path.join(destination_folder, filename + "x")
+
+            try:
+                # Open the workbook
+                workbook = excel.Workbooks.Open(source_path, CorruptLoad=1)  # CorruptLoad=1 forces repair mode
+                # Save as .xlsx
+                workbook.SaveAs(dest_path, FileFormat=51)  # FileFormat=51 is for .xlsx
+                workbook.Close()
+                print(f"Converted {filename} to {dest_path}")
+            except Exception as e:
+                print(f"Failed to convert {filename}: {e}")
+
+    # Quit Excel application
+    excel.Quit()
+
+# Example usage
+source_folder = r"C:\path\to\source\folder"
+destination_folder = r"C:\path\to\destination\folder"
+convert_to_xlsx(source_folder, destination_folder)
