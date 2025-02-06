@@ -1,0 +1,86 @@
+✅ Updated Python Code Using Set-Label
+This version:
+
+Uses your original Set-Label method.
+Logs errors properly if the command fails.
+Ensures the PowerShell command runs without requiring AIPService.
+python
+
+import os
+import shutil
+import pandas as pd
+import subprocess
+
+# Default paths
+default_source = r"C:\path\to\source\directory"
+default_destination = r"C:\path\to\destination\directory"
+label_id = "YOUR_LABEL_ID_HERE"  # Replace with actual Label ID
+
+# Prompt for source and destination paths (with defaults)
+source_folder = input(f"Enter source folder [{default_source}]: ").strip() or default_source
+destination_folder = input(f"Enter destination folder [{default_destination}]: ").strip() or default_destination
+
+# Ensure destination directory exists
+os.makedirs(destination_folder, exist_ok=True)
+
+# Define which columns should be treated as text (adjust indexes as needed)
+text_columns = [0, 2, 4]  # 0 = Column A, 2 = Column C, 4 = Column E
+
+# Process each .xls file in the source folder
+for filename in os.listdir(source_folder):
+    if filename.endswith(".xls"):
+        source_file = os.path.join(source_folder, filename)
+        base_name, _ = os.path.splitext(filename)
+        csv_file = os.path.join(destination_folder, base_name + ".csv")
+        xlsx_file = os.path.join(destination_folder, base_name + ".xlsx")
+
+        # Copy file and rename as CSV
+        shutil.copy2(source_file, csv_file)
+        print(f"Copied and renamed: {source_file} to {csv_file}")
+
+        try:
+            # Read CSV, keeping specific columns as text
+            df = pd.read_csv(csv_file, dtype={col: str for col in text_columns})
+            df.to_excel(xlsx_file, index=False, engine="openpyxl")
+            print(f"Converted: {csv_file} to {xlsx_file}")
+
+            # Apply MIP label using PowerShell
+            powershell_cmd = f'''
+            powershell -ExecutionPolicy Bypass -Command "Set-Label -File '{xlsx_file}' -LabelId '{label_id}'"
+            '''
+            result = subprocess.run(["powershell", "-Command", powershell_cmd], capture_output=True, text=True)
+
+            if result.returncode == 0:
+                print(f"Successfully applied sensitivity label to: {xlsx_file}")
+            else:
+                print(f"Failed to apply label: {xlsx_file}. Error: {result.stderr}")
+
+        except Exception as e:
+            print(f"Error processing {csv_file}: {e}")
+
+print("Processing complete. Press Enter to exit.")
+input()
+
+🚀 Key Fixes & Improvements
+✅ Uses Set-Label instead of Set-AIPFileLabel (since AIP is not installed).
+✅ Wraps PowerShell execution in subprocess.run() for better logging.
+✅ Ensures execution policy bypasses PowerShell restrictions.
+✅ Logs errors properly (users will see if the labeling fails).
+
+🔧 How to Compile to .exe
+To generate an EXE file that users can double-click:
+
+Install pyinstaller:
+bash
+pip install pyinstaller
+
+Run the following command:
+bash
+pyinstaller --onefile --windowed convert_and_label.py
+
+--onefile: Creates a single EXE file.
+--windowed: Prevents a command prompt from opening (for silent execution).
+🔥 Final Thoughts
+This fully automates the process without requiring AIP installation.
+Users just double-click the .exe—no need to open PowerShell manually.
+Error handling ensures labeling issues are logged.
