@@ -131,18 +131,20 @@ class Program
         string labelId = "YOUR_LABEL_ID_HERE"; // Replace with actual Label ID
 
         Console.WriteLine($"Enter source folder [{defaultSource}]: ");
-        string sourceFolder = Console.ReadLine();
-        if (string.IsNullOrWhiteSpace(sourceFolder)) sourceFolder = defaultSource;
+        string? sourceFolder = Console.ReadLine();
+        sourceFolder = string.IsNullOrWhiteSpace(sourceFolder) ? defaultSource : sourceFolder;
 
         Console.WriteLine($"Enter destination folder [{defaultDestination}]: ");
-        string destinationFolder = Console.ReadLine();
-        if (string.IsNullOrWhiteSpace(destinationFolder)) destinationFolder = defaultDestination;
+        string? destinationFolder = Console.ReadLine();
+        destinationFolder = string.IsNullOrWhiteSpace(destinationFolder) ? defaultDestination : destinationFolder;
 
         Directory.CreateDirectory(destinationFolder); // Ensure destination exists
 
-        Excel.Application xlApp = new Excel.Application();
-        xlApp.Visible = false;
-        xlApp.DisplayAlerts = false;
+        Excel.Application xlApp = new Excel.Application
+        {
+            Visible = false,
+            DisplayAlerts = false
+        };
 
         try
         {
@@ -150,14 +152,16 @@ class Program
             {
                 string newFile = Path.Combine(destinationFolder, Path.GetFileNameWithoutExtension(file) + ".xlsx");
 
-                // ✅ Explicitly cast Workbook
-                Excel.Workbook wb = xlApp.Workbooks.Open(file) as Excel.Workbook;
+                // ✅ Explicitly cast Workbook (Nullable)
+                Excel.Workbook? wb = xlApp.Workbooks.Open(file) as Excel.Workbook;
                 if (wb == null) continue; // Skip if workbook is null
 
-                Excel.Worksheet ws = wb.Sheets[1] as Excel.Worksheet;
+                Excel.Worksheet? ws = wb.Sheets[1] as Excel.Worksheet;
                 if (ws == null) continue; // Skip if worksheet is null
 
-                Excel.Range usedRange = ws.UsedRange;
+                Excel.Range? usedRange = ws.UsedRange;
+                if (usedRange == null) continue; // Skip if range is null
+
                 int totalColumns = usedRange.Columns.Count;
 
                 Console.WriteLine($"Processing {file} - Columns Detected: {totalColumns}");
@@ -169,10 +173,10 @@ class Program
 
                     for (int row = 1; row <= Math.Min(10, usedRange.Rows.Count); row++)
                     {
-                        Excel.Range cell = usedRange.Cells[row, col] as Excel.Range; // ✅ Fix
-                        if (cell == null || cell.Value2 == null) continue;
+                        Excel.Range? cell = usedRange.Cells[row, col] as Excel.Range; // ✅ Fix
+                        if (cell?.Value2 == null) continue; // Skip null values safely
 
-                        string cellText = cell.Value2.ToString();
+                        string cellText = cell.Value2.ToString() ?? string.Empty; // ✅ Fix: Ensure it's never null
                         if (cellText.Length > 1 && cellText.StartsWith("0") && cellText.All(char.IsDigit))
                         {
                             hasLeadingZeros = true;
@@ -185,7 +189,7 @@ class Program
 
                     if (hasLeadingZeros || hasExponential)
                     {
-                        Excel.Range columnRange = ws.Columns[col] as Excel.Range;
+                        Excel.Range? columnRange = ws.Columns[col] as Excel.Range;
                         if (columnRange != null)
                         {
                             columnRange.NumberFormat = "0"; // ✅ Fixes exponential & keeps leading zeros
