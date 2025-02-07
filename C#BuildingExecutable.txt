@@ -1,0 +1,94 @@
+🚀 How to Compile & Build a Standalone .exe in VS Code Using .NET Core
+Since you prefer VS Code over Visual Studio 2019, here’s how you can compile and generate an .exe using .NET Core / .NET 5+.
+
+✅ Step 1: Install Required Tools
+Check if .NET SDK is Installed
+Open VS Code Terminal.
+Run:
+powershell
+
+dotnet --version
+
+If you see a version number, you’re good! ✅
+If not, install the latest .NET SDK from Microsoft's .NET Download Page.
+✅ Step 2: Set Up Your C# Project in VS Code
+1️⃣ Open VS Code
+Create a new folder for your project, e.g., ExcelConverter.
+Open the folder in VS Code.
+2️⃣ Create a New .NET Console Project
+In VS Code Terminal, run:
+powershell
+dotnet new console -o ExcelConverter
+This creates a C# console project inside the ExcelConverter folder.
+Change to the project directory:
+powershell
+
+cd ExcelConverter
+3️⃣ Install Required Dependencies
+Run:
+
+powershell
+
+dotnet add package Microsoft.Office.Interop.Excel
+This installs Excel automation support.
+✅ Step 3: Write Your C# Code
+In VS Code, open Program.cs inside ExcelConverter.
+Replace the existing code with your Excel processing script (the one that detects leading zeros & scientific notation).
+✅ Step 4: Compile & Build .exe
+Option 1: Compile for Your Own PC
+Run:
+
+powershell
+
+dotnet build
+This creates the .exe inside:
+python
+
+bin\Debug\netX\ExcelConverter.exe
+Option 2: Compile a Standalone .exe for Any Windows PC
+Run:
+powershell
+
+dotnet publish -r win-x64 -c Release --self-contained true
+This generates a standalone .exe that does NOT require .NET installed.
+Find the .exe inside:
+python
+
+bin\Release\netX\win-x64\ExcelConverter.exe
+✅ Step 5: Run the EXE
+Navigate to your build folder:
+powershell
+
+cd bin\Release\netX\win-x64\
+Run your new .exe:
+powershell
+Copy
+Edit
+.\ExcelConverter.exe
+🔥 Recommended Extensions for VS Code
+C# Dev Kit
+
+Best for .NET development in VS Code
+Install in VS Code:
+Open Extensions (Ctrl + Shift + X)
+Search for "C# Dev Kit"
+Click Install
+.NET Install Tool for Extension Authors
+
+Helps VS Code auto-detect .NET installations.
+NuGet Package Manager
+
+Makes it easier to install libraries like Microsoft.Office.Interop.Excel.
+✅ Why This is Better Than Visual Studio 2019
+✔ Faster & lightweight 💨
+✔ Works directly in VS Code 🔥
+✔ **Creates a standalone .exe users can run 💾
+
+Let me know if you need help with any step! 🚀
+
+
+
+
+
+
+
