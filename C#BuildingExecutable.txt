@@ -42,9 +42,9 @@ powershell
 
 dotnet build
 This creates the .exe inside:
-python
 
 bin\Debug\netX\ExcelConverter.exe
+
 Option 2: Compile a Standalone .exe for Any Windows PC
 Run:
 powershell
@@ -52,7 +52,6 @@ powershell
 dotnet publish -r win-x64 -c Release --self-contained true
 This generates a standalone .exe that does NOT require .NET installed.
 Find the .exe inside:
-python
 
 bin\Release\netX\win-x64\ExcelConverter.exe
 ✅ Step 5: Run the EXE
@@ -62,9 +61,9 @@ powershell
 cd bin\Release\netX\win-x64\
 Run your new .exe:
 powershell
-Copy
-Edit
+
 .\ExcelConverter.exe
+
 🔥 Recommended Extensions for VS Code
 C# Dev Kit
 
@@ -87,7 +86,40 @@ Makes it easier to install libraries like Microsoft.Office.Interop.Excel.
 Let me know if you need help with any step! 🚀
 
 
+No, the C# Dev Kit is not necessary to compile and run C# projects in VS Code. You can still fully develop, compile, and build .exe files without signing in to Microsoft.
 
+🚀 Do You Need C# Dev Kit?
+❌ No, if you just want to compile and run C# → You can use .NET CLI (dotnet build, dotnet publish).
+✅ Yes, if you want IntelliSense, debugging, and better VS Code integration.
+✅ Alternative: Use C# Without Signing In
+If you don’t want to sign in, you can install only the essentials:
+
+1️⃣ Install the Official C# Extension (No Login Required)
+Open VS Code → Press Ctrl + Shift + X (Extensions).
+Search for "C#" (by Microsoft).
+Install the C# extension (Omnisharp) instead of C# Dev Kit.
+This lets you write, compile, and run C# in VS Code without needing a Microsoft login.
+
+2️⃣ Compile & Run Without C# Dev Kit
+You can do everything using the .NET CLI in VS Code’s terminal:
+
+Compile the Project
+powershell
+dotnet build
+Run the Project
+powershell
+Copy
+Edit
+dotnet run
+Build a Standalone .exe
+powershell
+
+dotnet publish -r win-x64 -c Release --self-contained true
+This creates an .exe in bin\Release\netX\win-x64\ExcelConverter.exe.
+🔥 Summary
+✔ You don’t need C# Dev Kit to compile or run C# in VS Code.
+✔ Install only the regular "C#" extension (Omnisharp) to get IntelliSense.
+✔ Use dotnet build and dotnet publish to create .exe files.
 
 
 
