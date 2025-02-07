@@ -151,8 +151,11 @@ class Program
                 string newFile = Path.Combine(destinationFolder, Path.GetFileNameWithoutExtension(file) + ".xlsx");
 
                 // ✅ Explicitly cast Workbook
-                Excel.Workbook wb = (Excel.Workbook)xlApp.Workbooks.Open(file);
-                Excel.Worksheet ws = (Excel.Worksheet)wb.Sheets[1]; // Assume first sheet
+                Excel.Workbook wb = xlApp.Workbooks.Open(file) as Excel.Workbook;
+                if (wb == null) continue; // Skip if workbook is null
+
+                Excel.Worksheet ws = wb.Sheets[1] as Excel.Worksheet;
+                if (ws == null) continue; // Skip if worksheet is null
 
                 Excel.Range usedRange = ws.UsedRange;
                 int totalColumns = usedRange.Columns.Count;
@@ -166,28 +169,28 @@ class Program
 
                     for (int row = 1; row <= Math.Min(10, usedRange.Rows.Count); row++)
                     {
-                        Excel.Range cell = (Excel.Range)usedRange.Cells[row, col]; // ✅ Fix
-                        var cellValue = cell.Value2; // ✅ Fix
+                        Excel.Range cell = usedRange.Cells[row, col] as Excel.Range; // ✅ Fix
+                        if (cell == null || cell.Value2 == null) continue;
 
-                        if (cellValue != null)
+                        string cellText = cell.Value2.ToString();
+                        if (cellText.Length > 1 && cellText.StartsWith("0") && cellText.All(char.IsDigit))
                         {
-                            string cellText = cellValue.ToString();
-                            if (cellText.Length > 1 && cellText.StartsWith("0") && cellText.All(char.IsDigit))
-                            {
-                                hasLeadingZeros = true;
-                            }
-                            if (cellText.Contains("E") || cellText.Contains("e"))
-                            {
-                                hasExponential = true;
-                            }
+                            hasLeadingZeros = true;
+                        }
+                        if (cellText.Contains("E") || cellText.Contains("e"))
+                        {
+                            hasExponential = true;
                         }
                     }
 
                     if (hasLeadingZeros || hasExponential)
                     {
-                        Excel.Range columnRange = ws.Columns[col];
-                        columnRange.NumberFormat = "0"; // ✅ Fixes exponential & keeps leading zeros
-                        Console.WriteLine($"Column {col}: Applied '0' format (Leading Zeros: {hasLeadingZeros}, Exponential: {hasExponential})");
+                        Excel.Range columnRange = ws.Columns[col] as Excel.Range;
+                        if (columnRange != null)
+                        {
+                            columnRange.NumberFormat = "0"; // ✅ Fixes exponential & keeps leading zeros
+                            Console.WriteLine($"Column {col}: Applied '0' format (Leading Zeros: {hasLeadingZeros}, Exponential: {hasExponential})");
+                        }
                     }
                 }
 
@@ -214,10 +217,13 @@ class Program
                 wb.SaveAs(newFile, Excel.XlFileFormat.xlOpenXMLWorkbook);
                 wb.Close(false);
 
-                // ✅ Release COM Objects to Prevent Memory Leaks
-                Marshal.ReleaseComObject(usedRange);
-                Marshal.ReleaseComObject(ws);
-                Marshal.ReleaseComObject(wb);
+                // ✅ Release COM Objects (Only If Running on Windows)
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Marshal.ReleaseComObject(usedRange);
+                    Marshal.ReleaseComObject(ws);
+                    Marshal.ReleaseComObject(wb);
+                }
 
                 Console.WriteLine($"Converted: {file} → {newFile}");
             }
@@ -229,7 +235,12 @@ class Program
         finally
         {
             xlApp.Quit();
-            Marshal.ReleaseComObject(xlApp); // ✅ Ensure Excel fully quits
+
+            // ✅ Release COM Object for Excel (Only on Windows)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Marshal.ReleaseComObject(xlApp);
+            }
         }
 
         Console.WriteLine("Processing complete. Press Enter to exit.");
