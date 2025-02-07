@@ -150,7 +150,7 @@ class Program
             {
                 string newFile = Path.Combine(destinationFolder, Path.GetFileNameWithoutExtension(file) + ".xlsx");
 
-                // ✅ EXPLICITLY CAST Workbook
+                // ✅ Explicitly cast Workbook
                 Excel.Workbook wb = (Excel.Workbook)xlApp.Workbooks.Open(file);
                 Excel.Worksheet ws = (Excel.Worksheet)wb.Sheets[1]; // Assume first sheet
 
@@ -166,7 +166,9 @@ class Program
 
                     for (int row = 1; row <= Math.Min(10, usedRange.Rows.Count); row++)
                     {
-                        var cellValue = usedRange.Cells[row, col].Value2;
+                        Excel.Range cell = (Excel.Range)usedRange.Cells[row, col]; // ✅ Fix
+                        var cellValue = cell.Value2; // ✅ Fix
+
                         if (cellValue != null)
                         {
                             string cellText = cellValue.ToString();
@@ -184,16 +186,24 @@ class Program
                     if (hasLeadingZeros || hasExponential)
                     {
                         Excel.Range columnRange = ws.Columns[col];
-                        columnRange.NumberFormat = "0"; // Fixes exponential & keeps leading zeros
+                        columnRange.NumberFormat = "0"; // ✅ Fixes exponential & keeps leading zeros
                         Console.WriteLine($"Column {col}: Applied '0' format (Leading Zeros: {hasLeadingZeros}, Exponential: {hasExponential})");
                     }
                 }
 
-                // ✅ Apply Sensitivity Label (If Supported)
+                // ✅ Check if Sensitivity Label is supported
                 try
                 {
-                    wb.SensitivityLabel.SetLabelById(labelId);
-                    Console.WriteLine($"Applied Sensitivity Label to: {newFile}");
+                    var sensitivityLabelProperty = wb.GetType().GetProperty("SensitivityLabel");
+                    if (sensitivityLabelProperty != null)
+                    {
+                        sensitivityLabelProperty.SetValue(wb, labelId);
+                        Console.WriteLine($"Applied Sensitivity Label to: {newFile}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Sensitivity Labeling not supported in this Office version.");
+                    }
                 }
                 catch
                 {
