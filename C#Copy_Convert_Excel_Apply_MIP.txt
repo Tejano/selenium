@@ -1,0 +1,115 @@
+🚀 Final C# Solution: Auto-Detect Columns
+What This Does
+✅ Scans each column for numbers with leading zeros or exponential notation
+✅ Automatically applies "0" formatting where needed
+✅ Saves as .xlsx with correct number formatting
+
+📌 Updated C# Code
+csharp
+Copy
+Edit
+using System;
+using System.IO;
+using Excel = Microsoft.Office.Interop.Excel;
+using System.Linq;
+
+class Program
+{
+    static void Main()
+    {
+        string defaultSource = @"C:\path\to\source\";
+        string defaultDestination = @"C:\path\to\destination\";
+        string labelId = "YOUR_LABEL_ID_HERE"; // Replace with actual Label ID
+
+        Console.WriteLine($"Enter source folder [{defaultSource}]: ");
+        string sourceFolder = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(sourceFolder)) sourceFolder = defaultSource;
+
+        Console.WriteLine($"Enter destination folder [{defaultDestination}]: ");
+        string destinationFolder = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(destinationFolder)) destinationFolder = defaultDestination;
+
+        Directory.CreateDirectory(destinationFolder); // Ensure destination exists
+
+        Excel.Application xlApp = new Excel.Application();
+        xlApp.Visible = false;
+        xlApp.DisplayAlerts = false;
+
+        foreach (string file in Directory.GetFiles(sourceFolder, "*.xls"))
+        {
+            string newFile = Path.Combine(destinationFolder, Path.GetFileNameWithoutExtension(file) + ".xlsx");
+
+            Excel.Workbook wb = xlApp.Workbooks.Open(file);
+            Excel.Worksheet ws = wb.Sheets[1]; // Assume first sheet
+            Excel.Range usedRange = ws.UsedRange;
+            int totalColumns = usedRange.Columns.Count;
+
+            Console.WriteLine($"Processing {file} - Columns Detected: {totalColumns}");
+
+            for (int col = 1; col <= totalColumns; col++)
+            {
+                bool hasLeadingZeros = false;
+                bool hasExponential = false;
+
+                // Scan first 10 rows for patterns (adjust as needed)
+                for (int row = 1; row <= Math.Min(10, usedRange.Rows.Count); row++)
+                {
+                    var cellValue = usedRange.Cells[row, col].Value2;
+                    if (cellValue != null)
+                    {
+                        string cellText = cellValue.ToString();
+
+                        // Check if value starts with "00" but isn't just "0"
+                        if (cellText.Length > 1 && cellText.StartsWith("0") && cellText.All(char.IsDigit))
+                        {
+                            hasLeadingZeros = true;
+                        }
+
+                        // Check for scientific notation (contains 'E' or 'e')
+                        if (cellText.Contains("E") || cellText.Contains("e"))
+                        {
+                            hasExponential = true;
+                        }
+                    }
+                }
+
+                // Apply proper formatting
+                if (hasLeadingZeros || hasExponential)
+                {
+                    Excel.Range columnRange = ws.Columns[col];
+                    columnRange.NumberFormat = "0"; // Expands scientific notation & keeps leading zeros
+                    Console.WriteLine($"Column {col}: Applied '0' format (Leading Zeros: {hasLeadingZeros}, Exponential: {hasExponential})");
+                }
+            }
+
+            // Apply Sensitivity Label
+            try
+            {
+                wb.SensitivityLabel.SetLabelById(labelId);
+                Console.WriteLine($"Applied Sensitivity Label to: {newFile}");
+            }
+            catch
+            {
+                Console.WriteLine($"Error applying sensitivity label to: {newFile}");
+            }
+
+            wb.SaveAs(newFile, Excel.XlFileFormat.xlOpenXMLWorkbook);
+            wb.Close();
+            Console.WriteLine($"Converted: {file} → {newFile}");
+        }
+
+        xlApp.Quit();
+        Console.WriteLine("Processing complete. Press Enter to exit.");
+        Console.ReadLine();
+    }
+}
+🔥 How This Works
+Scans the first 10 rows of each column to detect:
+Leading zeros (e.g., 00123)
+Exponential numbers (e.g., 1.23E+10)
+Automatically applies "0" format to fix display issues.
+Leaves other columns unchanged.
+Applies Sensitivity Label after processing.
+✅ Key Benefits
+✔ No manual column selection required 🎉
+✔ Works for unknown column layouts
