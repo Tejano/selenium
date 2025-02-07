@@ -1,0 +1,45 @@
+✅ Solution: Use the Office 16 Interop DLL Directly
+Since Office 16+ is installed on your machine, you can reference the correct interop DLL manually.
+
+1️⃣ Remove the NuGet Package
+Run this command to remove the outdated version (15.0.4795.1000):
+
+powershell
+
+dotnet remove package Microsoft.Office.Interop.Excel
+2️⃣ Add a Direct Reference to the Office 16 DLL
+Open Visual Studio Code.
+Locate the Office Interop DLL on your system:
+If you installed Office 2016 or later (including Office 365), the DLL is here:
+java
+
+C:\Program Files (x86)\Microsoft Office\root\Office16\Microsoft.Office.Interop.Excel.dll
+If you have 64-bit Office, check:
+makefile
+
+C:\Program Files\Microsoft Office\root\Office16\Microsoft.Office.Interop.Excel.dll
+Add a direct reference in your .csproj file.
+Open your project file (ExcelConverter.csproj) in VS Code.
+Add this line inside <ItemGroup>:
+xml
+
+<ItemGroup>
+    <Reference Include="Microsoft.Office.Interop.Excel">
+        <HintPath>C:\Program Files\Microsoft Office\root\Office16\Microsoft.Office.Interop.Excel.dll</HintPath>
+    </Reference>
+</ItemGroup>
+Save the file.
+3️⃣ Rebuild and Run
+After adding the reference, rebuild your project:
+
+powershell
+
+dotnet clean
+dotnet build
+dotnet run
+🔥 Why This Works
+✔ Uses the latest installed version of Office 16+
+✔ Avoids NuGet limitations (only version 15 is available there)
+✔ Ensures compatibility with your installed Office version
+
+🚀 Try it and let me know if it works! 🎯
