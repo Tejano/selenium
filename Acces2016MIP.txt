@@ -195,10 +195,66 @@ If True is returned, the property is not available in your version of Excel.
 
 
 
+The Microsoft Excel Object Library and Microsoft Office Object Library, version 16.0, are the default libraries
+included with Office 2016, Office 2019, and Office 365. These libraries should provide all the required objects, methods, and properties for integrating Excel with Access and interacting with sensitivity labels if the required features are supported by your organization's setup.
+
+Here’s what to keep in mind when working with these references and troubleshooting issues with Sensitivity Labels in Access VBA:
+
+1. Compatibility of Version 16.0 Libraries
+Version 16.0 is backward-compatible with earlier versions of Office (e.g., Office 2013) and 
+forward-compatible with Microsoft 365 (Office 365).
+
+If your organization uses Microsoft 365, referencing version 16.0 libraries is still valid and 
+should support all the latest features, including sensitivity labels.
+
+2. Features of the Referenced Libraries
+Microsoft Excel Object Library:
+
+Enables interaction with Excel objects like Workbook, Worksheet, Range, etc.
+Provides methods for automating Excel tasks (e.g., opening workbooks, editing cells).
+Allows access to the SensitivityLabel object through the Workbook object.
+
+Microsoft Office Object Library:
+
+Provides access to Office-wide objects and enums, such as MsoAssignmentMethod.
+Includes APIs for handling features like Sensitivity Labels, Ribbon customizations, and other cross-Office features.
+
+3. Verifying Sensitivity Label API Availability
+Even with the correct references, the Sensitivity Label API might not be available in Access VBA due to:
+
+Policy Restrictions:
+
+Your organization might restrict programmatic access to sensitivity labels in some Office apps, such as Access.
+Licensing Issues:
+
+Sensitivity Labels require a specific license tier (e.g., Microsoft 365 E5 or AIP Premium).
+Environment Configuration:
+
+Some features may only be enabled for Excel, Word, and PowerPoint, but not Access.
+Test in Excel:
+You can test the SensitivityLabel object directly in Excel to confirm whether it's accessible in your environment.
+
+Sub TestSensitivityLabelInExcel()
+    Dim lblInfo As Office.LabelInfo
+    Dim wb As Workbook
+
+    Set wb = ThisWorkbook
+
+    On Error Resume Next
+    Set lblInfo = wb.SensitivityLabel.GetLabelInfo()
+    If lblInfo Is Nothing Then
+        MsgBox "SensitivityLabel is not available or no label is applied."
+    Else
+        MsgBox "Label Name: " & lblInfo.Name & vbCrLf & "Label ID: " & lblInfo.LabelId
+    End If
+    On Error GoTo 0
+End Sub
+
 
 
 4. Late Binding as a Workaround
-If issues persist when referencing the libraries in Access, you can try late binding. Late binding eliminates the dependency on specific versions of the 
+If issues persist when referencing the libraries in Access, you can try late binding. Late binding eliminates 
+the dependency on specific versions of the 
 referenced libraries, which might help if corporate policies are restricting access.
 Sub ApplySensitivityLabelLateBinding()
     Dim xlApp As Object
@@ -230,3 +286,14 @@ Sub ApplySensitivityLabelLateBinding()
     Set xlWorkbook = Nothing
     Set xlApp = Nothing
 End Sub
+
+5. Next Steps
+Confirm Your Licensing:
+
+Verify if your organization’s Microsoft 365 license tier supports Sensitivity Label APIs.
+Test Directly in Excel:
+
+If the API works in Excel VBA but fails in Access, it’s likely an environment restriction or a limitation in Access.
+Contact IT:
+
+Ask if any policies prevent programmatic access to sensitivity labels in Access VBA.

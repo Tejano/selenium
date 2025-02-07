@@ -9,6 +9,12 @@ with open(sql_file_path, 'r') as file:
 
 print("SQL Content:")
 print(sql_content)
+sql_content_cleaned = re.sub(r"--.*", "", sql_content)  # Remove single-line comments
+sql_content_cleaned = re.sub(r"/\*.*?\*/", "", sql_content_cleaned, flags=re.DOTALL)  # Remove multi-line comments
+
+# Debugging: Print cleaned SQL content
+print("Cleaned SQL Content:")
+print(sql_content_cleaned)
 
 # Parse INSERT INTO for Target Table and Columns
 insert_pattern = re.search(
