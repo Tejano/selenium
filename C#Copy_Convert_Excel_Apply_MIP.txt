@@ -113,3 +113,116 @@ Applies Sensitivity Label after processing.
 ✅ Key Benefits
 ✔ No manual column selection required 🎉
 ✔ Works for unknown column layouts
+
+
+Code fix
+using System;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using Excel = Microsoft.Office.Interop.Excel;
+
+class Program
+{
+    static void Main()
+    {
+        string defaultSource = @"C:\path\to\source\";
+        string defaultDestination = @"C:\path\to\destination\";
+        string labelId = "YOUR_LABEL_ID_HERE"; // Replace with actual Label ID
+
+        Console.WriteLine($"Enter source folder [{defaultSource}]: ");
+        string sourceFolder = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(sourceFolder)) sourceFolder = defaultSource;
+
+        Console.WriteLine($"Enter destination folder [{defaultDestination}]: ");
+        string destinationFolder = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(destinationFolder)) destinationFolder = defaultDestination;
+
+        Directory.CreateDirectory(destinationFolder); // Ensure destination exists
+
+        Excel.Application xlApp = new Excel.Application();
+        xlApp.Visible = false;
+        xlApp.DisplayAlerts = false;
+
+        try
+        {
+            foreach (string file in Directory.GetFiles(sourceFolder, "*.xls"))
+            {
+                string newFile = Path.Combine(destinationFolder, Path.GetFileNameWithoutExtension(file) + ".xlsx");
+
+                // ✅ EXPLICITLY CAST Workbook
+                Excel.Workbook wb = (Excel.Workbook)xlApp.Workbooks.Open(file);
+                Excel.Worksheet ws = (Excel.Worksheet)wb.Sheets[1]; // Assume first sheet
+
+                Excel.Range usedRange = ws.UsedRange;
+                int totalColumns = usedRange.Columns.Count;
+
+                Console.WriteLine($"Processing {file} - Columns Detected: {totalColumns}");
+
+                for (int col = 1; col <= totalColumns; col++)
+                {
+                    bool hasLeadingZeros = false;
+                    bool hasExponential = false;
+
+                    for (int row = 1; row <= Math.Min(10, usedRange.Rows.Count); row++)
+                    {
+                        var cellValue = usedRange.Cells[row, col].Value2;
+                        if (cellValue != null)
+                        {
+                            string cellText = cellValue.ToString();
+                            if (cellText.Length > 1 && cellText.StartsWith("0") && cellText.All(char.IsDigit))
+                            {
+                                hasLeadingZeros = true;
+                            }
+                            if (cellText.Contains("E") || cellText.Contains("e"))
+                            {
+                                hasExponential = true;
+                            }
+                        }
+                    }
+
+                    if (hasLeadingZeros || hasExponential)
+                    {
+                        Excel.Range columnRange = ws.Columns[col];
+                        columnRange.NumberFormat = "0"; // Fixes exponential & keeps leading zeros
+                        Console.WriteLine($"Column {col}: Applied '0' format (Leading Zeros: {hasLeadingZeros}, Exponential: {hasExponential})");
+                    }
+                }
+
+                // ✅ Apply Sensitivity Label (If Supported)
+                try
+                {
+                    wb.SensitivityLabel.SetLabelById(labelId);
+                    Console.WriteLine($"Applied Sensitivity Label to: {newFile}");
+                }
+                catch
+                {
+                    Console.WriteLine($"Error applying sensitivity label to: {newFile}");
+                }
+
+                // ✅ Save and Close Workbook
+                wb.SaveAs(newFile, Excel.XlFileFormat.xlOpenXMLWorkbook);
+                wb.Close(false);
+
+                // ✅ Release COM Objects to Prevent Memory Leaks
+                Marshal.ReleaseComObject(usedRange);
+                Marshal.ReleaseComObject(ws);
+                Marshal.ReleaseComObject(wb);
+
+                Console.WriteLine($"Converted: {file} → {newFile}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error processing files: {ex.Message}");
+        }
+        finally
+        {
+            xlApp.Quit();
+            Marshal.ReleaseComObject(xlApp); // ✅ Ensure Excel fully quits
+        }
+
+        Console.WriteLine("Processing complete. Press Enter to exit.");
+        Console.ReadLine();
+    }
+}
