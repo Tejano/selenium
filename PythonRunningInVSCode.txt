@@ -1,0 +1,40 @@
+1. Install Python
+If you haven’t already, download and install Python from python.org.
+Make sure to add Python to PATH during installation.
+2. Install VS Code
+Download and install VS Code from code.visualstudio.com.
+3. Install the Python Extension
+Open VS Code.
+Go to the Extensions Marketplace (Ctrl + Shift + X).
+Search for Python (by Microsoft) and install it.
+4. Install Additional Useful Extensions (Optional)
+These extensions can enhance your Python development experience:
+
+Pylance (provides advanced IntelliSense and type checking)
+Jupyter (if you use Jupyter notebooks)
+Python Test Explorer (for running tests)
+AutoDocstring (automatically generates docstrings)
+5. Configure Python Interpreter
+Open VS Code and press Ctrl + Shift + P to open the Command Palette.
+Type "Python: Select Interpreter" and select the appropriate Python installation.
+6. Run Python Code
+Open a .py file.
+Run the script using:
+The play button (▶️) on the top-right.
+The terminal: Open a terminal (Ctrl + ~), then type:
+nginx
+Copy
+Edit
+python script.py
+Interactive Mode: Run Python: Run Selection/Line in Python Terminal from the command palette (Ctrl + Shift + P).
+7. Install Virtual Environment (Recommended)
+If you're working on multiple projects, it's best to use a virtual environment:
+
+bash
+Copy
+Edit
+python -m venv venv
+Activate the virtual environment:
+
+Windows: venv\Scripts\activate
+Mac/Linux: source venv/bin/activate
