@@ -72,9 +72,11 @@ def convert_xls_to_xlsx(file_path):
         print(f"❌ ERROR converting {file_path}: {e}")
 
 # ✅ Process all `.xls` files
-for file in os.listdir(SOURCE_FOLDER):
+for file in os.listdir(source_folder):
     if file.endswith(".xls"):
-        convert_xls_to_xlsx(os.path.join(SOURCE_FOLDER, file))
+        print(f"📂 Found File: {file}")  # 🔍 Debugging Output
+        convert_xls_to_xlsx(os.path.join(source_folder, file))
+
 
 print("✅ All files processed!")
 
