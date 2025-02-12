@@ -36,5 +36,5 @@ Edit
 python -m venv venv
 Activate the virtual environment:
 
-Windows: venv\Scripts\activate
+Windows: venv\Scripts\activate 1
 Mac/Linux: source venv/bin/activate
