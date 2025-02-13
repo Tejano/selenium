@@ -2,8 +2,9 @@ import os
 import shutil
 import pandas as pd
 import win32com.client
+import time
 
-# ✅ Default Paths (User Can Change)
+# ✅ Default Paths
 DEFAULT_TEMPLATE_PATH = r"C:\mip_templates\template.xlsx"
 DEFAULT_SOURCE_FOLDER = r"C:\path\to\source"
 DEFAULT_DEST_FOLDER = r"C:\path\to\destination"
@@ -21,30 +22,60 @@ print(f"\n🔍 Source Folder: {source_folder}")
 print(f"📂 Destination Folder: {dest_folder}")
 print(f"📄 Template File: {template_path}")
 
-# ✅ Special Formatting Rules
-TEXT_COLUMNS = ["ID", "Code", "SerialNumber"]  # Text (Preserve Leading Zeros)
-CURRENCY_COLUMNS = ["Price", "Amount", "TotalCost"]  # Currency
-DATE_COLUMNS = ["OrderDate", "ShipmentDate"]  # Dates
+# ✅ Define Special Formatting Rules
+TEXT_COLUMNS = ["ID", "Code", "SerialNumber"]
+CURRENCY_COLUMNS = ["Price", "Amount", "TotalCost"]
+DATE_COLUMNS = ["OrderDate", "ShipmentDate"]
 
 def detect_delimiter(file_path):
     """Detects whether a file is tab-delimited or comma-delimited."""
     with open(file_path, "r", encoding="utf-8") as f:
         first_line = f.readline()
-        if "\t" in first_line:
-            return "\t"
-        else:
-            return ","
+        return "\t" if "\t" in first_line else ","
+
+def process_large_file_in_chunks(df, ws):
+    """Processes large files in chunks to prevent Excel from freezing."""
+    batch_size = 1000  # ✅ Increase chunk size for performance
+    for start in range(0, len(df), batch_size):
+        end = start + batch_size
+        chunk = df.iloc[start:end]
+        
+        for row_idx, row in chunk.iterrows():
+            for col_idx, (column_name, cell_value) in enumerate(row.items(), start=1):
+                excel_row = row_idx + 2  # Start after header row
+                if pd.isna(cell_value) or cell_value.strip() == "":
+                    ws.Cells(excel_row, col_idx).Value = ""
+                elif column_name in TEXT_COLUMNS:  
+                    ws.Cells(excel_row, col_idx).NumberFormat = "@"
+                    ws.Cells(excel_row, col_idx).Value = cell_value
+                elif column_name in CURRENCY_COLUMNS:  
+                    ws.Cells(excel_row, col_idx).NumberFormat = "$#,##0.00"
+                    ws.Cells(excel_row, col_idx).Value = float(cell_value.replace(",", "").replace("$", ""))
+                elif column_name in DATE_COLUMNS:  
+                    ws.Cells(excel_row, col_idx).NumberFormat = "mm/dd/yyyy"
+                    try:
+                        ws.Cells(excel_row, col_idx).Value = pd.to_datetime(cell_value).strftime("%m/%d/%Y")
+                    except:
+                        ws.Cells(excel_row, col_idx).Value = cell_value  
+                elif cell_value.startswith("0") and cell_value.isdigit():  
+                    ws.Cells(excel_row, col_idx).NumberFormat = "@"
+                    ws.Cells(excel_row, col_idx).Value = cell_value
+                elif "E" in cell_value or "e" in cell_value:  
+                    ws.Cells(excel_row, col_idx).NumberFormat = "0"
+                    ws.Cells(excel_row, col_idx).Value = float(cell_value)
+                else:  
+                    ws.Cells(excel_row, col_idx).Value = cell_value
 
 def convert_xls_to_xlsx(file_path):
     """Converts a mislabeled .xls file to a proper .xlsx format with MIP label."""
     try:
-        print(f"🚀 Processing: {file_path}")
+        print(f"🚀 Processing: {file_path} (Size: {os.path.getsize(file_path)} bytes)")
 
         # ✅ Step 1: Copy the MIP-Labeled Template
         new_xlsx_path = os.path.join(dest_folder, os.path.basename(file_path).replace(".xls", ".xlsx"))
         shutil.copy(template_path, new_xlsx_path)
 
-        # ✅ Step 2: Detect Delimiter and Read File
+        # ✅ Step 2: Detect Delimiter and Read File in Chunks
         delimiter = detect_delimiter(file_path)
         df = pd.read_csv(file_path, delimiter=delimiter, dtype=str, encoding="utf-8", low_memory=False)
 
@@ -52,64 +83,47 @@ def convert_xls_to_xlsx(file_path):
         if df.empty:
             print(f"⚠️ Skipping empty file: {file_path}")
             return
-        df = df.dropna(how="all")  # Remove fully empty rows
+        df = df.dropna(how="all")
 
         # ✅ Step 4: Open the Copied MIP-Labeled Template in Excel
         excel = win32com.client.Dispatch("Excel.Application")
-        excel.Visible = False  # Run in background
-        excel.DisplayAlerts = False  # Disable pop-ups
+        excel.Visible = False  
+        excel.DisplayAlerts = False  
 
         wb = excel.Workbooks.Open(new_xlsx_path)
-        ws = wb.Sheets(1)  # First sheet
+        ws = wb.Sheets(1)  
 
         # ✅ Step 5: Copy Column Headers
         for col_idx, column_name in enumerate(df.columns, start=1):
-            ws.Cells(1, col_idx).Value = column_name  # Write headers
+            ws.Cells(1, col_idx).Value = column_name  
 
-        # ✅ Step 6: Copy Data Into the Template
-        for row_idx, row in df.iterrows():
-            for col_idx, (column_name, cell_value) in enumerate(row.items(), start=1):
-                if pd.isna(cell_value) or cell_value.strip() == "":
-                    ws.Cells(row_idx + 2, col_idx).Value = ""  # Start from row 2 (headers in row 1)
-                elif column_name in TEXT_COLUMNS:  # Preserve Leading Zeros
-                    ws.Cells(row_idx + 2, col_idx).NumberFormat = "@"
-                    ws.Cells(row_idx + 2, col_idx).Value = cell_value
-                elif column_name in CURRENCY_COLUMNS:  # Format as Currency
-                    ws.Cells(row_idx + 2, col_idx).NumberFormat = "$#,##0.00"
-                    ws.Cells(row_idx + 2, col_idx).Value = float(cell_value.replace(",", "").replace("$", ""))
-                elif column_name in DATE_COLUMNS:  # Format as Date
-                    ws.Cells(row_idx + 2, col_idx).NumberFormat = "mm/dd/yyyy"
-                    try:
-                        ws.Cells(row_idx + 2, col_idx).Value = pd.to_datetime(cell_value).strftime("%m/%d/%Y")
-                    except:
-                        ws.Cells(row_idx + 2, col_idx).Value = cell_value  # Fallback if parsing fails
-                elif cell_value.startswith("0") and cell_value.isdigit():  # Keep Leading Zeros
-                    ws.Cells(row_idx + 2, col_idx).NumberFormat = "@"
-                    ws.Cells(row_idx + 2, col_idx).Value = cell_value
-                elif "E" in cell_value or "e" in cell_value:  # Convert Exponential Numbers
-                    ws.Cells(row_idx + 2, col_idx).NumberFormat = "0"
-                    ws.Cells(row_idx + 2, col_idx).Value = float(cell_value)
-                else:  # Default Case (Numbers or Text)
-                    ws.Cells(row_idx + 2, col_idx).Value = cell_value
+        # ✅ Step 6: Process Large File in Chunks
+        process_large_file_in_chunks(df, ws)
 
-        # ✅ Step 7: Save the File (MIP Label Stays from Template)
+        # ✅ Step 7: Force Save & Release File Lock
+        print(f"⏳ Saving: {new_xlsx_path}")
         wb.Save()
         wb.Close()
+        
+        # ✅ Step 8: Ensure Excel Fully Releases Memory Before Moving to Next File
+        del wb
+        time.sleep(2)  # ✅ Allow time for Excel to finish writing before moving on
         excel.Quit()
+        del excel  
 
         print(f"✅ Converted and labeled file: {new_xlsx_path}")
 
     except Exception as e:
         print(f"❌ ERROR converting {file_path}: {e}")
 
-# ✅ Step 8: Find and Process .xls Files
-file_found = False  # Track if any files were found
+# ✅ Step 9: Find and Process .xls Files
+file_found = False  
 for file in os.listdir(source_folder):
     full_path = os.path.join(source_folder, file)
-    print(f"🔍 Checking: {full_path}")  # Debugging
+    print(f"🔍 Checking: {full_path}")  
     if file.endswith(".xls"):
         file_found = True
-        print(f"📂 Found File: {file}")  # File Detected
+        print(f"📂 Found File: {file}")  
         convert_xls_to_xlsx(full_path)
 
 # ✅ Final Status Check
@@ -117,3 +131,4 @@ if not file_found:
     print("⚠️ No .xls files found in the source folder.")
 
 print("✅ All files processed!")
+
