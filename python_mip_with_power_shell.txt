@@ -1,0 +1,118 @@
+import os
+import shutil
+import pandas as pd
+import win32com.client
+import time
+from openpyxl import load_workbook
+
+# ✅ Default Paths
+DEFAULT_TEMPLATE_PATH = r"C:\mip_templates\template.xlsx"
+DEFAULT_SOURCE_FOLDER = r"C:\path\to\source"
+DEFAULT_DEST_FOLDER = r"C:\path\to\destination"
+
+# ✅ User Input (With Defaults)
+template_path = input(f"Enter template path [{DEFAULT_TEMPLATE_PATH}]: ").strip() or DEFAULT_TEMPLATE_PATH
+source_folder = input(f"Enter source folder [{DEFAULT_SOURCE_FOLDER}]: ").strip() or DEFAULT_SOURCE_FOLDER
+dest_folder = input(f"Enter destination folder [{DEFAULT_DEST_FOLDER}]: ").strip() or DEFAULT_DEST_FOLDER
+
+# ✅ Ensure Destination Folder Exists
+os.makedirs(dest_folder, exist_ok=True)
+
+# ✅ Define Column Formatting Rules
+TEXT_COLUMNS = ["ID", "Code", "SerialNumber", "Medical Name"]
+CURRENCY_COLUMNS = ["Price", "Amount", "TotalCost"]
+DATE_COLUMNS = ["OrderDate", "ShipmentDate"]
+EXP_NUM_COLUMNS = ["ReferenceNumber"]
+
+def detect_delimiter(file_path):
+    """Detects whether a file is tab-delimited or comma-delimited."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        first_line = f.readline()
+        return "\t" if "\t" in first_line else ","
+
+def convert_xls_to_xlsx_directly(file_path):
+    """Converts a mislabeled .xls file (CSV format) to proper .xlsx with correct formatting."""
+    try:
+        print(f"🚀 Converting: {file_path} (Size: {os.path.getsize(file_path)} bytes)")
+
+        delimiter = detect_delimiter(file_path)
+        df = pd.read_csv(file_path, delimiter=delimiter, dtype=str, encoding="utf-8", low_memory=False)
+
+        if df.empty:
+            print(f"⚠️ Skipping empty file: {file_path}")
+            return None
+
+        new_xlsx_path = os.path.join(dest_folder, os.path.basename(file_path).replace(".xls", ".xlsx"))
+        df.to_excel(new_xlsx_path, index=False, engine='openpyxl')
+
+        # ✅ Step 2: Adjust Column Formats Using openpyxl
+        wb = load_workbook(new_xlsx_path)
+        ws = wb.active
+
+        for col in ws.iter_cols():
+            col_letter = col[0].column_letter
+            header = col[0].value
+
+            if header in TEXT_COLUMNS:
+                for cell in col[1:]:
+                    cell.number_format = '@'
+            elif header in EXP_NUM_COLUMNS:
+                for cell in col[1:]:
+                    cell.number_format = "0"
+            elif header in CURRENCY_COLUMNS:
+                for cell in col[1:]:
+                    cell.number_format = '"$"#,##0.00'
+            elif header in DATE_COLUMNS:
+                for cell in col[1:]:
+                    cell.number_format = "mm/dd/yyyy"
+
+        wb.save(new_xlsx_path)
+        wb.close()
+
+        print(f"✅ Converted & Formatted: {new_xlsx_path}")
+        return new_xlsx_path
+
+    except Exception as e:
+        print(f"❌ ERROR converting {file_path}: {e}")
+        return None
+
+def apply_mip_label_powershell(source_xlsx, label_id):
+    """Uses PowerShell to apply the MIP label to the Excel file."""
+    try:
+        print(f"🔖 Applying MIP Label via PowerShell: {source_xlsx}")
+
+        # ✅ PowerShell command to apply label
+        powershell_cmd = f'''
+        powershell -ExecutionPolicy Bypass -Command "& {{Set-Label -File '{source_xlsx}' -LabelId '{label_id}'}}"
+        '''
+
+        os.system(powershell_cmd)  # Run PowerShell command
+
+        print(f"✅ MIP Label Applied Successfully to {source_xlsx}")
+
+    except Exception as e:
+        print(f"❌ ERROR applying MIP label: {e}")
+
+def process_xls_files():
+    """Main function to find and process .xls files."""
+    file_found = False
+    label_id = "your-mip-label-id-here"  # Replace with the correct label ID
+
+    for file in os.listdir(source_folder):
+        full_path = os.path.join(source_folder, file)
+        print(f"🔍 Checking: {full_path}")
+
+        if file.endswith(".xls"):
+            file_found = True
+            print(f"📂 Found File: {file}")
+
+            converted_xlsx = convert_xls_to_xlsx_directly(full_path)
+            if converted_xlsx:
+                apply_mip_label_powershell(converted_xlsx, label_id)
+
+    if not file_found:
+        print("⚠️ No .xls files found in the source folder.")
+
+print("🚀 Starting Process...")
+process_xls_files()
+print("✅ All files processed!")
