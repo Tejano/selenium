@@ -1,0 +1,107 @@
+import os
+import shutil
+import pandas as pd
+import win32com.client
+import time
+
+# ✅ Default Paths
+DEFAULT_TEMPLATE_PATH = r"C:\mip_templates\template.xlsx"
+DEFAULT_SOURCE_FOLDER = r"C:\path\to\source"
+DEFAULT_DEST_FOLDER = r"C:\path\to\destination"
+
+# ✅ User Input (With Defaults)
+template_path = input(f"Enter template path [{DEFAULT_TEMPLATE_PATH}]: ").strip() or DEFAULT_TEMPLATE_PATH
+source_folder = input(f"Enter source folder [{DEFAULT_SOURCE_FOLDER}]: ").strip() or DEFAULT_SOURCE_FOLDER
+dest_folder = input(f"Enter destination folder [{DEFAULT_DEST_FOLDER}]: ").strip() or DEFAULT_DEST_FOLDER
+
+# ✅ Ensure Destination Folder Exists
+os.makedirs(dest_folder, exist_ok=True)
+
+# ✅ Debugging: Print Selected Paths
+print(f"\n🔍 Source Folder: {source_folder}")
+print(f"📂 Destination Folder: {dest_folder}")
+print(f"📄 Template File: {template_path}")
+
+def detect_delimiter(file_path):
+    """Detects whether a file is tab-delimited or comma-delimited."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        first_line = f.readline()
+        return "\t" if "\t" in first_line else ","
+
+def convert_xls_to_xlsx_directly(file_path):
+    """Converts a mislabeled .xls file (CSV format) to proper .xlsx without manual row copying."""
+    try:
+        print(f"🚀 Converting: {file_path} (Size: {os.path.getsize(file_path)} bytes)")
+
+        # ✅ Step 1: Convert CSV (Misnamed XLS) Directly to XLSX
+        delimiter = detect_delimiter(file_path)
+        df = pd.read_csv(file_path, delimiter=delimiter, dtype=str, encoding="utf-8", low_memory=False)
+
+        if df.empty:
+            print(f"⚠️ Skipping empty file: {file_path}")
+            return None  # No processing needed
+
+        new_xlsx_path = os.path.join(dest_folder, os.path.basename(file_path).replace(".xls", ".xlsx"))
+        df.to_excel(new_xlsx_path, index=False, engine='openpyxl')  # ✅ Save as XLSX
+
+        print(f"✅ Converted: {new_xlsx_path}")
+        return new_xlsx_path  # Return new XLSX file path
+
+    except Exception as e:
+        print(f"❌ ERROR converting {file_path}: {e}")
+        return None
+
+def apply_mip_label(source_xlsx, template_xlsx):
+    """Copies the MIP label from the template file and applies it to the converted XLSX file."""
+    try:
+        print(f"🔖 Applying MIP Label from: {template_xlsx} → {source_xlsx}")
+
+        excel = win32com.client.Dispatch("Excel.Application")
+        excel.Visible = False
+        excel.DisplayAlerts = False
+
+        # ✅ Step 1: Open Both Files
+        wb_template = excel.Workbooks.Open(template_xlsx)
+        wb_target = excel.Workbooks.Open(source_xlsx)
+
+        # ✅ Step 2: Copy MIP Sensitivity Label from Template
+        try:
+            wb_target.SensitivityLabel = wb_template.SensitivityLabel
+            print(f"✅ MIP Label Applied Successfully")
+        except Exception as e:
+            print(f"⚠️ MIP Label Could Not Be Applied: {e}")
+
+        # ✅ Step 3: Save & Close
+        wb_target.Save()
+        wb_target.Close()
+        wb_template.Close()
+        excel.Quit()
+
+        print(f"✅ Labeled File Saved: {source_xlsx}")
+
+    except Exception as e:
+        print(f"❌ ERROR applying MIP label: {e}")
+
+def process_xls_files():
+    """Main function to find and process .xls files."""
+    file_found = False
+    for file in os.listdir(source_folder):
+        full_path = os.path.join(source_folder, file)
+        print(f"🔍 Checking: {full_path}")
+
+        if file.endswith(".xls"):
+            file_found = True
+            print(f"📂 Found File: {file}")
+
+            # ✅ Step 1: Convert File to XLSX Directly
+            converted_xlsx = convert_xls_to_xlsx_directly(full_path)
+            if converted_xlsx:
+                # ✅ Step 2: Apply MIP Label
+                apply_mip_label(converted_xlsx, template_path)
+
+    if not file_found:
+        print("⚠️ No .xls files found in the source folder.")
+
+print("🚀 Starting Process...")
+process_xls_files()
+print("✅ All files processed!")
