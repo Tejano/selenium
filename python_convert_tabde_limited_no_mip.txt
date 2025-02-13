@@ -78,9 +78,9 @@ def convert_xls_to_xlsx_directly(file_path):
             if header in TEXT_COLUMNS:
                 for cell in col[1:]:
                     cell.number_format = '@'  # Preserve leading zeros
-            elif header in EXP_NUM_COLUMNS:
-                for cell in col[1:]:
-                    cell.number_format = "0"  # Prevent scientific notation
+            elif EXP_NUM_COLUMNS and header in EXP_NUM_COLUMNS:  # ✅ Skip if list is empty
+				for cell in col[1:]:
+					cell.number_format = "0"  # Prevent scientific notation
             elif header in CURRENCY_COLUMNS:
                 for cell in col[1:]:
                     cell.number_format = '"$"#,##0.00'  # Currency format
