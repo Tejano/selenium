@@ -1,0 +1,159 @@
+import os
+import shutil
+import pandas as pd
+import win32com.client
+import time
+
+# ✅ Default Paths
+DEFAULT_TEMPLATE_PATH = r"C:\mip_templates\template.xlsx"
+DEFAULT_SOURCE_FOLDER = r"C:\path\to\source"
+DEFAULT_DEST_FOLDER = r"C:\path\to\destination"
+
+# ✅ User Input (With Defaults)
+template_path = input(f"Enter template path [{DEFAULT_TEMPLATE_PATH}]: ").strip() or DEFAULT_TEMPLATE_PATH
+source_folder = input(f"Enter source folder [{DEFAULT_SOURCE_FOLDER}]: ").strip() or DEFAULT_SOURCE_FOLDER
+dest_folder = input(f"Enter destination folder [{DEFAULT_DEST_FOLDER}]: ").strip() or DEFAULT_DEST_FOLDER
+
+# ✅ Ensure Destination Folder Exists
+os.makedirs(dest_folder, exist_ok=True)
+
+# ✅ Debugging: Print Selected Paths
+print(f"\n🔍 Source Folder: {source_folder}")
+print(f"📂 Destination Folder: {dest_folder}")
+print(f"📄 Template File: {template_path}")
+
+# ✅ Define Special Formatting Rules
+TEXT_COLUMNS = ["ID", "Code", "SerialNumber", "Medical Name"]  # Ensure "Medical Name" stays text
+CURRENCY_COLUMNS = ["Price", "Amount", "TotalCost"]
+DATE_COLUMNS = ["OrderDate", "ShipmentDate"]
+
+def detect_delimiter(file_path):
+    """Detects whether a file is tab-delimited or comma-delimited."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        first_line = f.readline()
+        return "\t" if "\t" in first_line else ","
+
+def is_number(value):
+    """Check if value is a valid number (excluding empty strings)."""
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
+
+def process_large_file_in_chunks(df, ws):
+    """Processes large files in chunks and forces correct column formats."""
+    batch_size = 1000  # ✅ Increase chunk size for performance
+
+    # ✅ Force "Medical Name" Entire Column as Text
+    if "Medical Name" in df.columns:
+        medical_col_idx = df.columns.get_loc("Medical Name") + 1  # Excel uses 1-based index
+        ws.Columns(medical_col_idx).NumberFormat = "@"  # ✅ Force Entire Column as Text
+
+    for start in range(0, len(df), batch_size):
+        end = start + batch_size
+        chunk = df.iloc[start:end]
+
+        for row_idx, row in chunk.iterrows():
+            for col_idx, (column_name, cell_value) in enumerate(row.items(), start=1):
+                excel_row = row_idx + 2  # Start after header row
+
+                # ✅ Debugging: Print if "Medical Name" Column Has Float-like Values
+                if column_name == "Medical Name":
+                    print(f"🔍 Checking 'Medical Name' Value at Row {excel_row}: {cell_value}")
+
+                # ✅ Prevent Conversion of "Medical Name" Values to Float
+                if column_name in TEXT_COLUMNS:
+                    ws.Cells(excel_row, col_idx).NumberFormat = "@"
+                    ws.Cells(excel_row, col_idx).Value = str(cell_value)  # ✅ Ensure it's treated as text
+                elif pd.isna(cell_value) or cell_value.strip() == "":
+                    ws.Cells(excel_row, col_idx).Value = ""
+                elif column_name in CURRENCY_COLUMNS:  
+                    ws.Cells(excel_row, col_idx).NumberFormat = "$#,##0.00"
+                    if is_number(cell_value):
+                        ws.Cells(excel_row, col_idx).Value = float(cell_value.replace(",", "").replace("$", ""))
+                    else:
+                        ws.Cells(excel_row, col_idx).Value = cell_value  
+                elif column_name in DATE_COLUMNS:  
+                    ws.Cells(excel_row, col_idx).NumberFormat = "mm/dd/yyyy"
+                    try:
+                        ws.Cells(excel_row, col_idx).Value = pd.to_datetime(cell_value).strftime("%m/%d/%Y")
+                    except:
+                        ws.Cells(excel_row, col_idx).Value = cell_value  
+                elif cell_value.startswith("0") and cell_value.isdigit():  
+                    ws.Cells(excel_row, col_idx).NumberFormat = "@"
+                    ws.Cells(excel_row, col_idx).Value = str(cell_value)
+                elif "E" in cell_value or "e" in cell_value:  
+                    ws.Cells(excel_row, col_idx).NumberFormat = "0"
+                    if is_number(cell_value):
+                        ws.Cells(excel_row, col_idx).Value = float(cell_value)
+                    else:
+                        ws.Cells(excel_row, col_idx).Value = cell_value
+                else:  
+                    ws.Cells(excel_row, col_idx).Value = cell_value
+
+def convert_xls_to_xlsx(file_path):
+    """Converts a mislabeled .xls file to a proper .xlsx format with MIP label."""
+    try:
+        print(f"🚀 Processing: {file_path} (Size: {os.path.getsize(file_path)} bytes)")
+
+        # ✅ Step 1: Copy the MIP-Labeled Template
+        new_xlsx_path = os.path.join(dest_folder, os.path.basename(file_path).replace(".xls", ".xlsx"))
+        shutil.copy(template_path, new_xlsx_path)
+
+        # ✅ Step 2: Detect Delimiter and Read File in Chunks
+        delimiter = detect_delimiter(file_path)
+        df = pd.read_csv(file_path, delimiter=delimiter, dtype=str, encoding="utf-8", low_memory=False)
+
+        # ✅ Step 3: Ensure Data is Read Correctly
+        if df.empty:
+            print(f"⚠️ Skipping empty file: {file_path}")
+            return
+        df = df.dropna(how="all")
+
+        # ✅ Step 4: Open the Copied MIP-Labeled Template in Excel
+        excel = win32com.client.Dispatch("Excel.Application")
+        excel.Visible = False  
+        excel.DisplayAlerts = False  
+
+        wb = excel.Workbooks.Open(new_xlsx_path)
+        ws = wb.Sheets(1)  
+
+        # ✅ Step 5: Copy Column Headers
+        for col_idx, column_name in enumerate(df.columns, start=1):
+            ws.Cells(1, col_idx).Value = column_name  
+
+        # ✅ Step 6: Process Large File in Chunks
+        process_large_file_in_chunks(df, ws)
+
+        # ✅ Step 7: Force Save & Release File Lock
+        print(f"⏳ Saving: {new_xlsx_path}")
+        wb.Save()
+        wb.Close()
+        
+        # ✅ Step 8: Ensure Excel Fully Releases Memory Before Moving to Next File
+        del wb
+        time.sleep(2)  # ✅ Allow time for Excel to finish writing before moving on
+        excel.Quit()
+        del excel  
+
+        print(f"✅ Converted and labeled file: {new_xlsx_path}")
+
+    except Exception as e:
+        print(f"❌ ERROR converting {file_path}: {e}")
+
+# ✅ Step 9: Find and Process .xls Files
+file_found = False  
+for file in os.listdir(source_folder):
+    full_path = os.path.join(source_folder, file)
+    print(f"🔍 Checking: {full_path}")  
+    if file.endswith(".xls"):
+        file_found = True
+        print(f"📂 Found File: {file}")  
+        convert_xls_to_xlsx(full_path)
+
+# ✅ Final Status Check
+if not file_found:
+    print("⚠️ No .xls files found in the source folder.")
+
+print("✅ All files processed!")
