@@ -1,0 +1,134 @@
+import os
+import shutil
+import pandas as pd
+import win32com.client
+import time
+from openpyxl import load_workbook
+
+# ✅ Default Paths
+DEFAULT_TEMPLATE_PATH = r"C:\mip_templates\template.xlsx"
+DEFAULT_SOURCE_FOLDER = r"C:\path\to\source"
+DEFAULT_DEST_FOLDER = r"C:\path\to\destination"
+
+# ✅ User Input (With Defaults)
+template_path = input(f"Enter template path [{DEFAULT_TEMPLATE_PATH}]: ").strip() or DEFAULT_TEMPLATE_PATH
+source_folder = input(f"Enter source folder [{DEFAULT_SOURCE_FOLDER}]: ").strip() or DEFAULT_SOURCE_FOLDER
+dest_folder = input(f"Enter destination folder [{DEFAULT_DEST_FOLDER}]: ").strip() or DEFAULT_DEST_FOLDER
+
+# ✅ Ensure Destination Folder Exists
+os.makedirs(dest_folder, exist_ok=True)
+
+# ✅ Define Column Formatting Rules
+TEXT_COLUMNS = ["ID", "Code", "SerialNumber", "Medical Name"]
+CURRENCY_COLUMNS = ["Price", "Amount", "TotalCost"]
+DATE_COLUMNS = ["OrderDate", "ShipmentDate"]
+EXP_NUM_COLUMNS = ["ReferenceNumber"]
+
+def detect_delimiter(file_path):
+    """Detects whether a file is tab-delimited or comma-delimited."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        first_line = f.readline().strip()
+        return "\t" if "\t" in first_line else ","
+
+def clean_tab_delimited_file(file_path):
+    """Strips extra tabs before LF to prevent unwanted columns."""
+    print(f"🔧 Cleaning extra tabs in: {file_path}")
+    cleaned_file = file_path.replace(".xls", "_cleaned.xls")
+
+    with open(file_path, "r", encoding="utf-8") as f, open(cleaned_file, "w", encoding="utf-8") as new_f:
+        for line in f:
+            new_f.write(line.rstrip("\t") + "\n")  # ✅ Remove trailing tabs before LF
+
+    return cleaned_file
+
+def get_visible_columns(file_path, delimiter):
+    """Reads the first row of the file to determine which columns Excel will display."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        first_line = f.readline().strip()
+        headers = first_line.split(delimiter)
+        return [col.strip() for col in headers]  # Clean column names
+
+def convert_xls_to_xlsx_directly(file_path):
+    """Converts a mislabeled .xls file (CSV format) to proper .xlsx with correct formatting."""
+    try:
+        print(f"🚀 Converting: {file_path} (Size: {os.path.getsize(file_path)} bytes)")
+
+        cleaned_file = clean_tab_delimited_file(file_path)  # ✅ Remove extra tabs first
+        delimiter = detect_delimiter(cleaned_file)
+        visible_columns = get_visible_columns(cleaned_file, delimiter)  # ✅ Get columns Excel shows
+
+        df = pd.read_csv(cleaned_file, delimiter=delimiter, dtype=str, encoding="utf-8", low_memory=False)
+
+        if df.empty:
+            print(f"⚠️ Skipping empty file: {file_path}")
+            return None
+
+        # ✅ Step 1: Ensure only visible columns are included
+        df = df.loc[:, visible_columns]  # Keep only columns Excel shows
+
+        new_xlsx_path = os.path.join(dest_folder, os.path.basename(file_path).replace(".xls", ".xlsx"))
+        df.to_excel(new_xlsx_path, index=False, engine='openpyxl')
+
+        # ✅ Step 2: Format Only Necessary Columns Using openpyxl
+        wb = load_workbook(new_xlsx_path)
+        ws = wb.active
+
+        for col in ws.iter_cols():
+            header = col[0].value
+            if header in TEXT_COLUMNS:
+                for cell in col[1:]:
+                    cell.number_format = '@'  # Preserve leading zeros
+            elif header in EXP_NUM_COLUMNS:
+                for cell in col[1:]:
+                    cell.number_format = "0"  # Prevent scientific notation
+            elif header in CURRENCY_COLUMNS:
+                for cell in col[1:]:
+                    cell.number_format = '"$"#,##0.00'  # Currency format
+            elif header in DATE_COLUMNS:
+                for cell in col[1:]:
+                    cell.number_format = "mm/dd/yyyy"  # Date format
+
+        # ✅ Step 3: Auto-Size All Columns to Fit Content
+        for col in ws.columns:
+            max_length = 0
+            col_letter = col[0].column_letter
+            for cell in col:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except:
+                    pass
+            ws.column_dimensions[col_letter].width = max_length + 2  # ✅ Adjust column width
+
+        wb.save(new_xlsx_path)
+        wb.close()
+
+        print(f"✅ Converted, Cleaned & Auto-Sized: {new_xlsx_path}")
+        return new_xlsx_path
+
+    except Exception as e:
+        print(f"❌ ERROR converting {file_path}: {e}")
+        return None
+
+def process_xls_files():
+    """Main function to find and process .xls files."""
+    file_found = False
+
+    for file in os.listdir(source_folder):
+        full_path = os.path.join(source_folder, file)
+        print(f"🔍 Checking: {full_path}")
+
+        if file.endswith(".xls"):
+            file_found = True
+            print(f"📂 Found File: {file}")
+
+            converted_xlsx = convert_xls_to_xlsx_directly(full_path)
+            if converted_xlsx:
+                print(f"✅ Finished Processing: {converted_xlsx}")
+
+    if not file_found:
+        print("⚠️ No .xls files found in the source folder.")
+
+print("🚀 Starting Process...")
+process_xls_files()
+print("✅ All files processed!")
