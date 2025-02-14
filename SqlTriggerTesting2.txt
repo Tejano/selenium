@@ -10,29 +10,33 @@ PRINT '===== Step 1: Insert Test Records ====='
 -- Insert a test record, marking it with "TEST RECORD"
 DECLARE @InsertSQL NVARCHAR(MAX) = 'INSERT INTO YourTable (';
 DECLARE @Columns NVARCHAR(MAX) = '';
-DECLARE @Values NVARCHAR(MAX) = ' VALUES (';
+DECLARE @Values NVARCHAR(MAX) = ') VALUES (';
 
--- Dynamically build column list and values
+-- Dynamically build column list and values, ensuring correct data length
 SELECT 
-    @Columns += COLUMN_NAME + ', ',
+    @Columns += QUOTENAME(COLUMN_NAME) + ', ',
     @Values += 
         CASE 
-            WHEN COLUMN_NAME = 'Description' THEN '''TEST RECORD - Automated Test'', '
-            WHEN DATA_TYPE IN ('varchar', 'nvarchar', 'text') THEN '''TestValue'', '
-            WHEN DATA_TYPE IN ('int', 'bigint', 'smallint', 'tinyint') THEN '1, '
-            WHEN DATA_TYPE IN ('datetime', 'date', 'smalldatetime', 'datetime2') THEN 'GETDATE(), '
+            WHEN DATA_TYPE IN ('varchar', 'nvarchar') AND CHARACTER_MAXIMUM_LENGTH IS NOT NULL
+                THEN '''' + LEFT('TestValue', CHARACTER_MAXIMUM_LENGTH) + ''', '
+            WHEN DATA_TYPE IN ('text', 'ntext', 'image') 
+                THEN 'NULL, '  -- Avoid inserting into text/image columns
+            WHEN DATA_TYPE IN ('int', 'bigint', 'smallint', 'tinyint') 
+                THEN '1, '
+            WHEN DATA_TYPE IN ('datetime', 'date', 'smalldatetime', 'datetime2') 
+                THEN 'GETDATE(), '
             ELSE 'NULL, '
         END
 FROM INFORMATION_SCHEMA.COLUMNS
 WHERE TABLE_NAME = 'YourTable'
 AND COLUMN_NAME NOT IN ('LastUpdatedBy', 'LastUpdatedAt');  -- Exclude audit fields
 
--- Remove the last comma and space correctly
+-- Remove trailing comma and space correctly
 SET @Columns = LEFT(@Columns, LEN(@Columns) - 2);  
-SET @Values = LEFT(@Values, LEN(@Values) - 2) + ');';  -- Ensures proper VALUES formatting
+SET @Values = LEFT(@Values, LEN(@Values) - 2) + ')';  
 
 -- Construct the final SQL statement
-SET @InsertSQL += @Columns + ')' + @Values;
+SET @InsertSQL += @Columns + @Values + ';';
 
 -- Print and execute the final SQL statement
 PRINT 'Executing Insert Statement:';
