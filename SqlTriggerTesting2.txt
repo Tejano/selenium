@@ -43,10 +43,11 @@ PRINT '===== Step 3: Update Test Records ====='
 DECLARE @UpdateSQL NVARCHAR(MAX) = 'UPDATE YourTable SET ';
 DECLARE @UpdateFields NVARCHAR(MAX) = '';
 
-SELECT TOP 5  -- Pick 5 random columns to update
+-- Select random columns but apply updates only to test records
+SELECT TOP 5  
     @UpdateFields += COLUMN_NAME + ' = ' +
     CASE 
-        WHEN COLUMN_NAME = 'Description' THEN '''TEST RECORD - Updated'', '  -- Keep identifier
+        WHEN COLUMN_NAME = 'Description' THEN '''TEST RECORD - Updated'', '  
         WHEN DATA_TYPE IN ('varchar', 'nvarchar', 'text') THEN '''UpdatedValue'', '
         WHEN DATA_TYPE IN ('int', 'bigint', 'smallint', 'tinyint') THEN '2, '
         WHEN DATA_TYPE IN ('datetime', 'date', 'smalldatetime', 'datetime2') THEN 'GETDATE(), '
@@ -54,9 +55,10 @@ SELECT TOP 5  -- Pick 5 random columns to update
     END
 FROM INFORMATION_SCHEMA.COLUMNS
 WHERE TABLE_NAME = 'YourTable'
-AND COLUMN_NAME NOT IN ('ID', 'LastUpdatedBy', 'LastUpdatedAt')  -- Exclude primary key and audit fields
-ORDER BY NEWID();  -- Randomly pick columns
+AND COLUMN_NAME NOT IN ('ID', 'LastUpdatedBy', 'LastUpdatedAt')  -- Exclude key & audit fields
+ORDER BY NEWID();  -- Randomize column selection
 
+-- Append WHERE clause to target test records only
 SET @UpdateSQL += LEFT(@UpdateFields, LEN(@UpdateFields) - 2) + ' WHERE Description LIKE ''TEST RECORD%'';';
 
 PRINT 'Executing Update Statement:';
