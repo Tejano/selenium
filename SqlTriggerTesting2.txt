@@ -1,0 +1,89 @@
+-- Enable transaction logging for clean execution
+SET NOCOUNT ON;
+
+-- Drop temp tables if they exist from a previous run
+IF OBJECT_ID('tempdb..#TestResultsBefore') IS NOT NULL DROP TABLE #TestResultsBefore;
+IF OBJECT_ID('tempdb..#TestResultsAfter') IS NOT NULL DROP TABLE #TestResultsAfter;
+
+PRINT '===== Step 1: Insert Test Records ====='
+
+-- Insert a test record, marking it with "TEST RECORD"
+DECLARE @InsertSQL NVARCHAR(MAX) = 'INSERT INTO YourTable (';
+DECLARE @Columns NVARCHAR(MAX) = '';
+DECLARE @Values NVARCHAR(MAX) = ') VALUES (';
+
+SELECT 
+    @Columns += COLUMN_NAME + ', ',
+    @Values += 
+        CASE 
+            WHEN COLUMN_NAME = 'Description' THEN '''TEST RECORD - Automated Test'', '
+            WHEN DATA_TYPE IN ('varchar', 'nvarchar', 'text') THEN '''TestValue'', '
+            WHEN DATA_TYPE IN ('int', 'bigint', 'smallint', 'tinyint') THEN '1, '
+            WHEN DATA_TYPE IN ('datetime', 'date', 'smalldatetime', 'datetime2') THEN 'GETDATE(), '
+            ELSE 'NULL, '
+        END
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'YourTable'
+AND COLUMN_NAME NOT IN ('LastUpdatedBy', 'LastUpdatedAt');  -- Exclude audit fields
+
+SET @InsertSQL += LEFT(@Columns, LEN(@Columns) - 2) + @Values + ');';
+
+PRINT 'Executing Insert Statement:';
+PRINT @InsertSQL;
+EXEC sp_executesql @InsertSQL;
+
+
+PRINT '===== Step 2: Log Test Records Before Update ====='
+-- Store test records before the update
+SELECT * INTO #TestResultsBefore FROM YourTable WHERE Description LIKE 'TEST RECORD%';
+
+
+PRINT '===== Step 3: Update Test Records ====='
+-- Generate an UPDATE statement that only affects test records
+DECLARE @UpdateSQL NVARCHAR(MAX) = 'UPDATE YourTable SET ';
+DECLARE @UpdateFields NVARCHAR(MAX) = '';
+
+SELECT TOP 5  -- Pick 5 random columns to update
+    @UpdateFields += COLUMN_NAME + ' = ' +
+    CASE 
+        WHEN COLUMN_NAME = 'Description' THEN '''TEST RECORD - Updated'', '  -- Keep identifier
+        WHEN DATA_TYPE IN ('varchar', 'nvarchar', 'text') THEN '''UpdatedValue'', '
+        WHEN DATA_TYPE IN ('int', 'bigint', 'smallint', 'tinyint') THEN '2, '
+        WHEN DATA_TYPE IN ('datetime', 'date', 'smalldatetime', 'datetime2') THEN 'GETDATE(), '
+        ELSE 'NULL, '
+    END
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'YourTable'
+AND COLUMN_NAME NOT IN ('ID', 'LastUpdatedBy', 'LastUpdatedAt')  -- Exclude primary key and audit fields
+ORDER BY NEWID();  -- Randomly pick columns
+
+SET @UpdateSQL += LEFT(@UpdateFields, LEN(@UpdateFields) - 2) + ' WHERE Description LIKE ''TEST RECORD%'';';
+
+PRINT 'Executing Update Statement:';
+PRINT @UpdateSQL;
+EXEC sp_executesql @UpdateSQL;
+
+
+PRINT '===== Step 4: Log Test Records After Update ====='
+-- Store test records after the update
+SELECT * INTO #TestResultsAfter FROM YourTable WHERE Description LIKE 'TEST RECORD%';
+
+
+PRINT '===== Step 5: Display Before & After Comparison ====='
+-- Compare the records before and after
+SELECT 
+    b.ID AS RecordID,
+    b.Description AS Before_Description, a.Description AS After_Description,
+    b.LastUpdatedBy AS Before_LastUpdatedBy, a.LastUpdatedBy AS After_LastUpdatedBy,
+    b.LastUpdatedAt AS Before_LastUpdatedAt, a.LastUpdatedAt AS After_LastUpdatedAt
+FROM #TestResultsBefore b
+FULL OUTER JOIN #TestResultsAfter a
+ON b.ID = a.ID
+ORDER BY a.LastUpdatedAt DESC;
+
+
+PRINT '===== Step 6: Cleanup Test Records (Optional) ====='
+-- Remove test records if needed
+-- DELETE FROM YourTable WHERE Description LIKE 'TEST RECORD%';
+
+PRINT '===== Test Completed Successfully! ====='
