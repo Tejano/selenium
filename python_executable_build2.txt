@@ -1,0 +1,85 @@
+✅ Step 1: Run .exe in CMD with Debugging
+Since double-clicking doesn’t show errors, run it in CMD and capture any issues:
+
+powershell
+
+convertwithnomip.exe > log.txt 2>&1
+Then open log.txt and check for errors.
+
+If nothing prints, try running it in CMD without redirecting output:
+
+powershell
+
+convertwithnomip.exe
+Do you see any error messages? If so, send them here.
+
+✅ Step 2: Rebuild .exe with Hidden Imports
+Some modules (like pandas and openpyxl) might not be included correctly in the .exe. Rebuild it with:
+
+powershell
+
+pyinstaller --onefile --hidden-import pandas --hidden-import openpyxl --hidden-import win32com.client convertwithnomip.py
+Then, run the new .exe and see if it works.
+
+✅ Step 3: Try Without --onefile
+Sometimes, --onefile causes issues when dependencies are loaded dynamically. Try:
+
+powershell
+
+pyinstaller convertwithnomip.py
+This will generate a dist/convertwithnomip/ folder with multiple files.
+Now, run the .exe inside that folder:
+
+powershell
+
+cd dist/convertwithnomip
+convertwithnomip.exe
+Does it work now?
+✔ Yes? → The issue was with --onefile.
+✔ No? → Move to Step 4.
+
+✅ Step 4: Rebuild With Debug Mode
+Rebuild the .exe with console output enabled, so errors aren’t hidden:
+
+powershell
+Copy
+Edit
+pyinstaller --onefile --debug=all convertwithnomip.py
+Now run the .exe from CMD and see if an error message appears.
+
+✅ Step 5: Use print() Statements to Find Where It Hangs
+If the .exe still hangs, edit convertwithnomip.py to print debugging info:
+
+python
+
+print("🚀 Script started...")  
+
+try:
+    print("🔍 Checking paths...")
+    print(f"📂 Source Folder: {source_folder}")
+    print(f"📂 Destination Folder: {dest_folder}")
+
+    print("📄 Running process_xls_files()...")
+    process_xls_files()
+    
+    print("✅ All files processed successfully!")
+
+except Exception as e:
+    print(f"❌ ERROR: {e}")
+Rebuild the .exe and check which message prints last.
+
+🔥 Summary
+✔ Run the .exe in CMD to capture errors (convertwithnomip.exe > log.txt 2>&1).
+✔ Rebuild with --hidden-import pandas --hidden-import openpyxl --hidden-import win32com.client.
+✔ Try without --onefile to see if dependencies are the issue.
+✔ Rebuild with --debug=all to force error messages to appear.
+✔ Add print() statements to find where it hangs.
+
+🚀 Try these steps and let me know what happens! 🎯
+
+
+
+
+
+
+
