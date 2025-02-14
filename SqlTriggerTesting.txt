@@ -1,0 +1,89 @@
+-- Enable transaction logging for testing
+SET NOCOUNT ON;
+
+PRINT '===== Test Case 1: Verify Trigger Fires on Update ====='
+-- Insert a test record
+INSERT INTO YourTable (ID, Name) 
+VALUES (1001, 'Initial Name');
+
+-- Wait for a second to ensure timestamp changes
+WAITFOR DELAY '00:00:01';
+
+-- Update the record
+UPDATE YourTable 
+SET Name = 'Updated Name'
+WHERE ID = 1001;
+
+-- Check if audit fields updated correctly
+SELECT ID, Name, LastUpdatedBy, LastUpdatedAt 
+FROM YourTable 
+WHERE ID = 1001;
+
+
+PRINT '===== Test Case 2: Ensure Only Updated Fields Change ====='
+-- Insert another record
+INSERT INTO YourTable (ID, Name, Amount, Status) 
+VALUES (1002, 'Test Name', 500.00, 'Open');
+
+-- Wait to simulate a time difference
+WAITFOR DELAY '00:00:01';
+
+-- Update only Status
+UPDATE YourTable 
+SET Status = 'Closed'
+WHERE ID = 1002;
+
+-- Check if only Status, LastUpdatedBy, and LastUpdatedAt changed
+SELECT * FROM YourTable WHERE ID = 1002;
+
+
+PRINT '===== Test Case 3: Verify Trigger Does Not Fire on INSERT ====='
+-- Insert a new record and check audit fields
+INSERT INTO YourTable (ID, Name) 
+VALUES (1003, 'Inserted Record');
+
+-- Check if LastUpdatedBy and LastUpdatedAt are still NULL or default
+SELECT ID, Name, LastUpdatedBy, LastUpdatedAt 
+FROM YourTable 
+WHERE ID = 1003;
+
+
+PRINT '===== Test Case 4: Verify Updates from Different Users ====='
+-- Simulate user1 update
+EXECUTE AS LOGIN = 'user1';
+UPDATE YourTable 
+SET Name = 'Changed by User1'
+WHERE ID = 1001;
+REVERT;
+
+-- Wait to simulate different timestamps
+WAITFOR DELAY '00:00:01';
+
+-- Simulate user2 update
+EXECUTE AS LOGIN = 'user2';
+UPDATE YourTable 
+SET Name = 'Changed by User2'
+WHERE ID = 1001;
+REVERT;
+
+-- Check if LastUpdatedBy reflects user2
+SELECT ID, Name, LastUpdatedBy, LastUpdatedAt 
+FROM YourTable 
+WHERE ID = 1001;
+
+
+PRINT '===== Test Case 5: Ensure Trigger Does Not Fire on Rollback ====='
+-- Start transaction and rollback
+BEGIN TRAN;
+UPDATE YourTable 
+SET Name = 'Should Not Change'
+WHERE ID = 1002;
+ROLLBACK;
+
+-- Check if Name and audit fields remained unchanged
+SELECT ID, Name, LastUpdatedBy, LastUpdatedAt 
+FROM YourTable 
+WHERE ID = 1002;
+
+
+PRINT '===== All Test Cases Completed ====='
