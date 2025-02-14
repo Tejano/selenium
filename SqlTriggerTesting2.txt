@@ -10,7 +10,7 @@ PRINT '===== Step 1: Insert Test Records ====='
 -- Insert a test record, marking it with "TEST RECORD"
 DECLARE @InsertSQL NVARCHAR(MAX) = 'INSERT INTO YourTable (';
 DECLARE @Columns NVARCHAR(MAX) = '';
-DECLARE @Values NVARCHAR(MAX) = ') VALUES (';
+DECLARE @Values NVARCHAR(MAX) = ' VALUES (';
 
 -- Dynamically build column list and values
 SELECT 
@@ -27,12 +27,12 @@ FROM INFORMATION_SCHEMA.COLUMNS
 WHERE TABLE_NAME = 'YourTable'
 AND COLUMN_NAME NOT IN ('LastUpdatedBy', 'LastUpdatedAt');  -- Exclude audit fields
 
--- Remove the trailing comma and space
-SET @Columns = LEFT(@Columns, LEN(@Columns) - 2);
-SET @Values = LEFT(@Values, LEN(@Values) - 2);
+-- Remove the last comma and space correctly
+SET @Columns = LEFT(@Columns, LEN(@Columns) - 2);  
+SET @Values = LEFT(@Values, LEN(@Values) - 2) + ');';  -- Ensures proper VALUES formatting
 
--- Complete the SQL statement
-SET @InsertSQL += @Columns + ') VALUES (' + @Values + ');';
+-- Construct the final SQL statement
+SET @InsertSQL += @Columns + ')' + @Values;
 
 -- Print and execute the final SQL statement
 PRINT 'Executing Insert Statement:';
