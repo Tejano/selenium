@@ -79,7 +79,68 @@ Rebuild the .exe and check which message prints last.
 
 
 
+🚀 Fix: .exe Works but Takes a Long Time to Show Prompts
+Since it eventually runs but takes a while to show the prompts, this means:
+1️⃣ PyInstaller is unpacking dependencies, which can be slow.
+2️⃣ The script is waiting for something before displaying prompts (e.g., scanning directories).
+3️⃣ Large dependencies like pandas and win32com increase startup time.
 
+✅ Solution: Improve Startup Speed
+1️⃣ Reduce Startup Time by Preloading Modules
+Modify the top of your script:
+
+python
+
+import os
+import sys
+
+print("🚀 Starting script...")  # Debugging: Immediately prints output
+
+# ✅ Preload heavy modules early to avoid lag before input prompts
+import pandas as pd
+import win32com.client
+import time
+from openpyxl import load_workbook
+
+print("📦 Modules loaded, preparing input prompts...")
+✔ This ensures modules load before the user sees prompts.
+✔ Now, the prompts appear instantly after module loading.
+
+2️⃣ Convert Input Prompts to CMD Arguments
+If users will always use the same source/destination folders, allow CMD arguments instead of prompts:
+
+python
+
+DEFAULT_TEMPLATE_PATH = r"C:\mip_templates\template.xlsx"
+DEFAULT_SOURCE_FOLDER = r"C:\path\to\source"
+DEFAULT_DEST_FOLDER = r"C:\path\to\destination"
+
+template_path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_TEMPLATE_PATH
+source_folder = sys.argv[2] if len(sys.argv) > 2 else DEFAULT_SOURCE_FOLDER
+dest_folder = sys.argv[3] if len(sys.argv) > 3 else DEFAULT_DEST_FOLDER
+
+print(f"📂 Source: {source_folder}")
+print(f"📂 Destination: {dest_folder}")
+Now, users can run the .exe like this:
+
+powershell
+convertwithnomip.exe "C:\source\folder" "C:\destination\folder"
+🚀 No waiting for input!
+
+3️⃣ Rebuild the .exe With Faster Options
+Rebuild using --noconsole and --clean to optimize startup speed:
+
+powershell
+pyinstaller --onefile --noconsole --clean convertwithnomip.py
+✔ --noconsole → Removes unnecessary CMD window when running.
+✔ --clean → Forces a clean build, removing unused files.
+
+🔥 Summary
+✔ Preload modules early to reduce startup lag.
+✔ Use CMD arguments instead of input prompts.
+✔ Rebuild .exe with --noconsole --clean for faster execution.
+
+🚀 Try these and let me know if startup is faster! 🎯
 
 
 
