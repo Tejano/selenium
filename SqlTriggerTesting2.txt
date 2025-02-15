@@ -55,9 +55,9 @@ PRINT '===== Step 3: Update Test Records ====='
 DECLARE @UpdateSQL NVARCHAR(MAX) = 'UPDATE YourTable SET ';
 DECLARE @UpdateFields NVARCHAR(MAX) = '';
 
--- Select random columns but apply updates only to test records
+-- Select random columns to update, ensuring correct syntax
 SELECT TOP 5  
-    @UpdateFields += COLUMN_NAME + ' = ' +
+    @UpdateFields += QUOTENAME(COLUMN_NAME) + ' = ' +
     CASE 
         WHEN COLUMN_NAME = 'Description' THEN '''TEST RECORD - Updated'', '  
         WHEN DATA_TYPE IN ('varchar', 'nvarchar', 'text') THEN '''UpdatedValue'', '
@@ -68,15 +68,18 @@ SELECT TOP 5
 FROM INFORMATION_SCHEMA.COLUMNS
 WHERE TABLE_NAME = 'YourTable'
 AND COLUMN_NAME NOT IN ('ID', 'LastUpdatedBy', 'LastUpdatedAt')  -- Exclude key & audit fields
-ORDER BY NEWID();  -- Randomize column selection
+ORDER BY NEWID();  -- Randomly select columns
+
+-- Correctly remove ONLY the last comma without truncating column names
+SET @UpdateFields = LEFT(@UpdateFields, LEN(@UpdateFields) - 2);  
 
 -- Append WHERE clause to target test records only
-SET @UpdateSQL += LEFT(@UpdateFields, LEN(@UpdateFields) - 2) + ' WHERE Description LIKE ''TEST RECORD%'';';
+SET @UpdateSQL += @UpdateFields + ' WHERE Description LIKE ''TEST RECORD%'';';
 
+-- Print and execute the final SQL statement
 PRINT 'Executing Update Statement:';
 PRINT @UpdateSQL;
 EXEC sp_executesql @UpdateSQL;
-
 
 PRINT '===== Step 4: Log Test Records After Update ====='
 -- Store test records after the update
