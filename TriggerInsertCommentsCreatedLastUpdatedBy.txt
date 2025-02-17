@@ -1,0 +1,48 @@
+-- 🏁 Define Test Configuration
+DECLARE @TestMode NVARCHAR(10) = 'BOTH';  -- Options: 'BOTH', 'INSERT', 'UPDATE'
+DECLARE @TestCreatedBy NVARCHAR(100) = 'TestUser1';  -- ✅ User for insert
+DECLARE @TestLastUpdatedBy NVARCHAR(100) = 'TestUser2';  -- User for update
+DECLARE @TestComments NVARCHAR(255) = 'Initial Test Comment';  -- ✅ Comment for test records
+DECLARE @TestPricingLevel NVARCHAR(50) = 'Group';  -- ✅ Pricing level for test cases
+
+-- 🏁 Insert Section
+IF @TestMode IN ('BOTH', 'INSERT')
+BEGIN
+    DECLARE @InsertSQL NVARCHAR(MAX) = 'INSERT INTO YourTable (';
+    DECLARE @Columns NVARCHAR(MAX) = '';
+    DECLARE @Values NVARCHAR(MAX) = ') VALUES (';
+
+    -- Dynamically build column list and values
+    SELECT 
+        @Columns += QUOTENAME(COLUMN_NAME) + ', ',
+        @Values += 
+            CASE 
+                WHEN COLUMN_NAME = 'Comments' THEN '?, '  -- ✅ Uses parameterized placeholder
+                WHEN COLUMN_NAME = 'Pricing_Level' THEN '?, '  -- ✅ Uses parameterized placeholder
+                WHEN COLUMN_NAME = 'CreatedBy' THEN '?, '  -- ✅ Uses parameterized placeholder
+                WHEN DATA_TYPE IN ('varchar', 'nvarchar') AND CHARACTER_MAXIMUM_LENGTH IS NOT NULL
+                    THEN '''' + LEFT('TestValue', CHARACTER_MAXIMUM_LENGTH) + ''', '
+                WHEN DATA_TYPE IN ('int', 'bigint', 'smallint', 'tinyint') 
+                    THEN '1, '
+                WHEN DATA_TYPE IN ('datetime', 'date', 'smalldatetime', 'datetime2') 
+                    THEN 'GETDATE(), '
+                ELSE 'NULL, '
+            END
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'YourTable'
+    AND COLUMN_NAME NOT IN ('LastUpdatedBy', 'LastUpdatedAt');  -- Exclude audit fields
+
+    -- Correctly remove last comma
+    SET @Columns = LEFT(@Columns, LEN(@Columns) - 1);  
+    SET @Values = LEFT(@Values, LEN(@Values) - 1) + ')';  
+
+    -- Construct the final SQL statement
+    SET @InsertSQL += @Columns + @Values + ';';
+
+    -- Print and execute (ensures variables are properly passed)
+    PRINT 'Executing Insert Statement:';
+    PRINT @InsertSQL;
+    EXEC sp_executesql @InsertSQL, 
+        N'@TestComments NVARCHAR(255), @TestPricingLevel NVARCHAR(50), @TestCreatedBy NVARCHAR(100)', 
+        @TestComments, @TestPricingLevel, @TestCreatedBy;
+END
