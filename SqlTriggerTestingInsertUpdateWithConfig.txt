@@ -1,0 +1,94 @@
+
+Scenario	How to Run It	Expected Behavior
+Insert & Update	@TestMode = 'BOTH'	Inserts & updates test records
+Only Insert	@TestMode = 'INSERT'	Only inserts test records
+Only Update	@TestMode = 'UPDATE'	Updates existing test records
+Use Custom CreatedBy	Set @TestCreatedBy = 'APIUser'	Insert records with CreatedBy = APIUser
+Use Custom LastUpdatedBy	Set @TestLastUpdatedBy = 'ReactUser'	Update records with LastUpdatedBy = ReactUser
+Use Custom Comments	Set @TestComments = 'Testing Microservice'	Inserts/updates Comments = 'Testing Microservice'
+Use Custom Pricing Level	Set @TestPricingLevel = 'Contract'	Inserts/updates Pricing_Level = 'Contract'
+
+-- 🏁 Define Test Configuration
+DECLARE @TestMode NVARCHAR(10) = 'BOTH';  -- Options: 'BOTH', 'INSERT', 'UPDATE'
+DECLARE @TestCreatedBy NVARCHAR(100) = 'TestUser1';  -- User for insert
+DECLARE @TestLastUpdatedBy NVARCHAR(100) = 'TestUser2';  -- User for update
+DECLARE @TestComments NVARCHAR(255) = 'Initial Test Comment';  -- Comment for test records
+DECLARE @TestPricingLevel NVARCHAR(50) = 'Group';  -- Pricing level for test cases
+
+-- 🏁 Insert Section
+IF @TestMode IN ('BOTH', 'INSERT')
+BEGIN
+    DECLARE @InsertSQL NVARCHAR(MAX) = 'INSERT INTO YourTable (';
+    DECLARE @Columns NVARCHAR(MAX) = '';
+    DECLARE @Values NVARCHAR(MAX) = ') VALUES (';
+
+    -- Dynamically build column list and values
+    SELECT 
+        @Columns += QUOTENAME(COLUMN_NAME) + ', ',
+        @Values += 
+            CASE 
+                WHEN COLUMN_NAME = 'Comments' THEN '''' + @TestComments + ''', '  -- ✅ Uses supplied comment
+                WHEN COLUMN_NAME = 'Pricing_Level' THEN '''' + @TestPricingLevel + ''', '  -- ✅ Uses supplied pricing level
+                WHEN COLUMN_NAME = 'CreatedBy' THEN 'COALESCE(@TestCreatedBy, SUSER_NAME()), '  -- ✅ Uses provided or DB user
+                WHEN DATA_TYPE IN ('varchar', 'nvarchar') AND CHARACTER_MAXIMUM_LENGTH IS NOT NULL
+                    THEN '''' + LEFT('TestValue', CHARACTER_MAXIMUM_LENGTH) + ''', '
+                WHEN DATA_TYPE IN ('int', 'bigint', 'smallint', 'tinyint') 
+                    THEN '1, '
+                WHEN DATA_TYPE IN ('datetime', 'date', 'smalldatetime', 'datetime2') 
+                    THEN 'GETDATE(), '
+                ELSE 'NULL, '
+            END
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'YourTable'
+    AND COLUMN_NAME NOT IN ('LastUpdatedBy', 'LastUpdatedAt');  -- Exclude audit fields
+
+    -- Correctly remove last comma
+    SET @Columns = LEFT(@Columns, LEN(@Columns) - 1);  
+    SET @Values = LEFT(@Values, LEN(@Values) - 1) + ')';  
+
+    -- Construct the final SQL statement
+    SET @InsertSQL += @Columns + @Values + ';';
+
+    -- Print and execute
+    PRINT 'Executing Insert Statement:';
+    PRINT @InsertSQL;
+    EXEC sp_executesql @InsertSQL, 
+        N'@TestCreatedBy NVARCHAR(100), @TestPricingLevel NVARCHAR(50)', 
+        @TestCreatedBy, @TestPricingLevel;
+END
+
+-- 🏁 Update Section
+IF @TestMode IN ('BOTH', 'UPDATE')
+BEGIN
+    DECLARE @UpdateSQL NVARCHAR(MAX) = 'UPDATE YourTable SET ';
+    DECLARE @UpdateFields NVARCHAR(MAX) = '';
+
+    -- Select random columns to update
+    SELECT TOP 5  
+        @UpdateFields += QUOTENAME(COLUMN_NAME) + ' = ' +
+        CASE 
+            WHEN COLUMN_NAME = 'Comments' THEN '''' + @TestComments + ' - Updated'', '  -- ✅ Updates comment
+            WHEN COLUMN_NAME = 'Pricing_Level' THEN '''' + @TestPricingLevel + ''', '  -- ✅ Uses supplied pricing level
+            WHEN COLUMN_NAME = 'LastUpdatedBy' THEN 'COALESCE(@TestLastUpdatedBy, SUSER_NAME()), '  -- ✅ Uses provided or DB user
+            WHEN DATA_TYPE IN ('varchar', 'nvarchar', 'text') THEN '''UpdatedValue'', '
+            WHEN DATA_TYPE IN ('int', 'bigint', 'smallint', 'tinyint') THEN '2, '
+            WHEN DATA_TYPE IN ('datetime', 'date', 'smalldatetime', 'datetime2') THEN 'GETDATE(), '
+            ELSE 'NULL, '
+        END
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'YourTable'
+    AND COLUMN_NAME NOT IN ('ID', 'CreatedBy', 'CreatedAt');  -- Exclude key & audit fields
+
+    -- Remove last comma correctly
+    SET @UpdateFields = LEFT(@UpdateFields, LEN(@UpdateFields) - 1);  
+
+    -- Append WHERE clause to target test records only
+    SET @UpdateSQL += @UpdateFields + ' WHERE Comments LIKE ''TEST RECORD%'';';
+
+    -- Print and execute
+    PRINT 'Executing Update Statement:';
+    PRINT @UpdateSQL;
+    EXEC sp_executesql @UpdateSQL, 
+        N'@TestLastUpdatedBy NVARCHAR(100), @TestPricingLevel NVARCHAR(50)', 
+        @TestLastUpdatedBy, @TestPricingLevel;
+END
