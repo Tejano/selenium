@@ -1,0 +1,67 @@
+-- 🏁 Define Test Case
+DECLARE @TestCase INT = 1;  -- Options: 1 (No ID), 2 (Insert ID Only), 3 (Update ID Only), 4 (Insert & Update IDs)
+
+-- 🏁 Define Configurable Variables for the Test Case
+DECLARE @TestMode NVARCHAR(10);
+DECLARE @TestCreatedBy NVARCHAR(100);
+DECLARE @TestLastUpdatedBy NVARCHAR(100);
+DECLARE @TestComments NVARCHAR(255) = 'Initial Test Comment';  -- ✅ Comment for test records
+DECLARE @TestPricingLevel NVARCHAR(50) = 'Group';  -- ✅ Pricing level for test cases
+
+-- 🏁 Assign Values Based on Selected Test Case
+SET @TestMode = 
+    CASE 
+        WHEN @TestCase IN (1, 2) THEN 'INSERT'  
+        WHEN @TestCase IN (3, 4) THEN 'UPDATE'  
+        ELSE 'BOTH'  
+    END;
+
+SET @TestCreatedBy = 
+    CASE 
+        WHEN @TestCase = 2 THEN 'TestInsertUser'  -- ✅ Insert ID only
+        WHEN @TestCase = 4 THEN 'TestInsertUser'  -- ✅ Insert & Update ID
+        ELSE NULL  -- ✅ Default (use Windows login)
+    END;
+
+SET @TestLastUpdatedBy = 
+    CASE 
+        WHEN @TestCase = 3 THEN 'TestUpdateUser'  -- ✅ Update ID only
+        WHEN @TestCase = 4 THEN 'TestUpdateUser'  -- ✅ Insert & Update ID
+        ELSE NULL  -- ✅ Default (use Windows login)
+    END;
+
+-- 🏁 Print Test Configuration (For Debugging)
+PRINT 'Running Test Case ' + CAST(@TestCase AS NVARCHAR(10));
+PRINT 'Test Mode: ' + @TestMode;
+PRINT 'Test CreatedBy: ' + COALESCE(@TestCreatedBy, 'NULL');
+PRINT 'Test LastUpdatedBy: ' + COALESCE(@TestLastUpdatedBy, 'NULL');
+
+-- 🏁 Insert Test Record (If Test Mode is INSERT or BOTH)
+IF @TestMode IN ('BOTH', 'INSERT')
+BEGIN
+    DECLARE @InsertSQL NVARCHAR(MAX);
+    SET @InsertSQL = '
+        INSERT INTO YourTable (Comments, CreatedBy, Pricing_Level) 
+        VALUES (@TestComments, COALESCE(@TestCreatedBy, SUSER_NAME()), @TestPricingLevel);
+    ';
+
+    EXEC sp_executesql @InsertSQL, 
+        N'@TestComments NVARCHAR(255), @TestCreatedBy NVARCHAR(100), @TestPricingLevel NVARCHAR(50)', 
+        @TestComments, @TestCreatedBy, @TestPricingLevel;
+END;
+
+-- 🏁 Update Test Record (If Test Mode is UPDATE or BOTH)
+IF @TestMode IN ('BOTH', 'UPDATE')
+BEGIN
+    DECLARE @UpdateSQL NVARCHAR(MAX);
+    SET @UpdateSQL = '
+        UPDATE YourTable 
+        SET Comments = Comments + '' #'', 
+            LastUpdatedBy = COALESCE(@TestLastUpdatedBy, SUSER_NAME()) 
+        WHERE Comments LIKE ''Trigger Test%'';
+    ';
+
+    EXEC sp_executesql @UpdateSQL, 
+        N'@TestLastUpdatedBy NVARCHAR(100)', 
+        @TestLastUpdatedBy;
+END;
