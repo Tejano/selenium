@@ -1,0 +1,41 @@
+pip install selenium
+
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+import time
+
+# Setup WebDriver (Ensure you have ChromeDriver installed)
+driver = webdriver.Chrome()
+
+# Open the React app
+driver.get("http://localhost:3000")  # Replace with actual URL
+
+# Wait for the dropdown to load
+time.sleep(3)
+
+# Find and click the dropdown (modify selector as needed)
+dropdown = driver.find_element(By.XPATH, "//div[contains(@class, 'MuiSelect-root')]")
+dropdown.click()
+
+time.sleep(2)  # Wait for options to load
+
+# Scroll inside the dropdown to trigger pagination
+dropdown.send_keys(Keys.PAGE_DOWN)
+time.sleep(2)
+dropdown.send_keys(Keys.PAGE_DOWN)
+time.sleep(2)
+
+# Capture options after scrolling
+options = driver.find_elements(By.XPATH, "//li[contains(@class, 'MuiMenuItem-root')]")
+
+print(f"Total options loaded: {len(options)}")
+
+# Verify if new items were loaded
+if len(options) > 50:
+    print("Pagination is working!")
+else:
+    print("Pagination did NOT load more items. Issue detected!")
+
+driver.quit()
