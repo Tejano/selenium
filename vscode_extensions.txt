@@ -105,3 +105,90 @@ sh
 Copy
 Edit
 python tests/selenium_test.py
+
+✅ Recommended Alternative for React UI Testing with Python
+If you're testing React UIs using Python, the best approach is to use Selenium WebDriver or Playwright.
+
+1️⃣ Selenium for React UI Testing
+🔹 Install Selenium & WebDriver in Python
+Run the following in your VS Code terminal:
+
+sh
+Copy
+Edit
+pip install selenium webdriver-manager
+🔹 Install the required browser driver
+If using Chrome, download ChromeDriver here
+For Edge, download EdgeDriver here
+
+🔹 Example Selenium Test for React UI
+python
+Copy
+Edit
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+
+# Set up Selenium WebDriver
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+
+# Open your React App
+driver.get("http://localhost:3000")  # Replace with your React App URL
+
+# Find an element by its React component ID (Example: button)
+button = driver.find_element(By.XPATH, "//button[text()='Click Me']")
+button.click()
+
+# Verify action
+assert "Success" in driver.page_source
+
+# Close browser
+driver.quit()
+2️⃣ Playwright for Faster React UI Testing
+If Selenium is too slow, you can use Playwright, which is optimized for React and frontend testing.
+
+🔹 Install Playwright in Python
+sh
+Copy
+Edit
+pip install playwright
+playwright install
+🔹 Example Playwright Test for React UI
+python
+Copy
+Edit
+from playwright.sync_api import sync_playwright
+
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=False)  # Set headless=True for faster testing
+    page = browser.new_page()
+    
+    page.goto("http://localhost:3000")  # Replace with your React App URL
+    
+    page.click("text=Click Me")  # Clicks a button with text 'Click Me'
+    
+    assert "Success" in page.text_content("body")  # Check for success message
+    
+    browser.close()
+🎯 Best VS Code Extensions for React UI Testing
+Since Selenium IDE is not available, use these instead:
+
+For Selenium & Playwright UI Testing
+Python (by Microsoft) – Essential for Python scripting
+🔗 Install
+
+Pylance – IntelliSense for Python
+🔗 Install
+
+Playwright Test for VS Code – Best for UI automation
+🔗 Install
+
+Python Test Explorer – Runs and debugs Selenium/Playwright tests
+🔗 Install
+
+🎯 Which One Should You Use?
+✅ Use Selenium → If you need to test UI interactions across multiple browsers.
+✅ Use Playwright → If you need faster and more reliable UI tests for React apps.
+
+Let me know if you need a specific setup! 🚀
