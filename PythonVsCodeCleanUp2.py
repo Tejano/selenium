@@ -119,3 +119,4 @@ run_vscode_command("--list-extensions")
 # Step 5: Final cleanup messages
 print("\n🚀 Cleanup complete! Restart VS Code to see the changes.")
 
+
