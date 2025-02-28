@@ -1,0 +1,107 @@
+🔥 Recommended VS Code Extensions
+✅ React Development
+ES7+ React/Redux/React-Native snippets
+
+Snippets for React, Redux, and hooks.
+🔗 Install
+Prettier - Code formatter
+
+Ensures consistent code formatting for JS, JSX, and TypeScript.
+🔗 Install
+ESLint
+
+Lints JavaScript/TypeScript code, ensuring clean syntax.
+🔗 Install
+Tailwind CSS IntelliSense (If using Tailwind)
+
+Autocompletes Tailwind classes.
+🔗 Install
+Auto Rename Tag
+
+Automatically renames opening/closing JSX tags.
+🔗 Install
+React Developer Tools
+
+Debug React components within VS Code.
+🔗 Install
+Thunder Client (Lightweight alternative to Postman for API testing)
+
+Useful for testing microservice APIs manually.
+🔗 Install
+✅ Python Testing & API Automation
+Python (by Microsoft)
+
+Essential for Python development (debugging, linting, Jupyter).
+🔗 Install
+Pylance
+
+Provides IntelliSense and type checking.
+🔗 Install
+Python Test Explorer (Run and debug tests easily inside VS Code)
+
+Helps execute and manage test cases (unittest, pytest).
+🔗 Install
+Pytest Test Explorer UI (For managing pytest cases in a GUI format)
+Shows test results and logs within VS Code.
+🔗 Install
+REST Client (Make API requests inside VS Code, ideal for microservices testing)
+Run GET, POST, PUT, DELETE requests directly from VS Code.
+🔗 Install
+Selenium IDE (For automating React UI testing with Python Selenium)
+Useful for UI-based end-to-end testing.
+🔗 Install
+Playwright Test for VS Code (If using Playwright for React UI testing)
+Ideal for testing UI interactions in React using Python.
+🔗 Install
+🚀 Configuring VS Code for React & Python Testing
+1️⃣ Enable Format on Save
+Open Settings (Ctrl + ,) → Search formatOnSave → Enable.
+2️⃣ Set Default Formatters
+Open settings.json (Ctrl + Shift + P → "Preferences: Open Settings (JSON)").
+Add:
+json
+Copy
+Edit
+{
+  "editor.formatOnSave": true,
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  }
+}
+3️⃣ Running Tests in VS Code
+🟢 Run React Unit Tests (Jest)
+Open VS Code terminal and run:
+sh
+Copy
+Edit
+npm test
+Or, if using Playwright for React UI testing:
+sh
+Copy
+Edit
+npx playwright test
+🟢 Run API Tests (Python + pytest)
+Install required testing libraries:
+sh
+Copy
+Edit
+pip install pytest requests
+Run tests using:
+sh
+Copy
+Edit
+pytest tests/api_tests.py
+🟢 Run UI Tests (Selenium/Playwright)
+Playwright
+sh
+Copy
+Edit
+pytest tests/ui_tests.py
+Selenium
+sh
+Copy
+Edit
+python tests/selenium_test.py
