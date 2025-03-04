@@ -1,0 +1,80 @@
+🚀 C# Solution for Multiple Material-UI Autocomplete Dropdowns
+✔ Finds all dropdowns on the page
+✔ Loops through each dropdown, opening and handling it individually
+✔ Handles scrolling inside each dropdown
+✔ Tests search input for each dropdown
+
+
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Interactions;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+
+class MultipleDropdownsTest
+{
+    static void Main()
+    {
+        IWebDriver driver = new ChromeDriver();
+        driver.Navigate().GoToUrl("https://your.reactapp.com");
+        driver.Manage().Window.Maximize();
+
+        // Find all Material-UI dropdowns
+        var dropdowns = driver.FindElements(By.XPath("//input[@role='combobox']"));
+
+        // Function to handle a single dropdown
+        void HandleDropdown(IWebElement dropdown)
+        {
+            dropdown.Click();
+            Thread.Sleep(1000);
+
+            // Locate dropdown list
+            IWebElement dropdownList = driver.FindElement(By.XPath("//ul[contains(@class, 'MuiAutocomplete-listbox')]"));
+            int lastHeight = 0;
+            List<string> allOptions = new List<string>();
+
+            while (true)
+            {
+                var options = driver.FindElements(By.XPath("//li[contains(@class, 'MuiAutocomplete-option')]"));
+
+                foreach (var option in options)
+                {
+                    if (!allOptions.Contains(option.Text))
+                        allOptions.Add(option.Text);
+                }
+
+                // Scroll down inside the dropdown
+                new Actions(driver).MoveToElement(options.Last()).SendKeys(Keys.PageDown).Perform();
+                Thread.Sleep(1000);
+
+                // Stop if no new options appear
+                if (options.Count == lastHeight)
+                    break;
+                lastHeight = options.Count;
+            }
+
+            Console.WriteLine("Dropdown options: " + string.Join(", ", allOptions));
+
+            // Search for an item not in first page
+            dropdown.SendKeys(Keys.Control + "a");
+            dropdown.SendKeys(Keys.Backspace);
+            dropdown.SendKeys("SomeValueNotOnFirstPage");
+            Thread.Sleep(2000);
+
+            // Capture search results
+            var searchResults = driver.FindElements(By.XPath("//li[contains(@class, 'MuiAutocomplete-option')]"));
+            Console.WriteLine("Search results: " + string.Join(", ", searchResults.Select(x => x.Text)));
+        }
+
+        // Loop through each dropdown
+        for (int i = 0; i < dropdowns.Count; i++)
+        {
+            Console.WriteLine($"Handling dropdown {i + 1}");
+            HandleDropdown(dropdowns[i]);
+        }
+
+        driver.Quit();
+    }
+}
