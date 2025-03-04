@@ -1,0 +1,69 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
+import time
+
+# Set up WebDriver
+driver = webdriver.Chrome()
+driver.get("https://your.reactapp.com")
+driver.maximize_window()
+
+
+
+🚀 Python Solution for Multiple Material-UI Autocomplete Dropdowns
+This script: ✔ Finds all dropdowns on the page
+✔ Loops through each dropdown, opens it, and loads all options
+✔ Handles dynamic scrolling inside each dropdown
+✔ Handles search input inside each dropdown
+
+
+# Find all Material-UI dropdown inputs
+dropdowns = driver.find_elements(By.XPATH, "//input[@role='combobox']")
+
+# Function to handle a single dropdown
+def handle_dropdown(dropdown):
+    dropdown.click()
+    time.sleep(1)  # Wait for dropdown to open
+
+    # Locate the dropdown list
+    dropdown_list = driver.find_element(By.XPATH, "//ul[contains(@class, 'MuiAutocomplete-listbox')]")
+    
+    last_height = 0
+    all_options = set()
+
+    while True:
+        # Get currently loaded options
+        options = driver.find_elements(By.XPATH, "//li[contains(@class, 'MuiAutocomplete-option')]")
+        
+        for option in options:
+            all_options.add(option.text)
+
+        # Scroll down inside the dropdown
+        ActionChains(driver).move_to_element(options[-1]).send_keys(Keys.PAGE_DOWN).perform()
+        time.sleep(1)  # Wait for new options to load
+
+        # Stop if no new options appear
+        if len(options) == last_height:
+            break
+        last_height = len(options)
+
+    print("Dropdown options:", all_options)
+
+    # Search for an item not on the first page
+    dropdown.send_keys(Keys.CONTROL, "a")  # Select all text
+    dropdown.send_keys(Keys.BACKSPACE)  # Clear field
+    dropdown.send_keys("SomeValueNotOnFirstPage")
+    time.sleep(2)  # Wait for API response
+
+    # Capture search results
+    search_results = driver.find_elements(By.XPATH, "//li[contains(@class, 'MuiAutocomplete-option')]")
+    print("Search results:", [res.text for res in search_results])
+
+# Loop through each dropdown
+for idx, dropdown in enumerate(dropdowns):
+    print(f"Handling dropdown {idx + 1}")
+    handle_dropdown(dropdown)
+
+# Close WebDriver
+driver.quit()
