@@ -1,7 +1,3 @@
-
-
-
-
 import json
 import time
 import logging
@@ -13,13 +9,21 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 
+# Configure Chrome Options
+chrome_options = Options()
+chrome_options.add_argument("--ignore-certificate-errors")  # Ignore SSL certificate errors
+chrome_options.add_argument("--allow-running-insecure-content")  # Allow HTTP content in HTTPS site
+chrome_options.add_argument("--disable-web-security")  # Disable security restrictions
+
 # Configure Logging
 logging.basicConfig(filename="test_log.log", level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Set up Chrome WebDriver with DevTools Protocol
-options = Options()
-options.add_experimental_option("excludeSwitches", ["enable-automation"])
-options.add_argument("--auto-open-devtools-for-tabs")
+chrome_options = Options()
+chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])  # Bypass automation detection
+chrome_options.add_argument("--auto-open-devtools-for-tabs")  # Open DevTools for debugging
+chrome_options.add_argument("--ignore-certificate-errors")  # Ignore SSL issues
+chrome_options.add_argument("--allow-running-insecure-content")
 
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=options)
