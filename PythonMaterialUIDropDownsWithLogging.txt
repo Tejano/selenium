@@ -88,3 +88,4 @@ for idx, dropdown in enumerate(dropdowns):
 
 # Quit WebDriver
 driver.quit()
+##
