@@ -11,9 +11,12 @@ from selenium.webdriver.chrome.options import Options
 
 # Configure Chrome Options
 chrome_options = Options()
-chrome_options.add_argument("--ignore-certificate-errors")  # Ignore SSL certificate errors
-chrome_options.add_argument("--allow-running-insecure-content")  # Allow HTTP content in HTTPS site
-chrome_options.add_argument("--disable-web-security")  # Disable security restrictions
+chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+chrome_options.add_argument("--ignore-certificate-errors")  # Ignore SSL certificate issues
+chrome_options.add_argument("--allow-insecure-localhost")  # Allow localhost bypass SSL
+chrome_options.add_argument("--disable-features=CertificateTransparency")  # Ignore Chrome SSL transparency checks
+chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Prevent detection
+chrome_options.add_argument("--auto-open-devtools-for-tabs")  # Open DevTools automatically
 
 # Configure Logging
 logging.basicConfig(filename="test_log.log", level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
