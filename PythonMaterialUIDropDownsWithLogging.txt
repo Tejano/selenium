@@ -1,0 +1,90 @@
+
+
+
+
+import json
+import time
+import logging
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
+
+# Configure Logging
+logging.basicConfig(filename="test_log.log", level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+# Set up Chrome WebDriver with DevTools Protocol
+options = Options()
+options.add_experimental_option("excludeSwitches", ["enable-automation"])
+options.add_argument("--auto-open-devtools-for-tabs")
+
+service = Service(ChromeDriverManager().install())
+driver = webdriver.Chrome(service=service, options=options)
+
+# Open URL
+driver.get("https://your.reactapp.com")
+driver.maximize_window()
+
+# Enable DevTools Protocol for API capture
+devtools = driver.execute_cdp_cmd("Network.enable", {})
+
+# Function to log API calls
+def log_api_calls():
+    try:
+        logs = driver.execute_cdp_cmd("Network.getResponseBody", {})
+        for entry in logs:
+            logging.info(f"API Request: {json.dumps(entry, indent=2)}")
+    except Exception as e:
+        logging.error(f"Error capturing API logs: {str(e)}")
+
+# Function to handle dropdown scrolling & search
+def handle_dropdown(dropdown):
+    try:
+        dropdown.click()
+        time.sleep(1)
+
+        dropdown_list = driver.find_element(By.XPATH, "//ul[contains(@class, 'MuiAutocomplete-listbox')]")
+        last_height = 0
+        all_options = set()
+
+        while True:
+            options = driver.find_elements(By.XPATH, "//li[contains(@class, 'MuiAutocomplete-option')]")
+            
+            for option in options:
+                all_options.add(option.text)
+
+            ActionChains(driver).move_to_element(options[-1]).send_keys(Keys.PAGE_DOWN).perform()
+            time.sleep(1)
+
+            if len(options) == last_height:
+                break
+            last_height = len(options)
+
+        logging.info(f"Dropdown Options: {list(all_options)}")
+
+        # Search simulation
+        dropdown.send_keys(Keys.CONTROL, "a")
+        dropdown.send_keys(Keys.BACKSPACE)
+        dropdown.send_keys("SomeValueNotOnFirstPage")
+        time.sleep(2)
+
+        search_results = driver.find_elements(By.XPATH, "//li[contains(@class, 'MuiAutocomplete-option')]")
+        logging.info(f"Search Results: {[res.text for res in search_results]}")
+
+        # Capture API calls after search
+        log_api_calls()
+
+    except Exception as e:
+        logging.error(f"Error handling dropdown: {str(e)}")
+
+# Loop through multiple dropdowns
+dropdowns = driver.find_elements(By.XPATH, "//input[@role='combobox']")
+for idx, dropdown in enumerate(dropdowns):
+    logging.info(f"Handling dropdown {idx + 1}")
+    handle_dropdown(dropdown)
+
+# Quit WebDriver
+driver.quit()

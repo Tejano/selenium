@@ -1,0 +1,116 @@
+
+
+For C#, we’ll: ✅ Use Chrome DevTools Protocol
+✅ Capture API calls
+✅ Handle errors
+
+🔧 Install Dependencies (If Needed)
+NuGet Packages
+Selenium.WebDriver
+Selenium.WebDriver.ChromeDriver
+Newtonsoft.Json (for logging API responses)
+
+
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Interactions;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Threading;
+
+class MaterialUIDropdownTest
+{
+    static void Main()
+    {
+        var options = new ChromeOptions();
+        options.AddArgument("--auto-open-devtools-for-tabs");
+
+        IWebDriver driver = new ChromeDriver(options);
+        driver.Navigate().GoToUrl("https://your.reactapp.com");
+        driver.Manage().Window.Maximize();
+
+        // Log File
+        string logFile = "test_log.txt";
+
+        // Enable Chrome DevTools Protocol for API Logging
+        var devToolsSession = ((OpenQA.Selenium.Chrome.ChromeDriver)driver).GetDevToolsSession();
+        devToolsSession.SendCommand("Network.enable", new { });
+
+        // Function to Log API Calls
+        void LogAPICalls()
+        {
+            try
+            {
+                var logs = devToolsSession.SendCommand("Network.getResponseBody", new { });
+                File.AppendAllText(logFile, $"API Request: {JsonSerializer.Serialize(logs, new JsonSerializerOptions { WriteIndented = true })}\n");
+            }
+            catch (Exception ex)
+            {
+                File.AppendAllText(logFile, $"Error Capturing API Calls: {ex.Message}\n");
+            }
+        }
+
+        // Function to Handle Dropdowns
+        void HandleDropdown(IWebElement dropdown)
+        {
+            try
+            {
+                dropdown.Click();
+                Thread.Sleep(1000);
+
+                IWebElement dropdownList = driver.FindElement(By.XPath("//ul[contains(@class, 'MuiAutocomplete-listbox')]"));
+                int lastHeight = 0;
+                List<string> allOptions = new List<string>();
+
+                while (true)
+                {
+                    var options = driver.FindElements(By.XPath("//li[contains(@class, 'MuiAutocomplete-option')]"));
+
+                    foreach (var option in options)
+                    {
+                        if (!allOptions.Contains(option.Text))
+                            allOptions.Add(option.Text);
+                    }
+
+                    new Actions(driver).MoveToElement(options.Last()).SendKeys(Keys.PageDown).Perform();
+                    Thread.Sleep(1000);
+
+                    if (options.Count == lastHeight)
+                        break;
+                    lastHeight = options.Count;
+                }
+
+                File.AppendAllText(logFile, $"Dropdown Options: {string.Join(", ", allOptions)}\n");
+
+                // Simulate search
+                dropdown.SendKeys(Keys.Control + "a");
+                dropdown.SendKeys(Keys.Backspace);
+                dropdown.SendKeys("SomeValueNotOnFirstPage");
+                Thread.Sleep(2000);
+
+                var searchResults = driver.FindElements(By.XPath("//li[contains(@class, 'MuiAutocomplete-option')]"));
+                File.AppendAllText(logFile, $"Search Results: {string.Join(", ", searchResults.Select(x => x.Text))}\n");
+
+                // Capture API calls after search
+                LogAPICalls();
+            }
+            catch (Exception ex)
+            {
+                File.AppendAllText(logFile, $"Error Handling Dropdown: {ex.Message}\n");
+            }
+        }
+
+        // Loop through dropdowns
+        var dropdowns = driver.FindElements(By.XPath("//input[@role='combobox']"));
+        for (int i = 0; i < dropdowns.Count; i++)
+        {
+            File.AppendAllText(logFile, $"Handling Dropdown {i + 1}\n");
+            HandleDropdown(dropdowns[i]);
+        }
+
+        driver.Quit();
+    }
+}
