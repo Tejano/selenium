@@ -15,6 +15,7 @@ chrome_options.add_argument("--remote-debugging-port=9222")  # Enable debugging
 chrome_options.add_argument("--auto-open-devtools-for-tabs")  # Open DevTools for debugging
 chrome_options.add_argument("--headless=new")  # Run headless (try removing this if issues persist)
 
+
 # Initialize WebDriver
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=chrome_options)

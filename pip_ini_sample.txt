@@ -1,0 +1,8 @@
+[global]
+index-url = https://artifactory.company.com/api/pypi/pypi/simple/
+trusted-host = artifactory.company.com
+proxy = http://proxy.company.com:8080
+disable-pip-version-check = true
+
+[install]
+timeout = 60
