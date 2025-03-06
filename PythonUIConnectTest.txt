@@ -1,24 +1,40 @@
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
 # Configure Chrome Options
-chrome_options = Options()
-chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-chrome_options.add_argument("--ignore-certificate-errors")  # Ignore SSL issues
-chrome_options.add_argument("--allow-insecure-localhost")  # Bypass SSL for localhost
-chrome_options.add_argument("--disable-features=CertificateTransparency")  # Disable SSL security enforcement
-chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Prevent bot detection
-chrome_options.add_argument("--disable-gpu")  # Workaround for some environments
-chrome_options.add_argument("--remote-debugging-port=9222")  # Enable debugging
-chrome_options.add_argument("--auto-open-devtools-for-tabs")  # Open DevTools for debugging
-chrome_options.add_argument("--headless=new")  # Run headless (try removing this if issues persist)
+options = Options()
 
+# Bypass SSL & security restrictions
+options.add_argument("--ignore-certificate-errors")
+options.add_argument("--ignore-certificate-errors-spki-list")
+options.add_argument("--allow-insecure-localhost")
+options.add_argument("--disable-features=CertificateTransparency")
+options.add_argument("--disable-blink-features=AutomationControlled")
 
-# Initialize WebDriver
+# Corporate proxy settings (modify if needed)
+options.add_argument("--proxy-server=http://proxy.company.com:8080")
+
+# Disable additional Chrome security policies
+options.add_argument("--disable-web-security")
+options.add_argument("--disable-features=SameSiteByDefaultCookies,CookiesWithoutSameSiteMustBeSecure")
+
+# Use a separate Chrome profile to bypass corporate policies
+options.add_argument("--user-data-dir=C:\\SeleniumTempProfile")
+options.add_argument("--profile-directory=Default")
+
+# Debugging options
+options.add_argument("--disable-gpu")
+options.add_argument("--remote-debugging-port=9222")
+options.add_argument("--auto-open-devtools-for-tabs")
+
+# Optional: Remove headless mode if certificate issue persists
+options.add_argument("--headless=new")  # Remove if needed
+
+# Set up ChromeDriver (Ensure it's installed)
 service = Service(ChromeDriverManager().install())
-driver = webdriver.Chrome(service=service, options=chrome_options)
+driver = webdriver.Chrome(service=service, options=options)
 
 # Open your site
 driver.get("https://your.reactapp.com")
