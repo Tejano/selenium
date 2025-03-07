@@ -1,0 +1,96 @@
+
+🐍 Full Python Script to Auto-Update ChromeDriver
+import os
+import re
+import zipfile
+import subprocess
+import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+
+# 🚀 Step 1: Get Installed Chrome Version
+def get_chrome_version():
+    try:
+        # Get Chrome version from Windows Registry
+        output = subprocess.check_output(
+            'reg query "HKEY_CURRENT_USER\\Software\\Google\\Chrome\\BLBeacon" /v version',
+            shell=True
+        ).decode("utf-8")
+        
+        match = re.search(r"version\s+REG_SZ\s+([\d\.]+)", output)
+        if match:
+            return match.group(1)
+    except Exception as e:
+        print(f"❌ Error getting Chrome version: {e}")
+        return None
+
+# 🚀 Step 2: Find Matching ChromeDriver Version
+def get_chromedriver_version(chrome_version):
+    major_version = chrome_version.split('.')[0]
+    url = f"https://chromedriver.storage.googleapis.com/LATEST_RELEASE_{major_version}"
+
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.text.strip()
+    except Exception as e:
+        print(f"❌ Error fetching ChromeDriver version: {e}")
+    
+    return None
+
+# 🚀 Step 3: Download and Install ChromeDriver
+def download_chromedriver(version, destination_folder="C:/CompanyTools"):
+    url = f"https://chromedriver.storage.googleapis.com/{version}/chromedriver_win32.zip"
+    zip_path = os.path.join(destination_folder, "chromedriver.zip")
+
+    try:
+        # Download ChromeDriver
+        print(f"⬇️ Downloading ChromeDriver {version}...")
+        response = requests.get(url, stream=True)
+        with open(zip_path, "wb") as file:
+            for chunk in response.iter_content(chunk_size=8192):
+                file.write(chunk)
+
+        # Extract ChromeDriver
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
+            zip_ref.extractall(destination_folder)
+
+        os.remove(zip_path)  # Cleanup zip file
+        return os.path.join(destination_folder, "chromedriver.exe")
+    
+    except Exception as e:
+        print(f"❌ Error downloading ChromeDriver: {e}")
+        return None
+
+# 🚀 Step 4: Automatically Find and Update ChromeDriver
+chrome_version = get_chrome_version()
+if chrome_version:
+    print(f"✅ Installed Chrome Version: {chrome_version}")
+    
+    driver_version = get_chromedriver_version(chrome_version)
+    if driver_version:
+        print(f"✅ Matching ChromeDriver Version: {driver_version}")
+
+        driver_path = download_chromedriver(driver_version)
+        if driver_path:
+            print(f"✅ ChromeDriver Installed at: {driver_path}")
+
+            # 🚀 Step 5: Use Selenium with the Correct ChromeDriver
+            options = Options()
+            options.add_argument("--ignore-certificate-errors")
+            options.add_argument("--allow-insecure-localhost")
+            options.add_argument("--disable-blink-features=AutomationControlled")
+
+            service = Service(driver_path)
+            driver = webdriver.Chrome(service=service, options=options)
+
+            driver.get("https://www.google.com")
+            print("✅ Selenium is working with the latest ChromeDriver!")
+            driver.quit()
+        else:
+            print("❌ Failed to install ChromeDriver.")
+    else:
+        print("❌ Could not determine the correct ChromeDriver version.")
+else:
+    print("❌ Could not find installed Chrome version.")
