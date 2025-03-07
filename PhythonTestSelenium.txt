@@ -1,0 +1,21 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+
+# ✅ Set the ChromeDriver path manually
+CHROMEDRIVER_PATH = "C:/CompanyTools/chromedriver.exe"  
+
+# ✅ Configure Chrome options
+options = Options()
+options.add_argument("--ignore-certificate-errors")
+options.add_argument("--disable-blink-features=AutomationControlled")
+
+# ✅ Initialize Selenium with ChromeDriver
+service = Service(CHROMEDRIVER_PATH)
+driver = webdriver.Chrome(service=service, options=options)
+
+# ✅ Open a test website
+driver.get("https://www.google.com")
+print("✅ Selenium is working with the correct ChromeDriver!")
+
+driver.quit()
