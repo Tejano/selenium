@@ -1,0 +1,28 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+
+# Set ChromeDriver and Chrome Binary Paths
+CHROMEDRIVER_PATH = "C:/CompanyTools/chromedriver.exe"
+CHROME_BINARY_PATH = "C:/Program Files/Google/Chrome/Application/chrome.exe"  # Adjust if needed
+
+# Configure Chrome Options
+options = Options()
+options.binary_location = CHROME_BINARY_PATH  # Manually set Chrome binary
+options.add_argument("--no-sandbox")  # Bypass corporate security policies
+options.add_argument("--disable-dev-shm-usage")  # Prevent memory errors
+options.add_argument("--disable-gpu")  # Fix graphical rendering issues
+options.add_argument("--disable-blink-features=AutomationControlled")  # Prevent detection
+
+# 🚀 Use a temporary Chrome profile to avoid permission issues
+options.add_argument("--user-data-dir=C:/TempChromeProfile")
+
+# Initialize WebDriver with ChromeDriver path
+service = Service(CHROMEDRIVER_PATH)
+driver = webdriver.Chrome(service=service, options=options)
+
+# Open a test page
+driver.get("https://www.google.com")
+print("✅ ChromeDriver launched successfully!")
+
+driver.quit()
