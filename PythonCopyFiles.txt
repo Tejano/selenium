@@ -1,0 +1,87 @@
+import os
+import shutil
+import time
+import logging
+from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# === CONFIG ===
+MAX_WORKERS = 4
+RETRY_LIMIT = 3
+LOG_FILE = "copy_log.txt"
+BUFFER_SIZE = 1048576  # 1 MB
+
+# === LOGGING SETUP ===
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE, mode='a', encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+
+def file_needs_copy(src_file, dst_file):
+    return not os.path.exists(dst_file) or os.path.getsize(src_file) != os.path.getsize(dst_file)
+
+def copy_file_with_retry(src_file, dst_file):
+    for attempt in range(1, RETRY_LIMIT + 1):
+        try:
+            os.makedirs(os.path.dirname(dst_file), exist_ok=True)
+            with open(src_file, 'rb') as sf, open(dst_file, 'wb') as df:
+                while chunk := sf.read(BUFFER_SIZE):
+                    df.write(chunk)
+            logging.info(f"Copied: {src_file} -> {dst_file}")
+            return True
+        except Exception as e:
+            logging.warning(f"[Attempt {attempt}] Failed to copy {src_file}: {e}")
+            time.sleep(2 * attempt)  # exponential backoff
+    logging.error(f"Gave up on: {src_file}")
+    return False
+
+def collect_files_to_copy(src_root, dst_root):
+    files_to_copy = []
+    for root, _, files in os.walk(src_root):
+        rel_path = os.path.relpath(root, src_root)
+        dst_dir = os.path.join(dst_root, rel_path)
+        for file in files:
+            src_file = os.path.join(root, file)
+            dst_file = os.path.join(dst_dir, file)
+            if file_needs_copy(src_file, dst_file):
+                size = os.path.getsize(src_file)
+                files_to_copy.append((src_file, dst_file, size))
+    return sorted(files_to_copy, key=lambda x: x[2])  # sort by file size (smallest first)
+
+def main(src_folder, dst_folder):
+    if not os.path.exists(src_folder):
+        logging.error(f"Source folder does not exist: {src_folder}")
+        return
+
+    logging.info(f"Copying from {src_folder} to {dst_folder}")
+    files_to_copy = collect_files_to_copy(src_folder, dst_folder)
+    total = len(files_to_copy)
+
+    if total == 0:
+        logging.info("All files are already copied.")
+        return
+
+    logging.info(f"Files to copy: {total}")
+    progress = tqdm(total=total, desc="Copying files", unit="file")
+
+    def copy_job(task):
+        src, dst, _ = task
+        copy_file_with_retry(src, dst)
+        progress.update(1)
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = [executor.submit(copy_job, file_info) for file_info in files_to_copy]
+        for _ in as_completed(futures):
+            pass
+
+    progress.close()
+    logging.info("Copy complete.")
+
+if __name__ == "__main__":
+    source_folder = r"C:\path\to\your\source"
+    destination_folder = r"Z:\your\network\folder"
+    main(source_folder, destination_folder)
