@@ -1,0 +1,36 @@
+import os
+
+BUFFER_SIZE = 1048576  # 1MB chunks
+
+def copy_file_verbose(src_file, dst_file):
+    """Copy file with live byte progress."""
+    try:
+        os.makedirs(os.path.dirname(dst_file), exist_ok=True)
+        total_size = os.path.getsize(src_file)
+        copied = 0
+        with open(src_file, 'rb') as sf, open(dst_file, 'wb') as df:
+            while chunk := sf.read(BUFFER_SIZE):
+                df.write(chunk)
+                copied += len(chunk)
+                print(f"\r📦 Copying {os.path.basename(src_file)}: {copied:,}/{total_size:,} bytes", end="")
+        print(f"\n✅ Done copying: {os.path.basename(src_file)}")
+    except Exception as e:
+        print(f"\n❌ Failed to copy {src_file}: {e}")
+
+def main(src_folder, dst_folder):
+    if not os.path.exists(src_folder):
+        print(f"❌ Source folder does not exist: {src_folder}")
+        return
+
+    for root, _, files in os.walk(src_folder):
+        for file in files:
+            src_file = os.path.join(root, file)
+            rel_path = os.path.relpath(src_file, src_folder)
+            dst_file = os.path.join(dst_folder, rel_path)
+            print(f"\n➡️ Preparing to copy: {src_file}")
+            copy_file_verbose(src_file, dst_file)
+
+if __name__ == "__main__":
+    source_folder = r"C:\Temp\TestSrc"
+    destination_folder = r"C:\Temp\TestDst"
+    main(source_folder, destination_folder)
