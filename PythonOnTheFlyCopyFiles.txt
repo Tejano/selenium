@@ -1,0 +1,61 @@
+import os
+import time
+from concurrent.futures import ThreadPoolExecutor
+from tqdm import tqdm
+
+BUFFER_SIZE = 1048576  # 1 MB
+MAX_WORKERS = 2
+RETRY_LIMIT = 3
+
+def file_needs_copy(src, dst):
+    return not os.path.exists(dst) or os.path.getsize(src) != os.path.getsize(dst)
+
+def copy_file_with_retry(src, dst):
+    for attempt in range(1, RETRY_LIMIT + 1):
+        try:
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            with open(src, 'rb') as sf, open(dst, 'wb') as df:
+                while chunk := sf.read(BUFFER_SIZE):
+                    df.write(chunk)
+            return True
+        except Exception as e:
+            print(f"\n❌ Error copying {src} (attempt {attempt}): {e}")
+            time.sleep(attempt * 2)
+    print(f"\n❌ Gave up on {src}")
+    return False
+
+def copy_on_the_fly(src_root, dst_root):
+    file_count = 0
+    progress = tqdm(desc="Copying", unit="file")
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = []
+
+        for root, _, files in os.walk(src_root):
+            for file in files:
+                src_file = os.path.join(root, file)
+                rel_path = os.path.relpath(src_file, src_root)
+                dst_file = os.path.join(dst_root, rel_path)
+
+                if file_needs_copy(src_file, dst_file):
+                    future = executor.submit(copy_file_with_retry, src_file, dst_file)
+                    futures.append(future)
+
+                    file_count += 1
+                    progress.total = file_count
+                    progress.refresh()
+
+        for future in futures:
+            if future.result():
+                progress.update(1)
+
+    progress.close()
+    print("✅ Copy complete.")
+
+if __name__ == "__main__":
+    source_folder = r"C:\Temp\TestSrc"
+    destination_folder = r"U:\Backup\TestDst"  # Or whatever your mapped drive is
+    if not os.path.exists(source_folder):
+        print("❌ Source folder not found.")
+    else:
+        copy_on_the_fly(source_folder, destination_folder)

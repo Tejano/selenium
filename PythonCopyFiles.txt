@@ -85,3 +85,4 @@ if __name__ == "__main__":
     source_folder = r"C:\path\to\your\source"
     destination_folder = r"Z:\your\network\folder"
     main(source_folder, destination_folder)
+
