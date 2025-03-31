@@ -1,0 +1,173 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
+using Polly;
+using Polly.Retry;
+using System;
+
+namespace ListOfValuesService
+{
+    public class Startup
+    {
+    public IConfiguration Configuration { get; }
+    public ILogger<Startup> Logger { get; }
+
+    public Startup(IConfiguration configuration, ILogger<Startup> logger)
+    {
+        Configuration = configuration;
+        Logger = logger;
+    }
+
+        readonly string OriginPolicy = "AllInternalOrigins";
+        public IConfiguration Configuration { get; }
+        public ILogger Logger { get; }
+
+        // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureServices(IServiceCollection services)
+        {
+            string strConnect, server, database, username, password;
+			services.AddSingleton(Logger);
+            // Add logging services
+            services.AddLogging(builder =>
+            {
+                builder.AddConsole();
+            });
+            // Allow all internal origins to use services.
+            services.AddCors(options =>
+            {
+                options.AddPolicy(OriginPolicy, builder =>
+                {
+                    builder.SetIsOriginAllowedToAllowWildcardSubdomains().WithOrigins(
+                        "http://localhost", "https://localhost",
+                        "http://localhost:3000", "https://localhost:3000",
+                        "http://*.accounts.root.corp", "https://*.accounts.root.corp",
+                        "http://*.express-scripts.com", "https://*.express-scripts.com",
+                        "http://*.*.express-scripts.com", "https://*.*.express-scripts.com",
+                        "http://*.*.*.express-scripts.com", "https://*.*.*.express-scripts.com"
+                    )
+                    .AllowAnyHeader().AllowAnyMethod().AllowCredentials().Build();
+                });
+            });
+
+            // Add Entity Framework services
+            services.AddMvc(MvcOptions => MvcOptions.EnableEndpointRouting = false); // .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+
+            // Configure services.
+            services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
+
+            server = Configuration["DATABASE_SERVER"];
+            database = Configuration["DATABASE_NAME"];
+            username = Configuration["DATABASE_USERNAME"];
+            password = Configuration["DATABASE_PASSWORD"];
+
+            strConnect = "Server=" + server + ";Database=" + database + ";User Id=" + username + ";Password=" + password + ";Encrypt=False;TrustServerCertificate=True;Connection Timeout=120;Pooling=true;Min Pool Size=5;Max Pool Size=20;MultipleActiveResultSets=True;Persist Security Info=False";
+
+            services.AddDbContext<ListOfValuesDbContext>(options =>
+            {
+                options.UseSqlServer(strConnect);
+                options.EnableSensitiveDataLogging();
+            });
+
+            // Configure SQL connection with retry policy
+            services.AddSingleton(sp =>
+            {
+                var connectionString = Configuration.GetConnectionString(strConnect);
+
+                // Create a retry policy with exponential backoff
+                var retryPolicy = Policy
+                    .Handle<SqlException>()
+                    .WaitAndRetry(new[]
+                    {
+                        TimeSpan.FromSeconds(1),
+                        TimeSpan.FromSeconds(2),
+                        TimeSpan.FromSeconds(4)
+                    });
+
+                // Create a SQL connection with retry policy
+                var connection = RetryOpenSqlConnection(connectionString, retryPolicy);
+
+                // Log SQL connection information
+               // var logger = sp.GetService<ILogger<Startup>>();
+                Logger.LogInformation("SQL connection opened");
+
+                // Dispose the connection when the service provider is disposed
+                var serviceProvider = sp.GetService<IServiceProvider>();
+                var lifetime = serviceProvider.GetService<Microsoft.Extensions.Hosting.IHostApplicationLifetime>();
+                lifetime.ApplicationStopping.Register(() =>
+                {
+                    connection.Dispose();
+                    Logger.LogInformation("SQL connection closed");
+                });
+
+                return connection;
+            });
+
+            SqlConnection RetryOpenSqlConnection(string connectionString, RetryPolicy retryPolicy)
+            {
+                var connection = new SqlConnection(connectionString);
+                retryPolicy.Execute(() =>
+                {
+                    connection.Open();
+                });
+                return connection;
+            }
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            Logger.LogInformation("Application started");
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(env.ContentRootPath)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
+                //.AddJsonFile("secrets/appsettings.secrets.json", optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables();
+
+            // Captures synchronous and asynchronous Exception instances and generates HTML error responses.
+            if (env.EnvironmentName == "Development")
+                app.UseDeveloperExceptionPage();
+            else
+                app.UseHsts();
+
+            app.UseCors(OriginPolicy);
+
+            app.UseMvc(routes =>
+            {
+                routes.MapRoute(
+                    name: "default",
+                    template: "{controller}/{action}/{id?}",
+                    defaults: new { controller = "Home", action = "Index" });
+
+                routes.MapRoute(
+                    name: "api",
+                    template: "{controller}/{id?}");
+            });
+
+            app.Run(async (context) =>
+            {
+                try
+                {
+                    // Example usage of the SQL connection with retry policy
+                    var sqlConnection = app.ApplicationServices.GetService<SqlConnection>();
+                    // Use the SQL connection in your application...
+
+                    await context.Response.WriteAsync("Hello, World!");
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "An unhandled exception occurred.");
+
+                    context.Response.StatusCode = 500;
+                    await context.Response.WriteAsync("An error occurred. Please try again later.");
+                }
+            });
+        }
+    }
+}
