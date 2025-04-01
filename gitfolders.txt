@@ -1,0 +1,13 @@
+@echo off
+for /d %%F in (*) do (
+    if exist "%%F\.git" (
+        echo Skipping %%F (already a git repo)
+    ) else (
+        echo Initializing git repo in %%F...
+        pushd "%%F"
+        git init
+        git add .
+        git commit -m "Initial commit"
+        popd
+    )
+)
