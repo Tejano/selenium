@@ -1,0 +1,133 @@
+🖥️ What This GUI Does
+You run the script with Python.
+
+A simple window opens with:
+
+Two file selectors for the old and new .ispac files.
+
+A "Compare" button.
+
+When you click Compare:
+
+It extracts both .ispac files.
+
+Diffs all .dtsx, .dtproj, and .manifest files.
+
+Saves results to temp_compare_output/compare_log.txt
+
+Shows a pop-up with the results location.
+///////////////////////////////////////////////////////////////////////
+
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import zipfile
+import difflib
+import os
+import shutil
+from datetime import datetime
+
+def extract_ispac_as_zip(ispac_path, extract_to, label):
+    zip_path = os.path.join(extract_to, f"{label}.zip")
+    extract_folder = os.path.join(extract_to, label)
+
+    shutil.copy(ispac_path, zip_path)
+    os.makedirs(extract_folder, exist_ok=True)
+
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(extract_folder)
+
+    return extract_folder
+
+def compare_files(file1, file2, rel_path):
+    with open(file1, 'r', encoding='utf-8') as f1, open(file2, 'r', encoding='utf-8') as f2:
+        f1_lines = f1.readlines()
+        f2_lines = f2.readlines()
+
+    diff = list(difflib.unified_diff(f1_lines, f2_lines,
+                                     fromfile=f'old/{rel_path}',
+                                     tofile=f'new/{rel_path}',
+                                     lineterm=''))
+    return diff
+
+def compare_ispacs_gui(old_path, new_path):
+    output_dir = os.path.abspath("temp_compare_output")
+    os.makedirs(output_dir, exist_ok=True)
+
+    log_file = os.path.join(output_dir, "compare_log.txt")
+    log_lines = []
+
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_lines.append(f"SSIS .ispac comparison run: {timestamp}\n")
+    log_lines.append(f"Old file: {old_path}\n")
+    log_lines.append(f"New file: {new_path}\n")
+
+    old_folder = extract_ispac_as_zip(old_path, output_dir, "old")
+    new_folder = extract_ispac_as_zip(new_path, output_dir, "new")
+
+    all_files = set()
+    for root, _, files in os.walk(old_folder):
+        for f in files:
+            rel = os.path.relpath(os.path.join(root, f), old_folder)
+            all_files.add(rel)
+    for root, _, files in os.walk(new_folder):
+        for f in files:
+            rel = os.path.relpath(os.path.join(root, f), new_folder)
+            all_files.add(rel)
+
+    for rel_path in sorted(all_files):
+        f_old = os.path.join(old_folder, rel_path)
+        f_new = os.path.join(new_folder, rel_path)
+
+        if os.path.exists(f_old) and os.path.exists(f_new):
+            diff = compare_files(f_old, f_new, rel_path)
+            if diff:
+                log_lines.append(f"\n--- Differences in {rel_path} ---\n")
+                log_lines.extend(diff)
+        elif os.path.exists(f_old):
+            log_lines.append(f"\n--- File removed: {rel_path} ---\n")
+        else:
+            log_lines.append(f"\n--- File added: {rel_path} ---\n")
+
+    with open(log_file, 'w', encoding='utf-8') as f:
+        for line in log_lines:
+            f.write(line if isinstance(line, str) else str(line))
+            if not str(line).endswith('\n'):
+                f.write('\n')
+
+    messagebox.showinfo("Comparison Complete", f"Results saved to:\n{log_file}")
+
+def select_file(entry):
+    file_path = filedialog.askopenfilename(filetypes=[("ISPAC Files", "*.ispac")])
+    if file_path:
+        entry.delete(0, tk.END)
+        entry.insert(0, file_path)
+
+def run_comparison():
+    old_path = old_entry.get()
+    new_path = new_entry.get()
+
+    if not old_path or not new_path:
+        messagebox.showwarning("Missing Input", "Please select both .ispac files.")
+        return
+
+    compare_ispacs_gui(old_path, new_path)
+
+# GUI setup
+root = tk.Tk()
+root.title("SSIS ISPAC Comparison Tool")
+root.geometry("600x200")
+
+tk.Label(root, text="Old .ispac File:").pack(pady=5)
+old_entry = tk.Entry(root, width=80)
+old_entry.pack()
+tk.Button(root, text="Browse", command=lambda: select_file(old_entry)).pack()
+
+tk.Label(root, text="New .ispac File:").pack(pady=5)
+new_entry = tk.Entry(root, width=80)
+new_entry.pack()
+tk.Button(root, text="Browse", command=lambda: select_file(new_entry)).pack()
+
+tk.Button(root, text="Compare", command=run_comparison, bg="green", fg="white").pack(pady=10)
+
+root.mainloop()
+
