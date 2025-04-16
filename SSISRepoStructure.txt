@@ -1,0 +1,79 @@
+
+✅ Quick Setup: Using GitHub Desktop (Simplest Visual Option)
+🪜 Step-by-Step: GitHub Desktop
+Create Your Repo (locally)
+
+Open GitHub Desktop
+
+Click File > New Repository
+
+Name it: ssis-projects
+
+Choose a local path, and don’t initialize with a README yet
+
+Click Create Repository
+
+Create Folder Structure in File Explorer
+
+Open the repo folder in Explorer and build this:
+
+ssis-projects/
+├── develop/
+│   └── ProjectA/
+│       ├── ProjectA.dtproj
+│       └── *.dtsx
+├── deploy/
+│   ├── Dev/
+│   ├── QA/
+│   └── UAT/
+├── README.md
+└── .gitignore
+
+ssis-projects/
+├── develop/
+│   └── ProjectA/
+│       ├── ProjectA.dtproj
+│       ├── Package1.dtsx
+│       ├── bin/              ← Ignored
+│       ├── obj/              ← Ignored
+│       └── ProjectA.ispac    ← Ignored
+├── deploy/                   ← Optional to track if you want to archive .ispac
+│   └── Dev/
+├── .gitignore
+└── README.md
+If you want to archive your .ispac files for deployment tracking, keep them outside of Git (e.g., in a shared folder), or explicitly allow them in your deploy/ folder by modifying .gitignore like this:
+
+gitignore
+Copy
+Edit
+*.ispac
+!deploy/**/*.ispac
+Let me know if you want a downloadable starter .gitignore or GitHub repo template — I can spin one up
+
+✅ Recommended .gitignore for SSIS Projects (Visual Studio 2022)
+Create a file named .gitignore in the root of your repo with the following content:
+
+# Build output folders
+**/bin/
+**/obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Deployment output
+*.ispac
+*.log
+
+# Visual Studio backup and temp
+*.vspscc
+*.vssscc
+.vs/
+*.tmp
+
+# Packages and test results (if you use them)
+TestResults/
+*.nupkg
+*.snk
