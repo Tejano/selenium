@@ -77,3 +77,26 @@ Create a file named .gitignore in the root of your repo with the following conte
 TestResults/
 *.nupkg
 *.snk
+
+ssis-projects/
+└── develop/
+    ├── ProjectA/
+    │   ├── ProjectA.dtproj
+    │   ├── ProjectA.ispac
+    │   ├── Package1.dtsx
+    │   └── jobs/
+    │       └── Job_LoadSalesData.sql
+    ├── ProjectB/
+    │   └── ...
+    ├── multi-project-jobs/
+    │   └── Job_RunAllReports.sql
+    └── ssis-config/
+        ├── schema/
+        │   ├── Create_config_run.sql
+        │   ├── Create_properties.sql
+        ├── sprocs/
+        │   ├── usp_Run_Control.sql
+        │   ├── usp_Check_Schedule.sql
+        └── data/
+            ├── Seed_config_run.sql
+            └── Seed_properties.sql
